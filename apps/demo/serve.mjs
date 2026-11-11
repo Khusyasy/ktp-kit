@@ -6,12 +6,16 @@ import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const assets = path.join(root, "apps/demo/ktp-kit");  // filled by: npx ktp-kit assets apps/demo/ktp-kit
+// Self-hosted fonts (cross-origin isolation blocks font CDNs): /fonts/<file> from the @fontsource packages.
+const FONT_DIRS = ["node_modules/@fontsource-variable/plus-jakarta-sans/files", "node_modules/@fontsource/ibm-plex-mono/files"];
+const font = name => FONT_DIRS.map(d => path.join(root, d, name)).find(f => fs.existsSync(f));
 const types = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript",
-  ".wasm": "application/wasm", ".csv": "text/csv", ".json": "application/json"};
+  ".wasm": "application/wasm", ".csv": "text/csv", ".json": "application/json", ".woff2": "font/woff2", ".css": "text/css"};
 
 http.createServer((req, res) => {
   const url = decodeURIComponent(new URL(req.url, "http://x").pathname);
   const file = url === "/" ? path.join(root, "apps/demo/index.html")
+    : url.startsWith("/fonts/") ? font(path.basename(url)) ?? ""
     : url.startsWith("/ktp-kit/") ? path.join(assets, url.slice(9)) : path.join(root, url);
   if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end(); }
   res.writeHead(200, {"Content-Type": types[path.extname(file)] || "application/octet-stream",
