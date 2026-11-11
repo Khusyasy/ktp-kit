@@ -1,0 +1,26 @@
+{
+  "name": "@ktp-kit/vue",
+  "version": "0.1.0",
+  "description": "Vue 3 component and composable for ktp-kit: read Indonesian KTPs on the user's device.",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "author": "Muhammad Luthfi Khusyasy",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "dependencies": {
+    "ktp-kit": "0.1.0",
+    "onnxruntime-web": "1.20.1"
+  },
+  "peerDependencies": {
+    "vue": ">=3.3"
+  },
+  "scripts": {
+    "prepack": "cp ../../LICENSE.md ."
+  }
+}
