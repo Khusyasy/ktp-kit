@@ -17,11 +17,30 @@
   "author": "Muhammad Luthfi Khusyasy",
   "type": "module",
   "exports": {
-    ".": "./src/index.js",
-    "./element": "./src/element.js",
-    "./engine": "./src/engine.js",
-    "./capture": "./src/capture.js",
-    "./parser": "./src/ktp.js"
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./element": {
+      "types": "./types/element.d.ts",
+      "default": "./src/element.js"
+    },
+    "./engine": {
+      "types": "./types/engine.d.ts",
+      "default": "./src/engine.js"
+    },
+    "./capture": {
+      "types": "./types/capture.d.ts",
+      "default": "./src/capture.js"
+    },
+    "./parser": {
+      "types": "./types/ktp.d.ts",
+      "default": "./src/ktp.js"
+    },
+    "./nik": {
+      "types": "./types/nik.d.ts",
+      "default": "./src/nik.js"
+    }
   },
   "bin": {
     "ktp-kit": "./bin/cli.js"
@@ -32,7 +51,9 @@
     "LICENSE.md",
     "LICENSES",
     "THIRD_PARTY_NOTICES.md",
-    "README.md"
+    "README.md",
+    "types",
+    "PRIVACY.md"
   ],
   "dependencies": {
     "@ktp-kit/models": "0.1.0",
@@ -43,6 +64,7 @@
     "./src/element.js"
   ],
   "scripts": {
-    "prepack": "cp ../../LICENSE.md ../../README.md ../../THIRD_PARTY_NOTICES.md . && cp -r ../../LICENSES ."
-  }
+    "prepack": "npm run types --prefix ../.. && cp ../../LICENSE.md ../../README.md ../../THIRD_PARTY_NOTICES.md ../../PRIVACY.md . && cp -r ../../LICENSES ."
+  },
+  "types": "./types/index.d.ts"
 }
