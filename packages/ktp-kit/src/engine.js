@@ -83,13 +83,20 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     return blob.arrayBuffer();
   }
 
-  const session = async b => ort.InferenceSession.create(new Uint8Array(b), {executionProviders: ["wasm"]});
   // The runtime also comes from the device cache, so reading works offline without the app's service worker.
-  const runtime = async onBytes => {
-    if (load || ort.env.wasm.wasmBinary) return;
-    const [wasm, mjs] = await Promise.all([file(FILES.wasm, onBytes), file(FILES.mjs)]);
-    ort.env.wasm.wasmBinary = wasm;
-    ort.env.wasm.wasmPaths = {mjs: URL.createObjectURL(new Blob([mjs], {type: "text/javascript"}))};
+  // Every session waits for it: onnxruntime initialises its backend once, on the first session, and a session
+  // created before the paths are set fails for good ("no available backend found").
+  let rt;
+  const runtime = (onBytes = () => {}) => rt ??= (async () => {
+    if (load) return;
+    // The 11 MB engine comes from the device cache. Its 24 KB loader must load from its real address: it finds its
+    // files relative to its own URL, which fails from a blob: URL ("Invalid URL"). The browser's HTTP cache keeps it.
+    ort.env.wasm.wasmBinary = await file(FILES.wasm, onBytes);
+    ort.env.wasm.wasmPaths = {mjs: url(FILES.mjs), wasm: url(FILES.wasm)};
+  })().catch(e => { rt = undefined; throw e; });
+  const session = async b => {
+    await runtime();
+    return ort.InferenceSession.create(new Uint8Array(b), {executionProviders: ["wasm"]});
   };
 
   /** The region table only (~2 MB): enough for parseNik. @param {(p: Progress) => void} [onProgress] */
