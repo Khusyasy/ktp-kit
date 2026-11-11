@@ -8,7 +8,8 @@
   "scripts": {
     "demo": "node apps/demo/serve.mjs",
     "check": "node scripts/check.mjs",
-    "types": "tsc -p tsconfig.json"
+    "types": "tsc -p tsconfig.json",
+    "build:demo": "node scripts/build-demo.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
