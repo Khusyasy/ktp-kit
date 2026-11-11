@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ktp-kit demo</title>
+<style>
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; background: #f6f7f9; color: #111; }
+  main { max-width: 520px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+  ktp-capture { border-radius: 16px; }
+  .proof { background: #fff; border-radius: 12px; padding: 12px 16px; font-size: 14px; }
+  pre { background: #111; color: #9fe; padding: 12px; border-radius: 12px; overflow: auto; font-size: 12px; max-height: 320px; }
+</style>
+<script type="importmap">
+  {"imports": {"onnxruntime-web/wasm": "/node_modules/onnxruntime-web/dist/ort.wasm.min.mjs",
+               "ktp-kit": "/packages/ktp-kit/src/index.js", "ktp-kit/element": "/packages/ktp-kit/src/element.js"}}
+</script>
+<script type="module" src="/packages/ktp-kit/src/element.js"></script>
+</head>
+<body>
+<main>
+  <h1>ktp-kit</h1>
+  <ktp-capture base="/ktp-kit/" lang="id"></ktp-capture>
+  <div class="proof">
+    <b>Uji offline:</b> setelah lencana "Siap offline" muncul, nyalakan mode pesawat lalu baca KTP lagi.
+    Buka tab Network di DevTools: tidak ada foto yang dikirim.
+  </div>
+  <pre id="out">Hasil akan muncul di sini.</pre>
+</main>
+<script type="module">
+  const out = document.getElementById('out');
+  document.querySelector('ktp-capture').addEventListener('ktp-result', e => {
+    const { card, ...fields } = e.detail;  // card is a JPEG Blob of the straightened card
+    out.textContent = JSON.stringify(fields, null, 2);
+  });
+</script>
+</body>
+</html>

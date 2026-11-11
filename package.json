@@ -1,0 +1,12 @@
+{
+  "name": "ktp-kit-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "demo": "node apps/demo/serve.mjs",
+    "check": "node scripts/check.mjs"
+  }
+}

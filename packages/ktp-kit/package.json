@@ -1,0 +1,48 @@
+{
+  "name": "ktp-kit",
+  "version": "0.1.0",
+  "description": "Read Indonesian KTPs on the user's device: camera guidance, all 16 fields, region codes. No upload, works offline.",
+  "keywords": [
+    "ktp",
+    "e-ktp",
+    "ocr",
+    "indonesia",
+    "nik",
+    "ekyc",
+    "on-device",
+    "offline",
+    "web-component"
+  ],
+  "license": "SEE LICENSE IN LICENSE.md",
+  "author": "Muhammad Luthfi Khusyasy",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./element": "./src/element.js",
+    "./engine": "./src/engine.js",
+    "./capture": "./src/capture.js",
+    "./parser": "./src/ktp.js"
+  },
+  "bin": {
+    "ktp-kit": "./bin/cli.js"
+  },
+  "files": [
+    "src",
+    "bin",
+    "LICENSE.md",
+    "LICENSES",
+    "THIRD_PARTY_NOTICES.md",
+    "README.md"
+  ],
+  "dependencies": {
+    "@ktp-kit/models": "0.1.0",
+    "jpeg-js": "0.4.4",
+    "onnxruntime-web": "1.20.1"
+  },
+  "sideEffects": [
+    "./src/element.js"
+  ],
+  "scripts": {
+    "prepack": "cp ../../LICENSE.md ../../README.md ../../THIRD_PARTY_NOTICES.md . && cp -r ../../LICENSES ."
+  }
+}
