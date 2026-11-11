@@ -13,6 +13,6 @@
     "README.md"
   ],
   "scripts": {
-    "prepack": "cp ../../LICENSE.md ."
+    "prepack": "node check.mjs && cp ../../LICENSE.md ."
   }
 }
