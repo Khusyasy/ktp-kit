@@ -15,10 +15,13 @@ const [cmd, ...args] = process.argv.slice(2);
 if (cmd === "assets") {
   const out = args[0] || "public/ktp-kit";
   fs.mkdirSync(path.join(out, "ort"), {recursive: true});
-  for (const f of Object.values(FILES)) {
-    const src = f.startsWith("ort/") ? path.join(ortDir(), f.slice(4)) : path.join(modelsDir(), f);
-    fs.copyFileSync(src, path.join(out, f));
+  const src = f => f.startsWith("ort/") ? path.join(ortDir(), f.slice(4)) : path.join(modelsDir(), f);
+  const missing = Object.values(FILES).filter(f => !fs.existsSync(src(f)));
+  if (missing.length) {
+    console.error(`ktp-kit assets: missing ${missing.join(", ")} (is @ktp-kit/models installed with its model files?)`);
+    process.exit(1);
   }
+  for (const f of Object.values(FILES)) fs.copyFileSync(src(f), path.join(out, f));
   const mb = Object.values(FILES).reduce((a, f) => a + fs.statSync(path.join(out, f)).size, 0) / 1e6;
   console.log(`copied ${Object.keys(FILES).length} files (${mb.toFixed(0)} MB) to ${out}; serve it at the "base" URL`);
 } else if (cmd === "read" && args.length) {
