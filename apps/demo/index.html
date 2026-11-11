@@ -323,8 +323,7 @@ npx ktp-kit read foto/*.jpg --csv     # baca banyak foto di server sendiri`,
     const img = document.createElement("img");
     img.className = "cardimg"; img.alt = "KTP yang sudah diluruskan"; img.src = URL.createObjectURL(r.card);
     $("cardbox").replaceWith(img); img.id = "cardbox";
-    showFields(r);
-    document.getElementById("h-hasil").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+    showFields(r);  // no auto-scroll: the result stays in the reader, the field list is below for whoever scrolls
   });
 </script>
 </body>

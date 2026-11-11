@@ -3,7 +3,7 @@
 //
 // state.status: "idle" | "starting" | "searching" | "adjust" | "hold" | "reading" | "done" | "error"
 // state.hint:   message key (see MESSAGES) for searching / adjust / hold / reading
-import {orderCorners} from "./reader.js";
+import {orderCorners, warpCard} from "./reader.js";
 
 // Thresholds measured on real KTP photos and a synthetic blur/glare test (see the project notes).
 export const DEFAULTS = {
@@ -139,8 +139,9 @@ export function createCapture({video, engine, config = {}}) {
     requestAnimationFrame(loop);
   }
 
-  async function finish(read) {
-    set({status: "reading", hint: "reading"});
+  // preview: an RGBA image to show at once while reading (the straightened card, or the uploaded photo).
+  async function finish(read, preview) {
+    set({status: "reading", hint: "reading", step: undefined, preview});
     try {
       const r = await read(text => set({step: text}));
       set(r ? {status: "done", result: r} : {status: "error", error: "noCardPhoto"});
@@ -157,7 +158,7 @@ export function createCapture({video, engine, config = {}}) {
     const vw = video.videoWidth, vh = video.videoHeight, cx = canvas(vw, vh).getContext("2d");
     cx.drawImage(video, 0, 0);
     const frame = {w: vw, h: vh, data: cx.getImageData(0, 0, vw, vh).data};
-    return finish(step => engine.readFrame(frame, q, step));
+    return finish(step => engine.readFrame(frame, q, step), warpCard(frame, orderCorners(q)));
   }
 
   /** Read a photo file (gallery / upload) instead of the camera. */
@@ -166,7 +167,8 @@ export function createCapture({video, engine, config = {}}) {
     const f = Math.min(1, 3000 / Math.max(bmp.width, bmp.height)), w = Math.round(bmp.width * f), h = Math.round(bmp.height * f);
     const cx = canvas(w, h).getContext("2d");
     cx.drawImage(bmp, 0, 0, w, h);
-    return finish(step => engine.readImage({w, h, data: cx.getImageData(0, 0, w, h).data}, step));
+    const img = {w, h, data: cx.getImageData(0, 0, w, h).data};
+    return finish(step => engine.readImage(img, step), img);
   }
 
   return {
@@ -175,6 +177,8 @@ export function createCapture({video, engine, config = {}}) {
     /** Open the camera and start guiding. Downloads the reader in the background meanwhile. */
     async start() {
       set({status: "starting", hint: "loading"});
+      // Download the reader right away, camera or not: uploads and the offline badge must work without a camera.
+      engine.preload(p => set({download: p})).then(() => engine.status()).then(o => set({offline: o}), () => {});
       try {
         session = await engine.detector();
         stream = await navigator.mediaDevices.getUserMedia({audio: false,
@@ -183,7 +187,6 @@ export function createCapture({video, engine, config = {}}) {
         video.setAttribute("playsinline", "");
         video.muted = true;
         await video.play();
-        engine.preload(p => set({download: p})).then(() => engine.status()).then(s => set({offline: s}), () => {});
         running = true; prev = null; stable = 0;
         set({status: "searching", hint: "find"});
         loop();
