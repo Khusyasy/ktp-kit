@@ -101,7 +101,13 @@ export class KtpCapture extends HTMLElement {
       : s.download?.total ? t.download(Math.round(100 * s.download.loaded / s.download.total), mb(s.download.total)) : "";
     this.draw(s.corners, s.status === "hold");
     this.dispatchEvent(new CustomEvent("ktp-state", {detail: s}));
-    if (s.status === "reading") { ui.notice.textContent = s.step || t.reading; ui.form.replaceChildren(); ui.retake.hidden = true; }
+    if (s.status === "reading") {
+      if (s.preview && s.preview !== this.previewed) {  // show the card (or photo) at once, before reading finishes
+        this.previewed = s.preview;
+        ui.card.src = toCanvas(s.preview).toDataURL("image/jpeg", 0.85);
+      }
+      ui.notice.textContent = s.step || t.reading; ui.form.replaceChildren(); ui.retake.hidden = true;
+    }
     if (s.status === "error") {
       this.dispatchEvent(new CustomEvent("ktp-error", {detail: {error: s.error, detail: s.detail}}));
       if (s.error !== "noCamera") setTimeout(() => this.capture.state.status === "error" && this.capture.retake(), 2500);

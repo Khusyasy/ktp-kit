@@ -13,7 +13,10 @@ export const FILES = {
   wasm: "ort/ort-wasm-simd-threaded.wasm", // onnxruntime-web runtime (engine)
   mjs: "ort/ort-wasm-simd-threaded.mjs",   // onnxruntime-web runtime (loader)
 };
-const CACHE = "ktp-kit-v1";
+// Bump with every model change, or devices keep the old files.
+const CACHE = "ktp-kit-v2";
+// Stored on the device; the 24 KB runtime loader is left to the HTTP cache (it can't run from a blob: URL).
+const CACHED = Object.values(FILES).filter(f => f !== FILES.mjs);
 
 /**
  * @typedef {{loaded: number, total: number}} Progress  bytes downloaded so far / expected
@@ -59,6 +62,9 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
   ort.env.wasm.numThreads = threads ?? (isolated ? Math.min(4, globalThis.navigator?.hardwareConcurrency || 1) : 1);
   const url = name => new URL(base + name, globalThis.location?.href).href;
   let corners, all, regions;
+  // Real file sizes from `npx ktp-kit assets` (sizes.json). Content-Length can't be used for progress: hosts
+  // compress on the fly, so it reports compressed bytes while the stream yields uncompressed ones.
+  const sizes = load ? Promise.resolve({}) : fetch(url("sizes.json")).then(r => (r.ok ? r.json() : {})).catch(() => ({}));
 
   async function file(name, onBytes = () => {}) {
     if (load) return load(name);
@@ -71,12 +77,13 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     }
     const res = await fetch(url(name));
     if (!res.ok) throw new Error(`ktp-kit: ${url(name)} returned ${res.status}`);
-    const total = Number(res.headers.get("content-length")) || 0, parts = [], rd = res.body.getReader();
+    const known = (await sizes)[name], parts = [], rd = res.body.getReader();
     for (let got = 0; ;) {
       const {done, value} = await rd.read();
       if (done) break;
       parts.push(value);
-      onBytes(got += value.length, total);
+      got += value.length;
+      onBytes(got, known || got);  // without sizes.json the bar can't know the total: show bytes so far
     }
     const blob = new Blob(parts);
     await cache?.put(url(name), new Response(blob)).catch(() => {});
@@ -138,11 +145,11 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     if (load || !globalThis.caches) return {ready: !!load, bytes: 0};
     const cache = await caches.open(CACHE);
     let bytes = 0, n = 0;
-    for (const name of Object.values(FILES)) {
+    for (const name of CACHED) {
       const r = await cache.match(url(name));
       if (r) { n++; bytes += (await r.blob()).size; }
     }
-    return {ready: n === Object.keys(FILES).length, bytes};
+    return {ready: n === CACHED.length, bytes};
   }
 
   const clearCache = () => globalThis.caches?.delete(CACHE);

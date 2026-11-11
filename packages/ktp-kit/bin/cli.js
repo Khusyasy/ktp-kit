@@ -22,6 +22,9 @@ if (cmd === "assets") {
     process.exit(1);
   }
   for (const f of Object.values(FILES)) fs.copyFileSync(src(f), path.join(out, f));
+  // Real sizes for the download progress bar (hosts compress on the fly, so Content-Length can't be used).
+  fs.writeFileSync(path.join(out, "sizes.json"),
+    JSON.stringify(Object.fromEntries(Object.values(FILES).map(f => [f, fs.statSync(path.join(out, f)).size]))));
   const mb = Object.values(FILES).reduce((a, f) => a + fs.statSync(path.join(out, f)).size, 0) / 1e6;
   console.log(`copied ${Object.keys(FILES).length} files (${mb.toFixed(0)} MB) to ${out}; serve it at the "base" URL`);
 } else if (cmd === "read" && args.length) {
