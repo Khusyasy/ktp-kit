@@ -6,12 +6,16 @@
   "author": "Muhammad Luthfi Khusyasy",
   "type": "module",
   "exports": {
-    ".": "./index.js"
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
   },
   "files": [
     "index.js",
     "LICENSE.md",
-    "README.md"
+    "README.md",
+    "index.d.ts"
   ],
   "dependencies": {
     "ktp-kit": "0.1.0",
@@ -22,5 +26,6 @@
   },
   "scripts": {
     "prepack": "cp ../../LICENSE.md ."
-  }
+  },
+  "types": "./index.d.ts"
 }

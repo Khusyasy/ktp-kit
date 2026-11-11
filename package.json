@@ -7,6 +7,10 @@
   ],
   "scripts": {
     "demo": "node apps/demo/serve.mjs",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "types": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }

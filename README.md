@@ -64,6 +64,17 @@ const { videoRef, state, shoot, retake, readFile } = useKtpCapture();
 // state.hint, state.corners, state.download {loaded, total}, state.offline {ready, bytes}, state.result
 ```
 
+**Just the NIK** (birth date, gender, region names from the current Kemendagri table, including re-coded regions)
+
+```js
+import { createKtpReader } from "ktp-kit";
+const engine = createKtpReader({ ort });               // loads only the 2 MB region table for this
+await engine.parseNik("3171014501909001");
+// { valid: true, jenis_kelamin: "PEREMPUAN", tanggal_lahir: "05-01-1990", provinsi: "DAERAH KHUSUS IBUKOTA JAKARTA", ... }
+```
+
+TypeScript types are included (`KtpResult`, `KtpCaptureState`, ...).
+
 **Node / command line**
 
 ```bash
@@ -97,6 +108,11 @@ Cross-Origin-Embedder-Policy: require-corp
 
 `ktp-kit` stores the models and runtime on the device (Cache API, persistent storage requested) the first time. The
 element shows the download progress and then "Siap offline". To test: read a card, turn on airplane mode, read again.
+
+## Privacy
+
+Nothing about the card leaves the device; the only requests are downloads of ktp-kit's own files. See
+[PRIVACY.md](PRIVACY.md) for details for compliance teams.
 
 ## How it works
 

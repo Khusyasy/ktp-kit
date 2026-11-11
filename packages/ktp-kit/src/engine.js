@@ -2,6 +2,7 @@
 // Works in the browser and in Node (pass `load` to read files from disk). Nothing is ever uploaded.
 import {readCard, readUpload, warpCard, orderCorners} from "./reader.js";
 import {Wilayah, nikConflicts, ktpLabels} from "./ktp.js";
+import {parseNik} from "./nik.js";
 
 // Files expected under `base` (copy them with `npx ktp-kit assets <dir>`).
 export const FILES = {
@@ -15,6 +16,37 @@ export const FILES = {
 const CACHE = "ktp-kit-v1";
 
 /**
+ * @typedef {{loaded: number, total: number}} Progress  bytes downloaded so far / expected
+ * @typedef {{w: number, h: number, data: Uint8ClampedArray}} RgbaImage
+ * @typedef {object} KtpResult
+ * @property {string|null} nik
+ * @property {boolean} nik_valid          16 digits with a plausible region, birth date and sequence
+ * @property {string|null} nama
+ * @property {string|null} tempat_lahir
+ * @property {string|null} tanggal_lahir  DD-MM-YYYY
+ * @property {string|null} jenis_kelamin  LAKI-LAKI | PEREMPUAN
+ * @property {string|null} gol_darah      A, B, AB, O (+/-) or "-"
+ * @property {string|null} alamat
+ * @property {string|null} rt_rw          000/000
+ * @property {string|null} kel_desa
+ * @property {string|null} kecamatan
+ * @property {string|null} kabupaten_kota
+ * @property {string|null} provinsi
+ * @property {string|null} agama
+ * @property {string|null} status_perkawinan
+ * @property {string|null} pekerjaan
+ * @property {string|null} kewarganegaraan  WNI | WNA
+ * @property {string|null} berlaku_hingga   SEUMUR HIDUP or DD-MM-YYYY
+ * @property {string|null} kota_terbit
+ * @property {string|null} tanggal_terbit
+ * @property {string|null} [kode_wilayah]   official region code of the most specific region matched
+ * @property {string[]} perlu_dicek         fields that disagree with what the NIK encodes
+ * @property {boolean} isKtp                experimental: false when the card shows few KTP labels and no valid NIK
+ * @property {RgbaImage} card               the straightened 856x540 card (the element turns it into a JPEG Blob)
+ * @property {number} ms                    reading time on this device
+ */
+
+/**
  * @param {object} o
  * @param {string} [o.base="/ktp-kit/"]  where the files from `npx ktp-kit assets` are served
  * @param {object} o.ort                 `import * as ort from "onnxruntime-web"`
@@ -26,7 +58,7 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
   const isolated = globalThis.crossOriginIsolated === true;
   ort.env.wasm.numThreads = threads ?? (isolated ? Math.min(4, globalThis.navigator?.hardwareConcurrency || 1) : 1);
   const url = name => new URL(base + name, globalThis.location?.href).href;
-  let corners, all;
+  let corners, all, regions;
 
   async function file(name, onBytes = () => {}) {
     if (load) return load(name);
@@ -60,7 +92,16 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     ort.env.wasm.wasmPaths = {mjs: URL.createObjectURL(new Blob([mjs], {type: "text/javascript"}))};
   };
 
-  /** Only the corner detector (~5 MB): enough for live camera guidance while the rest downloads. */
+  /** The region table only (~2 MB): enough for parseNik. @param {(p: Progress) => void} [onProgress] */
+  function wilayah(onProgress = () => {}) {
+    regions ??= file(FILES.wilayah, (loaded, total) => onProgress({loaded, total}))
+      .then(b => new Wilayah(typeof b === "string" ? b : new TextDecoder().decode(b)))
+      .catch(e => { regions = undefined; throw e; });
+    return regions;
+  }
+
+  /** Only the corner detector (~5 MB): enough for live camera guidance while the rest downloads.
+   * @param {(p: Progress) => void} [onProgress] */
   function detector(onProgress = () => {}) {
     corners ??= (async () => {
       const bytes = {};
@@ -71,15 +112,16 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     return corners;
   }
 
-  /** Everything (~27 MB the first time, then from the device). onProgress({loaded, total}) in bytes. */
+  /** Everything (~27 MB the first time, then from the device).
+   * @param {(p: Progress) => void} [onProgress] */
   function preload(onProgress = () => {}) {
     all ??= (async () => {
       const bytes = {}, tick = k => (g, t) => { bytes[k] = [g, t || g]; onProgress(sum(bytes)); };
       const [detector_, det, rec, csv] = await Promise.all([detector(p => { bytes.d = [p.loaded, p.total]; onProgress(sum(bytes)); }),
-        file(FILES.det, tick("det")).then(session), file(FILES.rec, tick("rec")).then(session), file(FILES.wilayah, tick("w"))]);
+        file(FILES.det, tick("det")).then(session), file(FILES.rec, tick("rec")).then(session),
+        wilayah(p => { bytes.w = [p.loaded, p.total]; onProgress(sum(bytes)); })]);
       await globalThis.navigator?.storage?.persist?.().catch(() => {});
-      const text = typeof csv === "string" ? csv : new TextDecoder().decode(csv);
-      return {detector: detector_, det, rec, ort, wilayah: new Wilayah(text)};
+      return {detector: detector_, det, rec, ort, wilayah: csv};
     })().catch(e => { all = undefined; throw e; });
     return all;
   }
@@ -105,12 +147,17 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
   };
 
   return {
-    ort, detector, preload, status, clearCache,
-    /** A photo ({w, h, data: RGBA}) with a card somewhere in it: finds the card (with fallbacks), then reads it. */
+    ort, detector, preload, status, clearCache, wilayah,
+    /** What a NIK encodes (birth date, gender, region names), without reading a card. @param {string} nik */
+    async parseNik(nik) { return parseNik(nik, await wilayah()); },
+    /** A photo with a card somewhere in it: finds the card (with fallbacks), then reads it.
+     * @param {RgbaImage} img @param {(step: string) => void} [onStep] @returns {Promise<KtpResult|null>} */
     async readImage(img, onStep) {
       return result(await readUpload(img, await preload(), onStep));
     },
-    /** A camera frame plus the 4 card corners from live detection. */
+    /** A camera frame plus the 4 card corners from live detection.
+     * @param {RgbaImage} frame @param {number[][]} cornerPoints @param {(step: string) => void} [onStep]
+     * @returns {Promise<KtpResult>} */
     async readFrame(frame, cornerPoints, onStep) {
       return result(await readCard(warpCard(frame, orderCorners(cornerPoints)), await preload(), onStep));
     },

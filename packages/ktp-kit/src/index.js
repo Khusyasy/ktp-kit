@@ -2,3 +2,4 @@
 export {createKtpReader, FILES} from "./engine.js";
 export {createCapture, DEFAULTS, MESSAGES} from "./capture.js";
 export {extractFields, extractNik, nikValid, nikConflicts, Wilayah} from "./ktp.js";
+export {parseNik} from "./nik.js";

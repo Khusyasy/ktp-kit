@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "allowJs": true, "checkJs": false, "declaration": true, "emitDeclarationOnly": true,
+    "module": "NodeNext", "moduleResolution": "NodeNext", "target": "ES2022", "lib": ["ES2022", "DOM"],
+    "skipLibCheck": true, "noEmitOnError": false,
+    "rootDir": "packages/ktp-kit/src", "outDir": "packages/ktp-kit/types"
+  },
+  "include": ["packages/ktp-kit/src/*.js"]
+}
