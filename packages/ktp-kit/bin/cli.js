@@ -9,7 +9,7 @@ import {createKtpReader, FILES} from "../src/engine.js";
 
 const require = createRequire(import.meta.url);
 const modelsDir = () => path.dirname(require.resolve("@ktp-kit/models/package.json"));
-const ortDir = () => path.join(path.dirname(require.resolve("onnxruntime-web/package.json")), "dist");
+const ortDir = () => path.dirname(require.resolve("onnxruntime-web"));  // its main file sits in dist/
 const [cmd, ...args] = process.argv.slice(2);
 
 if (cmd === "assets") {

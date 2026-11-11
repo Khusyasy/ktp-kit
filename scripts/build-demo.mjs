@@ -14,7 +14,11 @@ fs.cpSync(path.join(root, "packages/ktp-kit/src"), path.join(dist, "lib/ktp-kit"
 fs.copyFileSync(path.join(root, "node_modules/onnxruntime-web/dist/ort.wasm.min.mjs"), path.join(dist, "lib/ort.wasm.min.mjs"));
 
 // 2. Models + runtime under /ktp-kit/ (fails clearly if @ktp-kit/models has no model files yet).
-execFileSync(process.execPath, [path.join(root, "packages/ktp-kit/bin/cli.js"), "assets", path.join(dist, "ktp-kit")], {stdio: "inherit"});
+try {
+  execFileSync(process.execPath, [path.join(root, "packages/ktp-kit/bin/cli.js"), "assets", path.join(dist, "ktp-kit")], {stdio: "inherit"});
+} catch {
+  process.exit(1);  // the CLI already said what is missing
+}
 
 // 3. The page, with its import map pointed at the copied files.
 const html = fs.readFileSync(path.join(root, "apps/demo/index.html"), "utf8")
