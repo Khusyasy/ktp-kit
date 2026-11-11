@@ -3,35 +3,328 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ktp-kit demo</title>
-<style>
-  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; background: #f6f7f9; color: #111; }
-  main { max-width: 520px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
-  ktp-capture { border-radius: 16px; }
-  .proof { background: #fff; border-radius: 12px; padding: 12px 16px; font-size: 14px; }
-  pre { background: #111; color: #9fe; padding: 12px; border-radius: 12px; overflow: auto; font-size: 12px; max-height: 320px; }
-</style>
+<title>ktp-kit</title>
+<meta name="description" content="Baca KTP langsung di perangkat pengguna: 16 kolom, kode wilayah resmi, cek NIK. Tanpa API OCR, tanpa upload, bisa offline.">
+<link rel="stylesheet" href="/apps/demo/tokens.css">
 <script type="importmap">
   {"imports": {"onnxruntime-web/wasm": "/node_modules/onnxruntime-web/dist/ort.wasm.min.mjs",
                "ktp-kit": "/packages/ktp-kit/src/index.js", "ktp-kit/element": "/packages/ktp-kit/src/element.js"}}
 </script>
 <script type="module" src="/packages/ktp-kit/src/element.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 var(--step-0)/1.6 var(--font-sans);
+         padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+  .mono, code, pre, .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  /* header */
+  header.top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+               padding-block: var(--space-6); border-bottom: 1px solid var(--line); }
+  .mark { font-weight: 800; font-size: var(--step-1); letter-spacing: -0.02em; color: var(--ink); text-decoration: none; }
+  .mark span { color: var(--accent); }
+  nav { display: flex; gap: var(--space-6); font-size: var(--step--1); font-weight: 600; }
+  nav a { color: var(--muted); text-decoration: none; }
+  nav a:hover { color: var(--ink); }
+
+  /* hero: proof first */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); column-gap: var(--space-12);
+          row-gap: var(--space-8); grid-template-areas: "intro demo" "code demo"; align-items: start;
+          padding-block: var(--space-12) var(--space-16); }
+  .intro { grid-area: intro; } .demo { grid-area: demo; } .snippet { grid-area: code; }
+  .hero > * { min-width: 0; }
+  .tag { display: inline-flex; gap: var(--space-2); align-items: center; font-size: var(--step--1); font-weight: 600;
+         color: var(--muted); letter-spacing: 0.02em; }
+  .tag b { color: var(--ink); font-weight: 700; }
+  h1 { font-size: var(--step-3); line-height: 1.04; letter-spacing: -0.035em; font-weight: 800; margin: var(--space-4) 0;
+       text-wrap: balance; }
+  .lead { font-size: var(--step-1); line-height: 1.5; color: var(--muted); max-width: 34ch; margin: 0 0 var(--space-8); }
+  .lead strong { color: var(--ink); font-weight: 700; }
+
+  /* the one signature move */
+  .resolve { animation: resolve var(--resolve-dur) var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms); }
+  h1 .w { display: inline-block; }
+  @keyframes resolve {
+    from { filter: blur(7px); opacity: 0.3; font-weight: 250; letter-spacing: 0.03em; }
+    to   { filter: blur(0); opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) { .resolve { animation: none; } }
+
+  /* proof strip */
+  .proof { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-block: 1px solid var(--line); margin: 0; }
+  .proof div { padding: var(--space-4) var(--space-3) var(--space-4) 0; }
+  .proof div + div { padding-left: var(--space-4); border-left: 1px solid var(--line); }
+  .proof dt { font-size: var(--step--1); color: var(--muted); }
+  .proof dd { margin: var(--space-1) 0 0; font: 500 var(--step-1)/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
+  .proof dd.ok { color: var(--ok); }
+  .proof dd.text { font-family: var(--font-sans); font-weight: 700; font-size: var(--step-0); padding-top: 3px; }
+
+  /* snippet */
+  .snippet { border-radius: var(--radius); background: var(--code-bg); color: var(--code-ink); overflow: hidden; }
+  .tabs { display: flex; align-items: center; gap: var(--space-1); padding: var(--space-2); border-bottom: 1px solid #ffffff1a; }
+  .tabs button { font: 600 var(--step--1) var(--font-sans); color: #9fb0ba; background: none; border: 0; padding: 6px 10px;
+                 border-radius: var(--radius-sm); cursor: pointer; }
+  .tabs button[aria-selected="true"] { color: #fff; background: #ffffff14; }
+  .tabs .copy { margin-left: auto; }
+  .snippet pre { margin: 0; padding: var(--space-4); overflow-x: auto; font-size: var(--step--1); line-height: 1.7; }
+
+  /* demo */
+  .demo { display: grid; gap: var(--space-3); }
+  .frame { border: 1px solid var(--line); border-radius: calc(var(--radius) + 4px); padding: 6px; background: var(--surface);
+           box-shadow: 0 1px 0 var(--line), 0 24px 48px -32px #0d141855; }
+  ktp-capture { --ktp-accent: var(--accent); --ktp-ok: var(--ok); --ktp-warn: var(--warn); --ktp-radius: 8px;
+                --ktp-font: var(--font-sans); border-radius: var(--radius); height: min(68vh, 560px); aspect-ratio: auto; }
+  .note { font-size: var(--step--1); color: var(--muted); margin: 0; }
+
+  section { padding-block: var(--space-16); border-top: 1px solid var(--line); }
+  h2 { font-size: var(--step-2); letter-spacing: -0.02em; line-height: 1.2; margin: 0 0 var(--space-2); text-wrap: balance; }
+  .sub { color: var(--muted); margin: 0 0 var(--space-8); max-width: var(--measure); }
+
+  /* result: laid out like the card's own rows, without imitating the card */
+  .result { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: var(--space-12); align-items: start; }
+  .result > * { min-width: 0; }
+  .cardimg { width: 100%; aspect-ratio: 856 / 540; border-radius: var(--radius); border: 1px solid var(--line);
+             background: var(--surface); object-fit: cover; display: grid; place-items: center; color: var(--muted);
+             font-size: var(--step--1); text-align: center; padding: var(--space-4); }
+  div.cardimg { border-style: dashed; background: transparent; }
+  .nik { font: 500 clamp(1.4rem, 1rem + 1.6vw, 2rem)/1.2 var(--font-mono); letter-spacing: 0.06em; margin: 0 0 var(--space-2);
+         overflow-wrap: anywhere; }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0 0 var(--space-6); }
+  .chip { font-size: var(--step--1); font-weight: 600; padding: 2px 10px; border-radius: 999px; border: 1px solid currentColor; }
+  .chip.ok { color: var(--ok); } .chip.warn { color: var(--warn); } .chip.muted { color: var(--muted); }
+  dl.fields { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-6); margin: 0; }
+  dl.fields dt { color: var(--muted); font-size: var(--step--1); padding-top: 3px; }
+  dl.fields dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+  dl.fields dd.warn { color: var(--warn); }
+  .example { font-size: var(--step--1); color: var(--muted); margin: 0 0 var(--space-3); }
+
+  /* how it works: a real sequence, so numbered */
+  ol.steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-8); counter-reset: s; }
+  ol.steps li { counter-increment: s; }
+  ol.steps li::before { content: counter(s); font: 500 var(--step--1) var(--font-mono); color: var(--accent); display: block; margin-bottom: var(--space-2); }
+  ol.steps h3 { margin: 0 0 var(--space-1); font-size: var(--step-0); }
+  ol.steps p { margin: 0; color: var(--muted); font-size: var(--step--1); }
+
+  table { width: 100%; border-collapse: collapse; font-size: var(--step--1); }
+  .tablewrap { overflow-x: auto; }
+  th, td { text-align: left; padding: var(--space-3) var(--space-4) var(--space-3) 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  td.us { font-weight: 700; }
+
+  footer { padding-block: var(--space-12); border-top: 1px solid var(--line); color: var(--muted); font-size: var(--step--1);
+           display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-8); justify-content: space-between; }
+
+  @media (max-width: 860px) {
+    .hero, .result { grid-template-columns: minmax(0, 1fr); gap: var(--space-8); }
+    .hero { grid-template-areas: "intro" "demo" "code"; }
+    .hero { padding-block: var(--space-8) var(--space-12); }
+    .proof { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .proof div:nth-child(3) { border-left: 0; padding-left: 0; }
+    .proof div:nth-child(n+3) { border-top: 1px solid var(--line); }
+    ol.steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    ktp-capture { height: auto; aspect-ratio: 3 / 4; }
+    nav a.hide-sm { display: none; }
+    nav { gap: var(--space-4); }
+  }
+</style>
 </head>
 <body>
-<main>
-  <h1>ktp-kit</h1>
-  <ktp-capture base="/ktp-kit/" lang="id"></ktp-capture>
-  <div class="proof">
-    <b>Uji offline:</b> setelah lencana "Siap offline" muncul, nyalakan mode pesawat lalu baca KTP lagi.
-    Buka tab Network di DevTools: tidak ada foto yang dikirim.
-  </div>
-  <pre id="out">Hasil akan muncul di sini.</pre>
-</main>
+<div class="wrap">
+  <header class="top">
+    <a class="mark" href="/">ktp<span>-</span>kit</a>
+    <nav aria-label="Utama">
+      <a class="hide-sm" href="#cara-kerja">Cara kerja</a>
+      <a class="hide-sm" href="https://github.com/Khusyasy/ktp-kit#readme">Dokumentasi</a>
+      <a href="https://github.com/Khusyasy/ktp-kit">GitHub</a>
+      <a href="https://www.npmjs.com/package/ktp-kit">npm</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div class="intro">
+        <span class="tag"><b>v0.1</b> pratinjau · untuk developer</span>
+        <h1 id="headline">Baca KTP langsung di HP pengguna.</h1>
+        <p class="lead">16 kolom KTP, kode wilayah resmi, dan cek NIK. <strong>Tanpa API OCR, tanpa upload,</strong> tetap jalan saat offline.</p>
+
+        <dl class="proof" aria-live="polite">
+          <div><dt>Permintaan jaringan saat membaca</dt><dd class="ok" id="p-req">0</dd></div>
+          <div><dt>Waktu baca</dt><dd id="p-ms">–</dd></div>
+          <div><dt>Kolom terbaca dari 16</dt><dd id="p-fields">–</dd></div>
+          <div><dt>Bisa offline</dt><dd class="text" id="p-off">menyiapkan</dd></div>
+        </dl>
+      </div>
+
+      <div class="snippet">
+          <div class="tabs" role="tablist" aria-label="Contoh pemasangan">
+            <button role="tab" aria-selected="true" data-tab="html" id="tab-html">HTML</button>
+            <button role="tab" aria-selected="false" data-tab="react" id="tab-react">React</button>
+            <button role="tab" aria-selected="false" data-tab="vue" id="tab-vue">Vue</button>
+            <button role="tab" aria-selected="false" data-tab="cli" id="tab-cli">CLI</button>
+            <button class="copy" id="copy" type="button">Salin</button>
+          </div>
+          <pre><code id="code"></code></pre>
+      </div>
+
+      <div class="demo">
+        <div class="frame"><ktp-capture id="reader" base="/ktp-kit/" lang="id" form="false"></ktp-capture></div>
+        <p class="note">Coba dengan kamera atau unggah foto KTP. Gambar diproses di perangkat ini dan tidak dikirim ke mana pun.</p>
+      </div>
+    </div>
+
+    <section aria-labelledby="h-hasil">
+      <h2 id="h-hasil">Hasil</h2>
+      <p class="sub" id="result-sub">Contoh dari kartu spesimen. Baca KTP di atas untuk melihat hasil Anda sendiri; hasilnya hanya ada di halaman ini.</p>
+      <div class="result">
+        <div id="cardbox" class="cardimg">Gambar kartu yang sudah diluruskan muncul di sini.</div>
+        <div>
+          <p class="nik" id="r-nik">3171234567890123</p>
+          <div class="chips" id="r-chips"><span class="chip muted">NIK spesimen, sengaja tidak valid</span></div>
+          <dl class="fields" id="r-fields"></dl>
+        </div>
+      </div>
+    </section>
+
+    <section id="cara-kerja" aria-labelledby="h-cara">
+      <h2 id="h-cara">Cara kerja</h2>
+      <p class="sub">Empat langkah, semuanya di perangkat pengguna. Model diunduh sekali (sekitar 27 MB), lalu disimpan untuk dipakai offline.</p>
+      <ol class="steps">
+        <li><h3>Temukan kartu</h3><p>Model sudut kartu memandu kamera: jarak, kemiringan, blur, dan pantulan cahaya.</p></li>
+        <li><h3>Luruskan</h3><p>Kartu dipotong dan diluruskan ke ukuran KTP, 85,6 × 54 mm.</p></li>
+        <li><h3>Baca tiap baris</h3><p>Baris teks ditemukan, lalu dibaca oleh model yang dilatih khusus untuk huruf KTP.</p></li>
+        <li><h3>Isi 16 kolom</h3><p>Nilai dicocokkan dengan tata letak KTP, daftar resmi, dan kode wilayah Kemendagri. Yang tidak cocok dengan NIK ditandai.</p></li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="h-banding">
+      <h2 id="h-banding">Dibanding API OCR KTP</h2>
+      <p class="sub">API OCR mengirim foto KTP ke server pihak ketiga. ktp-kit membaca di perangkat pengguna.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th></th><th>ktp-kit</th><th>API OCR KTP</th></tr></thead>
+          <tbody>
+            <tr><th>Foto KTP keluar dari perangkat</th><td class="us">Tidak</td><td>Ya, ke server penyedia</td></tr>
+            <tr><th>Biaya per scan</th><td class="us">Rp 0</td><td>sekitar Rp 150–500</td></tr>
+            <tr><th>Tanpa internet</th><td class="us">Bisa, setelah dimuat sekali</td><td>Tidak</td></tr>
+            <tr><th>Hasil</th><td class="us">16 kolom, kode wilayah, cek NIK</td><td>Bervariasi per penyedia</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>© 2026 Muhammad Luthfi Khusyasy · Gratis untuk nonkomersial dan usaha kecil (PolyForm). Lisensi komersial: luthfik.job@gmail.com</span>
+    <span><a href="https://github.com/Khusyasy/ktp-kit/blob/main/PRIVACY.md">Privasi</a></span>
+  </footer>
+</div>
+
 <script type="module">
-  const out = document.getElementById('out');
-  document.querySelector('ktp-capture').addEventListener('ktp-result', e => {
-    const { card, ...fields } = e.detail;  // card is a JPEG Blob of the straightened card
-    out.textContent = JSON.stringify(fields, null, 2);
+  const $ = id => document.getElementById(id);
+
+  // Signature move: the headline resolves word by word, like a photo becoming text.
+  const h1 = $("headline");
+  h1.innerHTML = h1.textContent.split(" ").map((w, i) => `<span class="w resolve" style="--i:${i}">${w}</span>`).join(" ");
+
+  // Install snippets (each runs as written).
+  const SNIPPETS = {
+    html: `<script type="module">import "ktp-kit/element";<\/script>
+<ktp-capture base="/ktp-kit/" lang="id"></ktp-capture>
+<script>
+  document.querySelector("ktp-capture")
+    .addEventListener("ktp-result", e => console.log(e.detail.nik, e.detail.nama));
+<\/script>`,
+    react: `import { KtpCapture } from "@ktp-kit/react";
+
+export function Daftar() {
+  return <KtpCapture base="/ktp-kit/" onResult={r => console.log(r.nik, r.nama)} />;
+}`,
+    vue: `<script setup>
+import { KtpCapture } from "@ktp-kit/vue";
+const simpan = r => console.log(r.nik, r.nama);
+<\/script>
+
+<template>
+  <KtpCapture base="/ktp-kit/" @result="simpan" />
+</template>`,
+    cli: `npm install ktp-kit
+npx ktp-kit assets public/ktp-kit     # model untuk browser
+npx ktp-kit read foto/*.jpg --csv     # baca banyak foto di server sendiri`,
+  };
+  let tab = "html";
+  const showTab = t => {
+    tab = t;
+    $("code").textContent = SNIPPETS[t];
+    document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+  };
+  document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+  showTab("html");
+  $("copy").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(SNIPPETS[tab]); $("copy").textContent = "Tersalin"; }
+    catch { getSelection().selectAllChildren($("code")); $("copy").textContent = "Pilih lalu salin"; }
+    setTimeout(() => { $("copy").textContent = "Salin"; }, 1600);
+  });
+
+  // Result rows, in the card's own order. The example is the official specimen card.
+  const ROWS = [["nama", "Nama"], ["tempat_lahir", "Tempat lahir"], ["tanggal_lahir", "Tanggal lahir"],
+    ["jenis_kelamin", "Jenis kelamin"], ["gol_darah", "Gol. darah"], ["alamat", "Alamat"], ["rt_rw", "RT/RW"],
+    ["kel_desa", "Kel/Desa"], ["kecamatan", "Kecamatan"], ["kabupaten_kota", "Kabupaten/Kota"], ["provinsi", "Provinsi"],
+    ["agama", "Agama"], ["status_perkawinan", "Status perkawinan"], ["pekerjaan", "Pekerjaan"],
+    ["kewarganegaraan", "Kewarganegaraan"], ["berlaku_hingga", "Berlaku hingga"], ["kode_wilayah", "Kode wilayah"]];
+  const SPECIMEN = {nama: "MIRA SETIAWAN", tempat_lahir: "JAKARTA", tanggal_lahir: "18-02-1986", jenis_kelamin: "PEREMPUAN",
+    gol_darah: "B", alamat: "JL. PASTI CEPAT A7/66", rt_rw: "007/008", kel_desa: "PEGADUNGAN", kecamatan: "KALIDERES",
+    kabupaten_kota: "KOTA ADMINISTRASI JAKARTA BARAT", provinsi: "DAERAH KHUSUS IBUKOTA JAKARTA", agama: "ISLAM",
+    status_perkawinan: "KAWIN", pekerjaan: "PEGAWAI SWASTA", kewarganegaraan: "WNI", berlaku_hingga: "22-02-2017",
+    kode_wilayah: null, perlu_dicek: []};
+  function showFields(r) {
+    $("r-fields").replaceChildren(...ROWS.flatMap(([k, label], i) => {
+      const dt = document.createElement("dt"), dd = document.createElement("dd");
+      dt.textContent = label;
+      dd.textContent = r[k] || "–";            // textContent: OCR output is untrusted
+      dd.className = "resolve" + ((r.perlu_dicek || []).includes(k) ? " warn" : "");
+      dd.style.setProperty("--i", i);
+      return [dt, dd];
+    }));
+  }
+  showFields(SPECIMEN);
+
+  // Live proof: count network requests made while a card is being read.
+  const reader = $("reader");
+  let readingSince = null, requests = 0;
+  new PerformanceObserver(list => {
+    for (const e of list.getEntries())
+      if (readingSince !== null && e.startTime >= readingSince && !/^(blob|data):/.test(e.name)) requests++;
+  }).observe({type: "resource", buffered: true});
+
+  reader.addEventListener("ktp-state", e => {
+    const s = e.detail;
+    if (s.status === "reading" && readingSince === null) { readingSince = performance.now(); requests = 0; }
+    if (s.offline?.ready) $("p-off").textContent = `ya · ${Math.round(s.offline.bytes / 1e6)} MB tersimpan`;
+    else if (s.download?.total) $("p-off").textContent = `mengunduh ${Math.round(100 * s.download.loaded / s.download.total)}%`;
+    $("p-off").classList.toggle("ok", !!s.offline?.ready);
+  });
+
+  reader.addEventListener("ktp-result", e => {
+    const r = e.detail;
+    $("p-req").textContent = String(requests);
+    $("p-req").classList.toggle("ok", requests === 0);
+    readingSince = null;
+    $("p-ms").textContent = `${(r.ms / 1000).toFixed(1)} s`;
+    $("p-fields").textContent = String(ROWS.slice(0, 16).filter(([k]) => r[k]).length);
+    $("result-sub").textContent = "Hasil dari kartu Anda. Hanya ada di halaman ini; muat ulang untuk menghapusnya.";
+    $("r-nik").textContent = r.nik || "NIK tidak terbaca";
+    const chips = [r.nik_valid ? ["ok", "NIK valid"] : ["warn", r.nik ? "NIK tidak valid" : "NIK tidak terbaca"]];
+    for (const k of r.perlu_dicek || []) chips.push(["warn", `Cek ${k.replace("_", " ")}: tidak cocok dengan NIK`]);
+    if (!r.isKtp) chips.push(["warn", "Mungkin bukan KTP"]);
+    $("r-chips").replaceChildren(...chips.map(([c, t]) => Object.assign(document.createElement("span"), {className: `chip ${c}`, textContent: t})));
+    const img = document.createElement("img");
+    img.className = "cardimg"; img.alt = "KTP yang sudah diluruskan"; img.src = URL.createObjectURL(r.card);
+    $("cardbox").replaceWith(img); img.id = "cardbox";
+    showFields(r);
+    document.getElementById("h-hasil").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
   });
 </script>
 </body>

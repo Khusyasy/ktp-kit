@@ -20,13 +20,21 @@ try {
   process.exit(1);  // the CLI already said what is missing
 }
 
-// 3. The page, with its import map pointed at the copied files.
+// 3. Design tokens and self-hosted fonts.
+fs.copyFileSync(path.join(root, "apps/demo/tokens.css"), path.join(dist, "tokens.css"));
+fs.mkdirSync(path.join(dist, "fonts"));
+for (const [dir, name] of [["@fontsource-variable/plus-jakarta-sans", "plus-jakarta-sans-latin-wght-normal.woff2"],
+  ["@fontsource/ibm-plex-mono", "ibm-plex-mono-latin-400-normal.woff2"], ["@fontsource/ibm-plex-mono", "ibm-plex-mono-latin-500-normal.woff2"]])
+  fs.copyFileSync(path.join(root, "node_modules", dir, "files", name), path.join(dist, "fonts", name));
+
+// 4. The page, with its import map pointed at the copied files.
 const html = fs.readFileSync(path.join(root, "apps/demo/index.html"), "utf8")
   .replaceAll("/node_modules/onnxruntime-web/dist/ort.wasm.min.mjs", "/lib/ort.wasm.min.mjs")
-  .replaceAll("/packages/ktp-kit/src/", "/lib/ktp-kit/");
+  .replaceAll("/packages/ktp-kit/src/", "/lib/ktp-kit/")
+  .replaceAll("/apps/demo/tokens.css", "/tokens.css");
 fs.writeFileSync(path.join(dist, "index.html"), html);
 
-// 4. Headers: cross-origin isolation everywhere, long caching for the big files (their names change with versions).
+// 5. Headers: cross-origin isolation everywhere, long caching for the big files (their names change with versions).
 fs.writeFileSync(path.join(dist, "_headers"), `/*
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: require-corp
