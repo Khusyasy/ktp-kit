@@ -191,6 +191,7 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     for (const name of CACHED) {
       const r = await cache.match(url(name));
       if (r) { n++; bytes += (await r.blob()).size; }
+      else if (name === FILES.brotli) n++;  // only fetched by browsers that can't unpack brotli, stored with the models
     }
     return {ready: n === CACHED.length, bytes};
   }
