@@ -17,7 +17,7 @@ export const FILES = {
 };
 // Bump with every model change, or devices keep the old files.
 const CACHE = "ktp-kit-v5";
-export const VERSION = "0.1.1";  // = package.json (scripts/check.mjs), reported in each result for audit logs
+export const VERSION = "0.1.2";  // = package.json (scripts/check.mjs), reported in each result for audit logs
 
 // Result keys in card order. Names follow Indonesian KTP OCR APIs (VIDA, GLAIR); the parser's own names differ for
 // two fields, kept so it stays line-for-line with ktp.py.
