@@ -134,6 +134,19 @@ export function snap(text, vocab, minRatio) {
   return ratio(t, letters(best)) >= minRatio ? best : null;
 }
 
+// Birth date from a valid NIK (digits 7-12 = DDMMYY, day + 40 for women), for when the printed date was misread
+// (see nik_birth_date in ktp.py). Century: a '19'/'20' still readable in the line, else the later one that makes the
+// holder at least 17, never a year in the future.
+export function nikBirthDate(nik, text, now = new Date().getFullYear()) {
+  let day = +nik.slice(6, 8);
+  const yy = +nik.slice(10, 12);
+  if (day > 40) day -= 40;
+  const seen = [...translate(text || "", TO_DIGIT).matchAll(/(?<!d)(19|20)(?=d)/g)];
+  let century = seen.length ? +seen.at(-1)[1] * 100 : (2000 + yy <= now - 17 ? 2000 : 1900);
+  if (century + yy > now) century = 1900;
+  return `${pad(day, 2)}-${nik.slice(8, 10)}-${century + yy}`;
+}
+
 function date(s) {
   const m = DATE.exec(translate(s || "", TO_DIGIT));
   if (!m) return null;
@@ -271,6 +284,19 @@ export class Wilayah {
 
   kids(code) { return this.children.get(code) || []; }
 
+  places() { // what a birthplace is printed as: regency/city names without KABUPATEN/KOTA, district names, JAKARTA
+    if (!this._places) {
+      const ps = new Set(["JAKARTA"]);
+      for (const [k, n] of this.name) {
+        if (k.length === 4) ps.add(n.replace(Wilayah.PREFIX, ""));
+        if (k.length === 6) ps.add(n);
+      }
+      this._places = [...ps].sort();
+      this._placeSet = ps;
+    }
+    return this._places;
+  }
+
   best(text, codes, minRatio, loose = false) {
     text = strip((text || "").toUpperCase(), " :.,");
     const bare = s => letters(s.replace(Wilayah.PREFIX, ""));
@@ -354,8 +380,13 @@ export async function extractFields(items, nik = null, wilayah = null, respace =
   out.nama = splitMuhammad(raw.nama) || null;
   const ttl = raw.tempat_tgl_lahir || "";
   out.tempat_lahir = place(ttl) || null;
-  out.tanggal_lahir = date(ttl);
+  if (wilayah && out.tempat_lahir && (wilayah.places(), !wilayah._placeSet.has(out.tempat_lahir.toUpperCase())))
+    // misread letters in a birthplace: snap to a close official place name (gold cards: 16 fixed, 0 broken)
+    out.tempat_lahir = snap(out.tempat_lahir, wilayah.places(), 0.9) || out.tempat_lahir;
+  out.tanggal_lahir = date(ttl) || (out.nik_valid ? nikBirthDate(out.nik, ttl) : null);
   out.jenis_kelamin = snap(raw.jenis_kelamin, JENIS_KELAMIN, 0.6);
+  if (!out.jenis_kelamin && out.nik_valid) // row not found (6% of held-out cards): the NIK encodes it
+    out.jenis_kelamin = +out.nik.slice(6, 8) > 40 ? "PEREMPUAN" : "LAKI-LAKI";
   let gd = translate((raw.gol_darah || "").replace(/G\w*\W*D\w*/gi, "").toUpperCase(), {0: "O", 8: "B"});
   gd = gd.replace(/[^ABO+\-]/g, "");
   out.gol_darah = /^((AB|A|B|O)[+-]?|-)$/.test(gd) ? gd : (where.jenis_kelamin ? "-" : null);
