@@ -4,6 +4,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import {spawn} from "node:child_process";
+import {prefill} from "./prefill.mjs";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const assets = path.join(root, "apps/demo/ktp-kit");  // filled by: npx ktp-kit assets apps/demo/ktp-kit
@@ -26,5 +27,6 @@ http.createServer((req, res) => {
   if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end(); }
   res.writeHead(200, {"Content-Type": types[path.extname(file)] || "application/octet-stream",
     "Cross-Origin-Opener-Policy": "same-origin", "Cross-Origin-Embedder-Policy": "require-corp", "Cache-Control": "no-cache"});
+  if (file.endsWith(path.join("apps", "demo", "index.html"))) return res.end(prefill(fs.readFileSync(file, "utf8")));  // copy in the HTML
   fs.createReadStream(file).pipe(res);
 }).listen(5173, "127.0.0.1", () => console.log("ktp-kit demo on http://localhost:5173"));
