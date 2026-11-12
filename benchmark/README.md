@@ -40,4 +40,4 @@ To test another reader, write `{"lines/0000.jpg": "TEXT READ", ...}` for every l
 ## License
 
 The images and labels are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): use them for
-anything, credit "ktp-kit KTP line benchmark". The scripts are MIT. ktp-kit itself keeps its own license.
+anything, credit "ktp-kit KTP line benchmark". The scripts are MIT. ktp-kit itself is Apache-2.0.

@@ -13,7 +13,7 @@
     "offline",
     "web-component"
   ],
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "Apache-2.0",
   "homepage": "https://ktp-kit.khusyasy.my.id",
   "repository": {"type": "git", "url": "git+https://github.com/Khusyasy/ktp-kit.git", "directory": "packages/ktp-kit"},
   "author": "Muhammad Luthfi Khusyasy",
@@ -67,7 +67,7 @@
     "./src/element.js"
   ],
   "scripts": {
-    "prepack": "npm run types --prefix ../.. && cp ../../LICENSE.md ../../README.md ../../THIRD_PARTY_NOTICES.md ../../PRIVACY.md . && cp -r ../../LICENSES ."
+    "prepack": "npm run types --prefix ../.. && cp ../../LICENSE.md ../../README.md ../../THIRD_PARTY_NOTICES.md ../../PRIVACY.md . && rm -rf LICENSES && cp -r ../../LICENSES ."
   },
   "types": "./types/index.d.ts"
 }
