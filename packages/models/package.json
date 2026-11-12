@@ -9,10 +9,13 @@
     "det.onnx",
     "rec.onnx",
     "wilayah.csv",
+    "ort",
     "LICENSE.md",
+    "LICENSES",
+    "THIRD_PARTY_NOTICES.md",
     "README.md"
   ],
   "scripts": {
-    "prepack": "node check.mjs && cp ../../LICENSE.md ."
+    "prepack": "node check.mjs && cp ../../LICENSE.md ../../THIRD_PARTY_NOTICES.md . && cp -r ../../LICENSES ."
   }
 }

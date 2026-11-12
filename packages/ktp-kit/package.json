@@ -57,6 +57,7 @@
   ],
   "dependencies": {
     "@ktp-kit/models": "0.1.0",
+    "brotli-dec-wasm": "^2.3.2",
     "jpeg-js": "0.4.4",
     "onnxruntime-web": "1.20.1"
   },
