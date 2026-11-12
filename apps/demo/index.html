@@ -6,12 +6,15 @@
 <title>ktp-kit</title>
 <meta name="description" content="Baca KTP di browser. Foto tidak dikirim ke server. Setelah diunduh sekali, tetap jalan tanpa internet.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M1.5%208.75V5.25h3.5M19%205.25h3.5v3.5M22.5%2015.25v3.5H19M5%2018.75H1.5v-3.5%22%20fill%3D%22none%22%20stroke%3D%22%23579be8%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22square%22%2F%3E%3Cg%20fill%3D%22%23579be8%22%3E%3Crect%20x%3D%224.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2210.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2216.5%22%20y%3D%2210.75%22%20width%3D%223%22%20height%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<link rel="preload" href="/fonts/ibm-plex-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/apps/demo/app.build.css">
 <script type="importmap">
   {"imports": {"onnxruntime-web/wasm": "/node_modules/onnxruntime-web/dist/ort.wasm.min.mjs",
                "ktp-kit": "/packages/ktp-kit/src/index.js", "ktp-kit/element": "/packages/ktp-kit/src/element.js"}}
 </script>
-<script type="module" src="/packages/ktp-kit/src/element.js"></script>
+<!-- async: the page script below must not wait for the reader code (400 KB) before filling in the page -->
+<script type="module" async src="/packages/ktp-kit/src/element.js"></script>
 </head>
 <body class="min-h-dvh font-sans text-ink antialiased">
 
@@ -37,7 +40,7 @@
       <a href="#pasang" class="transition-colors hover:text-ink aria-[current=true]:text-ink" data-t="nPasang">Pasang</a>
       <a href="#akurasi" class="transition-colors hover:text-ink aria-[current=true]:text-ink" data-t="nAkurasi">Akurasi</a>
       <a href="#lisensi" class="transition-colors hover:text-ink aria-[current=true]:text-ink" data-t="nLisensi">Lisensi</a>
-      <a href="/docs" class="transition-colors hover:text-ink" data-t="nDocs">Panduan</a>
+      <a href="/docs" class="transition-colors hover:text-ink" data-t="nDocs">Docs</a>
     </nav>
     <div class="ml-auto flex items-center">
       <button type="button" id="lang" class="h-10 rounded-md px-2.5 text-sm font-medium text-muted transition-colors hover:text-ink" aria-label="Read in English">EN</button>
@@ -62,7 +65,7 @@
       <div class="pointer-events-none absolute -inset-16 -z-10 rounded-full bg-accent/12 blur-3xl" aria-hidden="true"></div>
       <div class="rounded-[28px] border border-line bg-sunk p-2 shadow-[0_40px_80px_-40px_rgb(0_0_0/0.8)]">
         <ktp-capture id="reader" base="/ktp-kit/" lang="id"
-          class="block min-h-0 w-full rounded-[20px] md:w-[min(max(420px,calc(330px*var(--ktp-aspect,0.75))),46vw,calc(72svh*var(--ktp-aspect,0.75)))]
+          class="block min-h-0 w-full [&:not(:defined)]:aspect-[3/4] rounded-[20px] md:w-[min(max(420px,calc(330px*var(--ktp-aspect,0.75))),46vw,calc(72svh*var(--ktp-aspect,0.75)))]
                  data-[state=reading]:aspect-[3/4] data-[state=done]:aspect-[3/4]
                  [--ktp-accent:var(--color-accent)] [--ktp-ok:var(--color-ok)] [--ktp-warn:var(--color-warn)]
                  [--ktp-surface:var(--color-surface)] [--ktp-muted:var(--color-muted)] [--ktp-font:var(--font-sans)]
@@ -113,7 +116,7 @@
         <label class="grid gap-1.5 text-sm"><span data-t="fNama">Nama</span>
           <input name="nama" class="rounded-md border border-line bg-sunk px-3 py-2.5 text-base text-ink outline-none focus-visible:border-accent">
           <span class="text-warn empty:hidden" data-why="nama"></span></label>
-        <div class="grid gap-4 sm:grid-cols-2">
+        <div class="grid items-start gap-4 sm:grid-cols-2">
           <label class="grid gap-1.5 text-sm"><span data-t="fTempat">Tempat lahir</span>
             <input name="tempat_lahir" class="rounded-md border border-line bg-sunk px-3 py-2.5 text-base text-ink outline-none focus-visible:border-accent">
             <span class="text-warn empty:hidden" data-why="tempat_lahir"></span></label>
@@ -130,39 +133,38 @@
         </div>
       </form>
       <div class="min-w-0 overflow-hidden rounded-xl border border-line bg-sunk">
-        <p class="border-b border-line px-4 py-3 text-sm font-medium text-muted"><code class="font-mono">ktp-result</code> <span data-t="hJson"></span></p>
-        <pre class="max-h-[34rem] overflow-auto p-4 font-mono text-[13px] leading-relaxed"><code id="json" class="block text-muted"></code></pre>
+        <p class="border-b border-line px-4 py-3 text-sm font-medium text-muted"><code class="font-mono">ktp-result</code> <span id="json-label"></span></p>
+        <pre class="h-[24rem] overflow-auto p-4 md:h-[34rem] font-mono text-[13px] leading-relaxed"><code id="json" class="block text-muted"></code></pre>
       </div>
     </div>
-    <p class="mt-6"><a href="/docs" class="text-accent underline decoration-accent/40 underline-offset-4 transition-colors hover:decoration-accent" data-t="hDocs">Panduan lengkap: pemasangan, isi hasil, dan contoh kode</a></p>
+    <p class="mt-6"><a href="/docs" class="text-accent underline decoration-accent/40 underline-offset-4 transition-colors hover:decoration-accent" data-t="hDocs">Docs lengkap: install, isi result, dan contoh kode</a></p>
   </section>
 
-  <div class="mx-auto max-w-3xl">
+  <div class="mx-auto max-w-4xl">
     <!-- Comparison: facts from the providers' own pages, including the row where they win -->
     <section id="banding" class="border-t border-line py-16">
       <h2 class="text-2xl font-semibold tracking-tight" data-t="cH">Dibanding API OCR</h2>
-      <p class="mt-3 text-muted" data-t="cIntro"></p>
+      <p class="mt-3 max-w-[70ch] text-muted" data-t="cIntro"></p>
       <div class="mt-6 overflow-x-auto">
         <table class="w-full min-w-[34rem] border-b border-line text-[15px]">
-          <thead><tr class="text-sm text-muted"><th class="w-[28%] pb-3 text-left font-normal"></th><th class="pb-3 text-left font-mono font-medium text-accent">ktp-kit</th><th class="pb-3 text-left font-normal" data-t="cApi"></th></tr></thead>
+          <thead><tr class="text-sm text-muted"><th class="w-[22%] pb-3 text-left font-normal"></th><th class="pb-3 pr-4 text-left font-mono font-medium text-accent">ktp-kit</th><th class="pb-3 pr-4 text-left font-normal" data-t="cApi"></th><th class="pb-3 text-left font-normal">Google Cloud Vision</th></tr></thead>
           <tbody>
-          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c1l"></th><td class="py-3 pr-4 text-ink" data-t="c1k"></td><td class="py-3 text-muted" data-t="c1a"></td></tr>
-          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c2l"></th><td class="py-3 pr-4 text-ink" data-t="c2k"></td><td class="py-3 text-muted" data-t="c2a"></td></tr>
-          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c3l"></th><td class="py-3 pr-4 text-ink" data-t="c3k"></td><td class="py-3 text-muted" data-t="c3a"></td></tr>
-          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c4l"></th><td class="py-3 pr-4 text-ink" data-t="c4k"></td><td class="py-3 text-muted" data-t="c4a"></td></tr>
-          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c5l"></th><td class="py-3 pr-4 text-ink" data-t="c5k"></td><td class="py-3 text-muted" data-t="c5a"></td></tr>
-          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c6l"></th><td class="py-3 pr-4 text-ink" data-t="c6k"></td><td class="py-3 text-muted" data-t="c6a"></td></tr>
-          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c7l"></th><td class="py-3 pr-4 text-muted" data-t="c7k"></td><td class="py-3 text-ok" data-t="c7a"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c1l"></th><td class="py-3 pr-4 text-ink" data-t="c1k"></td><td class="py-3 pr-4 text-muted" data-t="c1a"></td><td class="py-3 text-muted" data-t="c1g"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c2l"></th><td class="py-3 pr-4 text-ink" data-t="c2k"></td><td class="py-3 pr-4 text-muted" data-t="c2a"></td><td class="py-3 text-muted" data-t="c2g"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c3l"></th><td class="py-3 pr-4 text-ink" data-t="c3k"></td><td class="py-3 pr-4 text-muted" data-t="c3a"></td><td class="py-3 text-muted" data-t="c3g"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c4l"></th><td class="py-3 pr-4 text-ink" data-t="c4k"></td><td class="py-3 pr-4 text-muted" data-t="c4a"></td><td class="py-3 text-muted" data-t="c4g"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c5l"></th><td class="py-3 pr-4 text-ink" data-t="c5k"></td><td class="py-3 pr-4 text-muted" data-t="c5a"></td><td class="py-3 text-muted" data-t="c5g"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c7l"></th><td class="py-3 pr-4 text-muted" data-t="c7k"></td><td class="py-3 pr-4 text-ok" data-t="c7a"></td><td class="py-3 text-muted" data-t="c7g"></td></tr>
           </tbody>
         </table>
       </div>
-      <p class="mt-4 text-sm text-muted"><span data-t="cNote"></span> <a class="underline underline-offset-4 transition-colors hover:text-ink" href="https://api.co.id/ktp-ocr-api/">api.co.id OCR</a>, <a class="underline underline-offset-4 transition-colors hover:text-ink" href="https://api.co.id/id-verification-api/">api.co.id ID Verification</a>, <a class="underline underline-offset-4 transition-colors hover:text-ink" href="https://docs.xendit.co/docs/id/pricing">Xendit</a>.</p>
+      <p class="mt-4 text-sm text-muted"><span data-t="cNote"></span> <a class="underline underline-offset-4 transition-colors hover:text-ink" href="https://api.co.id/ktp-ocr-api/">api.co.id OCR</a>, <a class="underline underline-offset-4 transition-colors hover:text-ink" href="https://api.co.id/id-verification-api/">api.co.id ID Verification</a>, <a class="underline underline-offset-4 transition-colors hover:text-ink" href="https://cloud.google.com/vision/pricing">Vision pricing</a>, <a class="underline underline-offset-4 transition-colors hover:text-ink" href="https://cloud.google.com/vision/docs/data-usage">Vision data usage</a>.</p>
     </section>
 
     <!-- Install -->
     <section id="pasang" class="border-t border-line py-16">
       <h2 class="text-2xl font-semibold tracking-tight" data-t="nPasang">Pasang</h2>
-      <p class="mt-3 text-muted" data-t="pasang">Satu elemen HTML, dengan pembungkus React dan Vue. Hasilnya JSON: NIK, nama, alamat, sampai kode wilayah Kemendagri.</p>
+      <p class="mt-3 max-w-[70ch] text-muted" data-t="pasang">Satu elemen HTML, dengan pembungkus React dan Vue. Hasilnya JSON: NIK, nama, alamat, sampai kode wilayah Kemendagri.</p>
       <div class="mt-6 overflow-hidden rounded-xl border border-line bg-sunk">
         <div class="flex items-center gap-1 border-b border-line p-1.5" role="tablist" aria-label="Contoh">
           <button role="tab" data-tab="html" class="rounded-md px-3 py-1.5 text-sm text-muted transition-colors hover:text-ink aria-selected:bg-surface aria-selected:text-ink">HTML</button>
@@ -191,7 +193,18 @@
           <dd class="text-muted" data-t="v3d"></dd>
         </div>
       </dl>
-      <p class="mt-4 text-sm text-muted" data-t="vNum"></p>
+      <div class="mt-8 overflow-x-auto">
+        <table class="w-full border-b border-line text-[15px]">
+          <thead><tr class="text-sm text-muted"><th class="w-[34%] pb-3 text-left font-normal"></th><th class="pb-3 text-left font-mono font-medium text-accent">ktp-kit</th><th class="pb-3 text-left font-normal">PP-OCRv6 small</th><th class="pb-3 text-left font-normal">PP-OCRv6 tiny</th></tr></thead>
+          <tbody class="tabular-nums">
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="tNik"></th><td class="py-3 pr-4 text-ink" data-pct="90.8"></td><td class="py-3 pr-4 text-ink" data-pct="91.6"></td><td class="py-3 text-muted" data-pct="87.8"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="tAll"></th><td class="py-3 pr-4 text-ink" data-pct="81.5"></td><td class="py-3 pr-4 text-muted" data-pct="51.4"></td><td class="py-3 text-muted" data-pct="48.7"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="tBlank"></th><td class="py-3 pr-4 text-ink" data-pct="97.0"></td><td class="py-3 pr-4 text-muted" data-pct="70.5"></td><td class="py-3 text-muted" data-pct="71.1"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="tSize"></th><td class="py-3 pr-4 text-ink" data-mb="0.7"></td><td class="py-3 pr-4 text-muted" data-mb="21.2"></td><td class="py-3 text-muted" data-mb="4.5"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-4 text-sm text-muted"><span data-t="vNum"></span> <a class="text-accent underline decoration-accent/40 underline-offset-4 transition-colors hover:decoration-accent" href="https://github.com/Khusyasy/ktp-kit/tree/main/benchmark" data-t="vBench"></a></p>
     </section>
 
     <!-- License -->
@@ -216,31 +229,31 @@
   // The agreed Indonesian and English copy.
   const T = {
     id: {h1: "KTP dicek di HP.", sub: "Tanpa pihak ketiga, langsung ke server Anda. Tetap jalan tanpa internet.",
-      nDemo: "Demo", nPasang: "Pasang", nAkurasi: "Akurasi", nLisensi: "Lisensi", navLabel: "Bagian",
-      t1: mb => mb ? `Unduh model, ${mb} MB` : "Unduh model", t2: "Nyalakan mode pesawat", t3: "Foto KTP",
-      saved: "Tersimpan di perangkat", downloading: p => `Mengunduh ${p}%`, offline: "Offline", online: "Masih online",
-      read: (s, n) => `Terbaca dalam ${s} detik, ${n} permintaan jaringan`, waiting: "Belum ada",
-      pasang: "Satu elemen HTML, dengan pembungkus React dan Vue. Hasilnya JSON: NIK, nama, alamat, sampai kode wilayah Kemendagri.",
-      cli: "Untuk Node.js, misalnya di server Anda. Perintah <code>assets</code> menyalin model ke folder web Anda. Perintah <code>read</code> membaca banyak foto KTP sekaligus dan menulis hasilnya ke CSV. Foto diproses di mesin Anda sendiri.",
-      laptop: "Kamera laptop biasanya terlalu buram untuk teks KTP. Coba dari HP, atau unggah foto dari HP.", wifi: "Masih online. Matikan Wi-Fi juga.",
-      nBanding: "Banding", cH: "Dibanding API OCR", cIntro: "API OCR membaca KTP di server mereka. ktp-kit membaca di HP pengguna.", cApi: "API OCR cloud", c1l: "Foto KTP", c1k: "Tetap di HP pengguna", c1a: "Diunggah ke server mereka, dihapus setelah dibaca", c2l: "Tanpa internet", c2k: "Jalan", c2a: "Tidak jalan", c3l: "Biaya per scan", c3k: "Rp0", c3a: "Rp150 (api.co.id), Rp500 (Xendit)", c4l: "Foto buram", c4k: "Ditolak kamera sebelum difoto", c4a: "Ditolak setelah diunggah", c5l: "Wilayah", c5k: "Nama dan kode Kemendagri", c5a: "Nama saja", c6l: "Cek NIK", c6k: "Struktur, tanggal lahir, jenis kelamin dan wilayah. Di HP, gratis", c6a: "Lewat API terpisah, Rp4.000", c7l: "Cek ke data resmi", c7k: "Tidak ada", c7a: "Ada, Rp4.000", cNote: "Dicek 12 November 2026. Butuh cek ke data resmi? Baca dengan ktp-kit, lalu panggil cek resmi dari server Anda hanya saat perlu. Sumber:", vH: "Bisa dipercaya karena", v1: "NIK memeriksa dirinya sendiri", v1d: "16 digit NIK memuat kode wilayah, tanggal lahir dan jenis kelamin. ktp-kit mencocokkannya dengan isi kartu. Hasilnya menyertakan nik_valid dan perlu_dicek, jadi aplikasi Anda tahu kolom mana yang perlu diperiksa ulang.", v3: "Coba dengan KTP Anda", v3d: "Angka di bawah berasal dari teks buatan. KTP Anda sendiri adalah uji yang lebih jujur, dan fotonya tidak ke mana-mana.", vNum: "Pada 2.400 baris teks KTP buatan yang tidak dipakai untuk melatih maupun memilih model, ktp-kit membaca persis 91% baris NIK dan 81,5% semua baris. Model umum PaddleOCR PP-OCRv6 small: 92% dan 51%. Baris buatan sengaja dibuat sulit: buram, pudar, dan aus. Data dan skripnya terbuka di folder benchmark di GitHub. Membaca satu kartu butuh 2-5 detik di HP Android kelas menengah. Uji dengan KTP asli dari sukarelawan menyusul.",
-      lisensi: "Gratis untuk proyek nonkomersial dan usaha kecil (di bawah 100 orang dan omzet US$1 juta). Selain itu:",
-      analitik: "Halaman ini tidak memakai analitik.", privasi: "Privasi", copy: "Salin", copied: "Tersalin",
+      nDemo: "Demo", nPasang: "Install", nAkurasi: "Akurasi", nLisensi: "Lisensi", navLabel: "Bagian",
+      t1: mb => mb ? `Download model, ${mb} MB` : "Download model", t2: "Nyalakan mode pesawat", t3: "Foto KTP",
+      saved: "Tersimpan di device", downloading: p => `Download ${p}%`, offline: "Offline", online: "Masih online",
+      read: (s, n) => `Selesai dalam ${s} detik, ${n} request network`, waiting: "Belum ada",
+      pasang: "HTML element, plus wrapper React dan Vue. Output-nya JSON.",
+      cli: "Untuk Node.js. <code>assets</code> copy model ke folder public. <code>read</code> baca banyak foto sekaligus, output JSON atau CSV.",
+      laptop: "Kamera laptop biasanya terlalu blur. Pakai HP, atau upload foto dari HP.", wifi: "Masih online. Matikan Wi-Fi juga.",
+      nBanding: "Banding", cH: "ktp-kit vs API OCR", cIntro: "API OCR baca KTP di server mereka. ktp-kit baca di HP user. Semua fakta dari halaman resmi masing-masing.", cApi: "api.co.id", c1l: "Foto KTP", c1k: "Tetap di HP user", c1a: "Di-upload ke server mereka, dihapus setelah ekstraksi", c1g: "Di-upload ke Google, diproses di memory, tidak disimpan ke disk", c2l: "Tanpa internet", c2k: "Bisa", c2a: "Tidak bisa", c2g: "Tidak bisa", c3l: "Biaya per scan", c3k: "Rp0", c3a: "Rp150 per scan berhasil", c3g: "1.000 gratis per bulan, lalu US$1,50 per 1.000", c4l: "Foto blur", c4k: "Kamera menunggu sampai gambar tajam", c4a: "Error setelah di-upload kalau teks tidak terbaca", c4g: "Tidak disebut", c5l: "Hasil", c5k: "JSON 21 field, termasuk kode wilayah Kemendagri dan tanda field yang perlu dicek ulang", c5a: "JSON 16 field, wilayah berupa nama saja", c5g: "Teks mentah per kata, tanpa field KTP", c7l: "Cek ke data kependudukan", c7k: "Tidak ada", c7a: "Ada, API terpisah, Rp4.000 per verifikasi", c7g: "Tidak ada", cNote: "Dicek 12 November 2026. Sumber:", vH: "Akurasi", v1: "NIK ikut mengecek isi kartu", v1d: "NIK berisi wilayah, tanggal lahir, dan jenis kelamin. Kalau isi kartu beda atau kurang jelas, field-nya diberi tanda perlu dicek ulang, lengkap dengan alasannya.", v3: "Coba dengan KTP Anda", v3d: "Fotonya tidak dikirim ke mana pun.", vNum: "Data uji: 2.400 baris teks KTP sintetis yang tidak dipakai untuk training, sengaja dibuat sulit (blur, pudar, aus). Baca satu KTP 2-5 detik di HP mid-range. Tes dengan KTP asli menyusul.",
+      lisensi: "Gratis untuk non-komersial dan usaha kecil (di bawah 100 orang dan omzet US$1 juta). Selain itu:",
+      analitik: "Halaman ini tanpa analytics.", privasi: "Privasi", copy: "Copy", copied: "Copied",
       other: "EN", otherLabel: "Read in English", decimal: ",",
-      nDocs: "Panduan", hH: "Hasilnya", hIntro: "ktp-kit memberi hasil sekali, sebagai JSON. Aplikasi Anda yang menentukan kolom mana yang dipakai, boleh diubah, dan dikirim. Formulir ini contohnya: lima baris kode mengisinya, dan kolom yang perlu dicek diberi tanda.", hForm: "Contoh formulir pendaftaran", hJson: "lengkap", hDocs: "Panduan lengkap: pemasangan, isi hasil, dan contoh kode", hEmpty: "// Foto KTP di atas. Hasilnya muncul di sini.", fNik: "NIK", fNama: "Nama", fTempat: "Tempat lahir", fTanggal: "Tanggal lahir", fAlamat: "Alamat", fDaftar: "Daftar", fSent: "Contoh saja. Tidak ada yang dikirim.", why: {nik_mismatch: "Tidak cocok dengan NIK, cek lagi", from_nik: "Tidak terbaca, diisi dari NIK", low_confidence: "Kurang jelas, cek lagi"}},
+      nDocs: "Docs", hH: "Result", hIntro: "Result dikirim sekali sebagai JSON. Form di bawah contoh app: isi field yang dibutuhkan, tandai yang perlu dicek.", hForm: "Contoh form pendaftaran", hJson: "dari KTP Anda", hSample: "data contoh", hDocs: "Docs lengkap", tNik: "Baris NIK", tAll: "Semua baris teks", tBlank: "Strip kosong (tanpa teks)", tSize: "Ukuran model baca", vBench: "Data dan script benchmark di GitHub", hEmpty: "// Foto KTP di atas, result-nya muncul di sini.", fNik: "NIK", fNama: "Nama", fTempat: "Tempat lahir", fTanggal: "Tanggal lahir", fAlamat: "Alamat", fDaftar: "Daftar", fSent: "Ini contoh, tidak ada data yang dikirim.", why: {nik_mismatch: "Tidak cocok dengan NIK, cek lagi", from_nik: "Tidak terbaca, diambil dari NIK", low_confidence: "Kurang jelas, cek lagi"}, nikInvalid: "NIK tidak valid, cek lagi", nikMissing: "NIK tidak terbaca, isi manual"},
     en: {h1: "KTP checked on the phone.", sub: "No third party, straight to your server. Works offline.",
       nDemo: "Demo", nPasang: "Install", nAkurasi: "Accuracy", nLisensi: "License", navLabel: "Sections",
       t1: mb => mb ? `Download the model, ${mb} MB` : "Download the model", t2: "Turn on airplane mode", t3: "Photograph a KTP",
       saved: "Saved on this device", downloading: p => `Downloading ${p}%`, offline: "Offline", online: "Still online",
-      read: (s, n) => `Read in ${s} s, ${n} network requests`, waiting: "Not yet",
-      pasang: "One HTML element, with React and Vue wrappers. You get JSON: NIK, name, address, down to the official region code.",
-      cli: "For Node.js, for example on your server. <code>assets</code> copies the model into your web folder. <code>read</code> reads many KTP photos at once and writes the results to CSV. Photos are processed on your own machine.",
-      laptop: "Laptop cameras are usually too blurry for KTP text. Try a phone, or upload a photo taken with one.", wifi: "Still online. Turn off Wi-Fi too.",
-      nBanding: "Compare", cH: "Compared with OCR APIs", cIntro: "OCR APIs read the KTP on their servers. ktp-kit reads it on the user's phone.", cApi: "Cloud OCR API", c1l: "KTP photo", c1k: "Stays on the user's phone", c1a: "Uploaded to their server, deleted after reading", c2l: "Offline", c2k: "Works", c2a: "Doesn't work", c3l: "Cost per scan", c3k: "Rp 0", c3a: "Rp 150 (api.co.id), Rp 500 (Xendit)", c4l: "Blurry photo", c4k: "Rejected by the camera before it's taken", c4a: "Rejected after upload", c5l: "Region", c5k: "Names and the official Kemendagri code", c5a: "Names only", c6l: "NIK check", c6k: "Structure, birth date, sex and region. On the phone, free", c6a: "Separate API, Rp 4,000", c7l: "Check against official records", c7k: "No", c7a: "Yes, Rp 4,000", cNote: "Checked on 12 November 2026. Need the official records check? Read with ktp-kit, then call the official check from your server only when needed. Sources:", vH: "Why the result holds up", v1: "The NIK checks itself", v1d: "The 16 digits encode region, birth date and sex. ktp-kit matches them against the rest of the card. The result includes nik_valid and perlu_dicek, so your app knows which fields to double-check.", v3: "Try it with your own KTP", v3d: "The numbers below come from generated text. Your own card is a fairer test, and the photo goes nowhere.", vNum: "On 2,400 generated KTP text lines never used for training or for choosing the model, ktp-kit reads 91% of NIK lines and 81.5% of all lines exactly. The general PaddleOCR PP-OCRv6 small model: 92% and 51%. The lines are hard on purpose: blurred, faded and worn. The data and scripts are open in the benchmark folder on GitHub. Reading one card takes 2-5 s on a mid-range Android phone. A test on real KTPs from volunteers is coming.",
+      read: (s, n) => `Done in ${s} s, ${n} network requests`, waiting: "Not yet",
+      pasang: "One HTML element, plus React and Vue wrappers. Outputs JSON.",
+      cli: "For Node.js. <code>assets</code> copies the model to your public folder. <code>read</code> reads many photos at once, outputs JSON or CSV.",
+      laptop: "Laptop cameras are usually too blurry. Use a phone, or upload a photo from one.", wifi: "Still online. Turn off Wi-Fi too.",
+      nBanding: "Compare", cH: "ktp-kit vs OCR APIs", cIntro: "OCR APIs read the KTP on their servers. ktp-kit reads it on the user's phone. Every fact is from each provider's own pages.", cApi: "api.co.id", c1l: "KTP photo", c1k: "Stays on the user's phone", c1a: "Uploaded to their server, deleted after extraction", c1g: "Uploaded to Google, processed in memory, not stored to disk", c2l: "Offline", c2k: "Works", c2a: "Doesn't work", c2g: "Doesn't work", c3l: "Cost per scan", c3k: "Rp 0", c3a: "Rp 150 per successful scan", c3g: "1,000 free a month, then US$1.50 per 1,000", c4l: "Blurry photo", c4k: "The camera waits for a sharp frame", c4a: "Error after upload if the text can't be read", c4g: "Not stated", c5l: "Output", c5k: "JSON, 21 fields, including official region codes and flags on fields worth a second look", c5a: "JSON, 16 fields, regions as names only", c5g: "Plain text per word, no KTP fields", c7l: "Check against population records", c7k: "No", c7a: "Yes, separate API, Rp 4,000 per check", c7g: "No", cNote: "Checked on 12 November 2026. Sources:", vH: "Accuracy", v1: "The NIK checks the card", v1d: "The NIK encodes region, birth date and sex. If the card disagrees or reads unclearly, the field is flagged for a second look, with the reason.", v3: "Try it with your own KTP", v3d: "The photo goes nowhere.", vNum: "Test data: 2,400 synthetic KTP text lines not used for training, hard on purpose (blurred, faded, worn). One card reads in 2-5 s on a mid-range phone. A test on real KTPs is coming.",
       lisensi: "Free for non-commercial use and small businesses (under 100 people and US$1M revenue). Otherwise:",
       analitik: "This page has no analytics.", privasi: "Privacy", copy: "Copy", copied: "Copied",
       other: "ID", otherLabel: "Baca dalam bahasa Indonesia", decimal: ".",
-      nDocs: "Docs", hH: "The result", hIntro: "ktp-kit hands over the result once, as JSON. Your app decides which fields to use, allow edits on, and send. This form is an example: five lines of code fill it, and fields worth checking are marked.", hForm: "Example sign-up form", hJson: "in full", hDocs: "Full docs: installation, result fields and code recipes", hEmpty: "// Photograph a KTP above. The result shows up here.", fNik: "NIK", fNama: "Name", fTempat: "Place of birth", fTanggal: "Date of birth", fAlamat: "Address", fDaftar: "Sign up", fSent: "Example only. Nothing was sent.", why: {nik_mismatch: "Doesn't match the NIK, check again", from_nik: "Unreadable, filled from the NIK", low_confidence: "Unclear, check again"}},
+      nDocs: "Docs", hH: "The result", hIntro: "The result comes once, as JSON. The form below is an example app: fill the fields you need, mark the ones to check.", hForm: "Example sign-up form", hJson: "from your KTP", hSample: "sample data", hDocs: "Full docs", tNik: "NIK lines", tAll: "All text lines", tBlank: "Blank strips (no text)", tSize: "Reader model size", vBench: "Benchmark data and scripts on GitHub", hEmpty: "// Photograph a KTP above. The result shows up here.", fNik: "NIK", fNama: "Name", fTempat: "Place of birth", fTanggal: "Date of birth", fAlamat: "Address", fDaftar: "Sign up", fSent: "Example only. Nothing was sent.", why: {nik_mismatch: "Doesn't match the NIK, check again", from_nik: "Unreadable, filled from the NIK", low_confidence: "Unclear, check again"}, nikInvalid: "Invalid NIK, check again", nikMissing: "NIK unreadable, type it in"},
   };
   let lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "id";
   try { lang = localStorage.getItem("ktp-kit-lang") || lang; } catch {}
@@ -279,17 +292,28 @@
   });
   // The example form: the recipe from the docs, then the reasons in this app's own words.
   const form = $("contoh");
-  let result = null;
+  // Made-up sample until a real read: the NIK's sequence number is 9001, which real NIKs don't reach.
+  const SAMPLE = {nik: "3171014501909001", nik_valid: true, nama: "NAMA CONTOH", tempat_lahir: "JAKARTA", tanggal_lahir: "05-01-1990",
+    jenis_kelamin: "PEREMPUAN", golongan_darah: "O", alamat: "JL. CONTOH NO. 1", rt_rw: "001/002", kelurahan_desa: "GAMBIR",
+    kecamatan: "GAMBIR", kabupaten_kota: "KOTA ADMINISTRASI JAKARTA PUSAT", provinsi: "DAERAH KHUSUS IBUKOTA JAKARTA",
+    agama: "ISLAM", status_perkawinan: "KAWIN", pekerjaan: "KARYAWAN SWASTA", kewarganegaraan: "WNI", berlaku_hingga: "SEUMUR HIDUP",
+    kota_terbit: "KOTA ADMINISTRASI JAKARTA PUSAT", tanggal_terbit: "12-08-2020", kode_wilayah: "3171011001",
+    perlu_dicek: {alamat: ["low_confidence"]}, info: {is_ktp: true, ms: 2300, versi: "0.1.0"}, card: null};
+  let result = SAMPLE;
+  const fill = r => { for (const [k, v] of Object.entries(r)) if (form.elements[k]) form.elements[k].value = v ?? ""; };
   function paintResult() {
-    const r = result;
-    $("json").textContent = r ? JSON.stringify({...r, card: `Blob (${r.card.type}, ${Math.round(r.card.size / 1024)} KB)`}, null, 2) : t().hEmpty;
+    const r = result, card = r.card ? `Blob (${r.card.type}, ${Math.round(r.card.size / 1024)} KB)` : "Blob (image/jpeg)";
+    $("json").textContent = JSON.stringify({...r, card}, null, 2);
+    $("json-label").textContent = r === SAMPLE ? t().hSample : t().hJson;
     document.querySelectorAll("[data-why]").forEach(el => {
-      el.textContent = (r?.perlu_dicek[el.dataset.why] || []).map(code => t().why[code] || code).join(". ");
+      el.textContent = (r.perlu_dicek[el.dataset.why] || []).map(code => t().why[code] || code).join(". ");
     });
+    $("contoh").querySelector("[data-why=nik]").textContent = !r.nik ? t().nikMissing : r.nik_valid ? "" : t().nikInvalid;
   }
+  fill(SAMPLE);
   reader.addEventListener("ktp-result", e => {
     result = e.detail;
-    for (const [k, v] of Object.entries(e.detail)) if (form.elements[k]) form.elements[k].value = v ?? "";
+    fill(e.detail);
     paintResult();
   });
   form.addEventListener("submit", e => { e.preventDefault(); $("contoh-note").textContent = t().fSent; });
@@ -361,6 +385,8 @@ npx ktp-kit read foto/*.jpg --csv     # baca satu folder foto, hasil CSV`,
   function applyLang() {
     document.documentElement.lang = lang;
     document.querySelectorAll("[data-t]").forEach(el => { el.textContent = t()[el.dataset.t]; });
+    document.querySelectorAll("[data-pct]").forEach(el => { el.textContent = el.dataset.pct.replace(".", t().decimal) + "%"; });
+    document.querySelectorAll("[data-mb]").forEach(el => { el.textContent = el.dataset.mb.replace(".", t().decimal) + " MB"; });
     $("cli-note").innerHTML = t().cli.replace(/<code>/g, '<code class="font-mono text-ink">');  // fixed strings from T
     document.querySelectorAll("[data-t-aria]").forEach(el => el.setAttribute("aria-label", t()[el.dataset.tAria]));
     $("lang").textContent = t().other; $("lang").setAttribute("aria-label", t().otherLabel);

@@ -3,9 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Panduan ktp-kit</title>
-<meta name="description" content="Cara memasang ktp-kit, isi hasilnya, dan contoh kode untuk formulir dan server.">
+<title>ktp-kit docs</title>
+<meta name="description" content="Cara install ktp-kit, isi result-nya, dan contoh kode untuk form dan server.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M1.5%208.75V5.25h3.5M19%205.25h3.5v3.5M22.5%2015.25v3.5H19M5%2018.75H1.5v-3.5%22%20fill%3D%22none%22%20stroke%3D%22%23579be8%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22square%22%2F%3E%3Cg%20fill%3D%22%23579be8%22%3E%3Crect%20x%3D%224.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2210.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2216.5%22%20y%3D%2210.75%22%20width%3D%223%22%20height%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<link rel="preload" href="/fonts/ibm-plex-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/apps/demo/app.build.css">
 </head>
 <body class="min-h-dvh font-sans text-ink antialiased">
@@ -13,52 +15,52 @@
 <header class="sticky top-0 z-20 border-b border-line/70 bg-bg/75 backdrop-blur-md">
   <div class="mx-auto flex h-16 max-w-6xl items-center gap-6 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]">
     <a href="/" class="flex items-center gap-2 font-mono text-[15px] font-medium"><svg class="size-7 text-accent" viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 8.75V5.25h3.5M19 5.25h3.5v3.5M22.5 15.25v3.5H19M5 18.75H1.5v-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/><g fill="currentColor"><rect x="4.5" y="8.25" width="4.5" height="7.5"/><rect x="10.5" y="8.25" width="4.5" height="7.5"/><rect x="16.5" y="10.75" width="3" height="5"/></g></svg>ktp-kit</a>
-    <span class="text-sm text-muted">Panduan</span>
+    <span class="text-sm text-muted">Docs</span>
     <a href="/#demo" class="ml-auto text-sm text-muted transition-colors hover:text-ink">Coba demo</a>
   </div>
 </header>
 
 <main class="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-12 pt-10 pb-24 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] lg:grid-cols-[12rem_minmax(0,1fr)]">
-  <nav class="hidden text-sm lg:block" aria-label="Isi panduan">
+  <nav class="hidden text-sm lg:block" aria-label="Isi docs">
     <ol class="sticky top-24 grid gap-2 text-muted">
-      <li><a class="hover:text-ink" href="#pasang">Pasang</a></li>
-      <li><a class="hover:text-ink" href="#pakai">Pakai</a></li>
-      <li><a class="hover:text-ink" href="#hasil">Isi hasil</a></li>
-      <li><a class="hover:text-ink" href="#formulir">Contoh formulir</a></li>
+      <li><a class="hover:text-ink" href="#install">Install</a></li>
+      <li><a class="hover:text-ink" href="#usage">Cara pakai</a></li>
+      <li><a class="hover:text-ink" href="#result">Result</a></li>
+      <li><a class="hover:text-ink" href="#form">Contoh form</a></li>
       <li><a class="hover:text-ink" href="#server">Kirim ke server</a></li>
       <li><a class="hover:text-ink" href="#offline">Offline</a></li>
       <li><a class="hover:text-ink" href="#privasi">Privasi</a></li>
     </ol>
   </nav>
 
-  <article class="docs max-w-3xl min-w-0">
-    <h1 class="text-4xl font-semibold tracking-tight">Panduan</h1>
-    <p class="mt-4 text-lg text-muted">ktp-kit membaca KTP di perangkat pengguna dan memberi hasilnya sekali, sebagai JSON. Formulir, aturan edit, dan penyimpanan tetap milik aplikasi Anda. Panduan ini dari pemasangan sampai data tiba di server.</p>
+  <article class="docs max-w-4xl min-w-0">
+    <h1 class="text-4xl font-semibold tracking-tight">Docs</h1>
+    <p class="mt-4 text-lg text-muted">ktp-kit membaca KTP langsung di device user, lalu memberi result dalam bentuk JSON. Form, validasi, dan penyimpanan tetap di app Anda. Docs ini membahas dari install sampai data masuk ke server.</p>
 
-    <h2 id="pasang">Pasang</h2>
+    <h2 id="install">Install</h2>
     <ol>
-      <li>Pasang paket:
+      <li>Install package-nya:
         <pre><code>npm install ktp-kit</code></pre></li>
-      <li>Salin model dan runtime (4,9 MB, sudah dikompres) ke folder yang dilayani web Anda:
+      <li>Copy model dan runtime (4,9 MB, sudah dikompres) ke folder public app Anda:
         <pre><code>npx ktp-kit assets public/ktp-kit</code></pre>
-        Jalankan lagi setiap kali memperbarui ktp-kit. Folder ini yang nanti dipakai sebagai <code>base</code>.</li>
-      <li>Kirim dua header ini di halaman yang memakai ktp-kit. Dengan header ini pembacaan memakai beberapa inti CPU dan sekitar 3 kali lebih cepat (2-4 detik di HP kelas menengah):
+        Jalankan ulang setiap update ktp-kit. Path folder ini nanti dipakai sebagai <code>base</code>.</li>
+      <li>Tambahkan dua header ini di halaman yang memakai ktp-kit, supaya WebAssembly bisa pakai beberapa thread. Hasilnya sekitar 3x lebih cepat, 2-4 detik per KTP di HP mid-range:
         <pre><code>Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp</code></pre>
-        Akibatnya, skrip, gambar, dan iframe dari domain lain harus mengizinkan dimuat lintas origin. Tanpa header ini ktp-kit tetap jalan, hanya lebih lambat.</li>
+        Efek sampingnya, script, gambar, dan iframe dari domain lain harus mengizinkan cross-origin. Tanpa header ini ktp-kit tetap jalan, hanya lebih lambat.</li>
     </ol>
 
-    <h2 id="pakai">Pakai</h2>
-    <p>Pilih satu cara. Semuanya memberi hasil yang sama.</p>
-    <h3>HTML biasa (Laravel Blade, PHP, Django, Rails, Svelte...)</h3>
+    <h2 id="usage">Cara pakai</h2>
+    <p>Pilih salah satu. Result-nya sama.</p>
+    <h3>HTML (Laravel Blade, PHP, Django, Rails, Svelte...)</h3>
     <pre><code>&lt;script type="module"&gt;import "ktp-kit/element";&lt;/script&gt;
 &lt;ktp-capture base="/ktp-kit/" lang="id"&gt;&lt;/ktp-capture&gt;
 &lt;script&gt;
   document.querySelector("ktp-capture").addEventListener("ktp-result", e =&gt; {
-    console.log(e.detail);   // lihat "Isi hasil" di bawah
+    console.log(e.detail);   // lihat bagian Result
   });
 &lt;/script&gt;</code></pre>
-    <p>Atribut: <code>base</code> (folder dari langkah 2), <code>lang</code> (<code>id</code> atau <code>en</code>), <code>upload="false"</code> untuk menyembunyikan tombol unggah foto. Event: <code>ktp-result</code>, <code>ktp-state</code>, <code>ktp-error</code>. Tampilan diatur lewat variabel CSS dan <code>::part()</code>, lihat README.</p>
+    <p>Attribute: <code>base</code> (path dari langkah 2), <code>lang</code> (<code>id</code> atau <code>en</code>), <code>upload="false"</code> untuk menyembunyikan tombol upload. Event: <code>ktp-result</code>, <code>ktp-state</code>, <code>ktp-error</code>. Styling lewat CSS variable dan <code>::part()</code>, detailnya di README.</p>
     <h3>React</h3>
     <pre><code>npm install @ktp-kit/react
 
@@ -68,30 +70,30 @@ import { KtpCapture } from "@ktp-kit/react";
     <pre><code>npm install @ktp-kit/vue
 
 &lt;KtpCapture base="/ktp-kit/" @result="r =&gt; ktp = r" /&gt;</code></pre>
-    <h3>Tanpa UI (tampilan sendiri)</h3>
+    <h3>Headless (UI sendiri)</h3>
     <pre><code>import { useKtpCapture } from "@ktp-kit/react";   // sama di @ktp-kit/vue
 const { videoRef, state, shoot, retake, readFile } = useKtpCapture({ base: "/ktp-kit/" });
 // state.status: searching | adjust | hold | reading | done | error
-// state.hint: kunci pesan (MESSAGES), state.corners: sudut kartu untuk digambar
-// state.result: hasil saat status "done" (card berupa piksel, bukan Blob)</code></pre>
-    <h3>Node.js dan baris perintah</h3>
+// state.hint: key pesan (MESSAGES), state.corners: sudut kartu untuk di-render
+// state.result: result saat status "done" (card berupa pixel, bukan Blob)</code></pre>
+    <h3>Node.js dan CLI</h3>
     <pre><code>npx ktp-kit read foto/*.jpg          # satu baris JSON per foto
 npx ktp-kit read foto/*.jpg --csv    # atau CSV</code></pre>
 
-    <h2 id="hasil">Isi hasil</h2>
-    <p>Nama kolom mengikuti API OCR KTP yang umum di Indonesia (VIDA, GLAIR), jadi kode yang sudah ada biasanya bisa dipakai lagi. Kolom yang tidak terbaca bernilai <code>null</code>. Tanggal memakai format KTP, <code>DD-MM-YYYY</code>.</p>
+    <h2 id="result">Result</h2>
+    <p>Nama field mengikuti API OCR KTP yang umum di Indonesia (VIDA, GLAIR), jadi kode yang sudah ada biasanya tinggal pakai. Field yang tidak terbaca bernilai <code>null</code>. Format tanggal sama seperti di KTP, <code>DD-MM-YYYY</code>.</p>
     <div class="overflow-x-auto">
       <table>
-        <thead><tr><th>Kolom</th><th>Contoh</th><th>Catatan</th></tr></thead>
+        <thead><tr><th>Field</th><th>Contoh</th><th>Catatan</th></tr></thead>
         <tbody>
           <tr><td><code>nik</code></td><td><code>3171014501909001</code></td><td>16 digit</td></tr>
-          <tr><td><code>nik_valid</code></td><td><code>true</code></td><td>Kode wilayah, tanggal lahir, dan nomor urut masuk akal. Bukan cek ke data Dukcapil.</td></tr>
-          <tr><td><code>nama</code></td><td><code>SITI AMINAH</code></td><td>Persis seperti tercetak, termasuk gelar</td></tr>
+          <tr><td><code>nik_valid</code></td><td><code>true</code></td><td>Kode wilayah, tanggal lahir, dan nomor urut masuk akal. Ini bukan cek ke data Dukcapil.</td></tr>
+          <tr><td><code>nama</code></td><td><code>NAMA CONTOH</code></td><td>Sesuai yang tercetak, termasuk gelar</td></tr>
           <tr><td><code>tempat_lahir</code></td><td><code>JAKARTA</code></td><td></td></tr>
           <tr><td><code>tanggal_lahir</code></td><td><code>05-01-1990</code></td><td></td></tr>
           <tr><td><code>jenis_kelamin</code></td><td><code>PEREMPUAN</code></td><td><code>LAKI-LAKI</code> atau <code>PEREMPUAN</code></td></tr>
-          <tr><td><code>golongan_darah</code></td><td><code>O</code></td><td><code>A</code>, <code>B</code>, <code>AB</code>, <code>O</code>, bisa dengan <code>+</code>/<code>-</code>, atau <code>-</code> bila kosong di kartu</td></tr>
-          <tr><td><code>alamat</code></td><td><code>JL. MERDEKA NO. 1</code></td><td></td></tr>
+          <tr><td><code>golongan_darah</code></td><td><code>O</code></td><td><code>A</code>, <code>B</code>, <code>AB</code>, <code>O</code>, bisa dengan <code>+</code>/<code>-</code>, atau <code>-</code> kalau kosong di kartu</td></tr>
+          <tr><td><code>alamat</code></td><td><code>JL. CONTOH NO. 1</code></td><td></td></tr>
           <tr><td><code>rt_rw</code></td><td><code>001/002</code></td><td></td></tr>
           <tr><td><code>kelurahan_desa</code></td><td><code>GAMBIR</code></td><td rowspan="4">Nama resmi Kemendagri</td></tr>
           <tr><td><code>kecamatan</code></td><td><code>GAMBIR</code></td></tr>
@@ -101,32 +103,32 @@ npx ktp-kit read foto/*.jpg --csv    # atau CSV</code></pre>
           <tr><td><code>status_perkawinan</code></td><td><code>KAWIN</code></td></tr>
           <tr><td><code>pekerjaan</code></td><td><code>KARYAWAN SWASTA</code></td></tr>
           <tr><td><code>kewarganegaraan</code></td><td><code>WNI</code></td><td><code>WNI</code> atau <code>WNA</code></td></tr>
-          <tr><td><code>berlaku_hingga</code></td><td><code>SEUMUR HIDUP</code></td><td>Atau tanggal pada KTP lama</td></tr>
+          <tr><td><code>berlaku_hingga</code></td><td><code>SEUMUR HIDUP</code></td><td>Atau tanggal, di KTP lama</td></tr>
           <tr><td><code>kota_terbit</code></td><td><code>KOTA ADMINISTRASI JAKARTA PUSAT</code></td><td>Di atas tanda tangan, nama resmi</td></tr>
           <tr><td><code>tanggal_terbit</code></td><td><code>12-08-2020</code></td><td></td></tr>
-          <tr><td><code>kode_wilayah</code></td><td><code>3171011001</code></td><td>Kode wilayah paling rinci yang cocok. 2 digit provinsi, 4 kabupaten/kota, 6 kecamatan, 10 kelurahan/desa.</td></tr>
+          <tr><td><code>kode_wilayah</code></td><td><code>3171011001</code></td><td>Kode wilayah paling detail yang cocok: 2 digit provinsi, 4 kabupaten/kota, 6 kecamatan, 10 kelurahan/desa</td></tr>
           <tr><td><code>perlu_dicek</code></td><td><code>{"tanggal_lahir": ["from_nik"]}</code></td><td>Lihat di bawah</td></tr>
-          <tr><td><code>info</code></td><td><code>{"is_ktp": true, "ms": 2300, "versi": "0.1.0"}</code></td><td>Waktu baca di perangkat dan versi ktp-kit, berguna untuk log audit. <code>is_ktp</code> masih eksperimental.</td></tr>
+          <tr><td><code>info</code></td><td><code>{"is_ktp": true, "ms": 2300, "versi": "0.1.0"}</code></td><td>Waktu baca di device dan versi ktp-kit, berguna untuk audit log. <code>is_ktp</code> masih eksperimental.</td></tr>
           <tr><td><code>card</code></td><td>Blob JPEG</td><td>Foto KTP yang sudah diluruskan, 856 x 540</td></tr>
         </tbody>
       </table>
     </div>
 
     <h3>perlu_dicek</h3>
-    <p>Kolom yang layak dicek ulang oleh pengguna, dengan alasan berupa kode. Kalimat untuk pengguna Anda yang menentukan.</p>
+    <p>Field yang sebaiknya dicek ulang oleh user, lengkap dengan kode alasannya. Teks yang tampil ke user Anda yang tentukan.</p>
     <div class="overflow-x-auto">
       <table>
         <thead><tr><th>Kode</th><th>Artinya</th></tr></thead>
         <tbody>
-          <tr><td><code>nik_mismatch</code></td><td>Isi kartu berbeda dengan yang tersandi di NIK (tanggal lahir, jenis kelamin). Salah satunya salah baca.</td></tr>
+          <tr><td><code>nik_mismatch</code></td><td>Isi kartu beda dengan yang ada di NIK (tanggal lahir, jenis kelamin). Salah satunya salah baca.</td></tr>
           <tr><td><code>from_nik</code></td><td>Tulisan di kartu tidak terbaca, jadi nilainya diambil dari NIK. Biasanya benar, tapi bukan hasil baca kartu.</td></tr>
-          <tr><td><code>low_confidence</code></td><td>Nama atau alamat: pembaca ragu pada setidaknya satu huruf, sering karena buram atau pantulan cahaya. Pada foto uji, tanda ini menangkap sekitar 3 dari 4 nama yang salah baca.</td></tr>
+          <tr><td><code>low_confidence</code></td><td>Nama atau alamat: model ragu di minimal satu huruf, biasanya karena foto blur atau ada pantulan cahaya. Di foto uji, flag ini menangkap sekitar 3 dari 4 nama yang salah baca.</td></tr>
         </tbody>
       </table>
     </div>
 
-    <h2 id="formulir">Contoh formulir</h2>
-    <p>Taruh hanya kolom yang Anda butuhkan. Nama input sama dengan nama kolom hasil, jadi lima baris ini mengisinya. Kolom lain diabaikan.</p>
+    <h2 id="form">Contoh form</h2>
+    <p>Pasang input untuk field yang Anda butuhkan saja. Selama <code>name</code> input sama dengan nama field di result, potongan kode ini sudah cukup untuk mengisinya. Field lain diabaikan.</p>
     <pre><code>&lt;ktp-capture base="/ktp-kit/"&gt;&lt;/ktp-capture&gt;
 &lt;form id="daftar"&gt;
   &lt;input name="nik"&gt; &lt;input name="nama"&gt; &lt;input name="tanggal_lahir"&gt;
@@ -140,40 +142,55 @@ npx ktp-kit read foto/*.jpg --csv    # atau CSV</code></pre>
     for (const [k, v] of Object.entries(ktp)) if (form.elements[k]) form.elements[k].value = v ?? "";
   });
 &lt;/script&gt;</code></pre>
-    <p>Kolom yang tidak boleh diubah pengguna cukup diberi <code>readonly</code>. Untuk menandai kolom yang perlu dicek:</p>
-    <pre><code>for (const [kolom, alasan] of Object.entries(ktp.perlu_dicek))
-  form.elements[kolom]?.classList.add("perlu-dicek");</code></pre>
+    <p>Kalau user tidak boleh mengubah suatu field, tambahkan <code>readonly</code>. Untuk menandai field yang perlu dicek:</p>
+    <pre><code>for (const [field, alasan] of Object.entries(ktp.perlu_dicek))
+  form.elements[field]?.classList.add("perlu-dicek");</code></pre>
     <h3>React</h3>
     <pre><code>const [form, setForm] = useState({ nik: "", nama: "" });
 &lt;KtpCapture base="/ktp-kit/" onResult={r =&gt; setForm({ nik: r.nik ?? "", nama: r.nama ?? "" })} /&gt;
 &lt;input value={form.nik} onChange={e =&gt; setForm({ ...form, nik: e.target.value })} /&gt;</code></pre>
 
     <h2 id="server">Kirim ke server</h2>
-    <p>Kirim formulir seperti biasa. Foto KTP hanya ikut bila Anda memang perlu menyimpannya.</p>
+    <p>Submit form seperti biasa. Foto KTP ikut dikirim hanya kalau memang perlu disimpan.</p>
     <pre><code>form.addEventListener("submit", async e =&gt; {
   e.preventDefault();
   const data = new FormData(form);
   data.append("ktp", ktp.card, "ktp.jpg");   // opsional
   await fetch("/daftar", { method: "POST", body: data });
 });</code></pre>
-    <p>Di server, perlakukan isinya sebagai masukan pengguna, karena pengguna bisa mengubah formulir. Cek ulang NIK dengan fungsi yang sama:</p>
+    <p>Di server, perlakukan data ini sebagai input user biasa, karena user bisa mengedit form. Validasi ulang NIK dengan function yang sama:</p>
     <pre><code>import { nikValid, nikConflicts } from "ktp-kit";
 
 app.post("/daftar", upload.single("ktp"), (req, res) =&gt; {
   const { nik, tanggal_lahir, jenis_kelamin } = req.body;
   if (!nikValid(nik)) return res.status(400).json({ error: "NIK tidak valid" });
   const beda = nikConflicts({ nik, tanggal_lahir, jenis_kelamin });   // misalnya ["tanggal_lahir"]
-  if (beda.length) return res.status(400).json({ error: "Tidak cocok dengan NIK", kolom: beda });
-  // simpan
+  if (beda.length) return res.status(400).json({ error: "Tidak cocok dengan NIK", field: beda });
+  // simpan ke database
 });</code></pre>
-    <p>Butuh kepastian bahwa NIK benar-benar terdaftar? Itu perlu cek ke data Dukcapil lewat penyedia resmi. Panggil dari server Anda, hanya untuk pendaftaran yang memerlukannya.</p>
+    <p>Perlu memastikan NIK benar-benar terdaftar? Itu butuh verifikasi ke data Dukcapil lewat provider resmi. Panggil dari server, dan hanya untuk pendaftaran yang memang membutuhkannya.</p>
 
     <h2 id="offline">Offline</h2>
-    <p>Saat pertama dipakai, ktp-kit menyimpan model di perangkat (Cache API). Setelah itu pembacaan jalan tanpa internet selama halaman terbuka. Agar halaman juga bisa dimuat ulang tanpa internet, aplikasi Anda perlu service worker yang menyimpan halaman itu sendiri (HTML, skrip, gaya). Contoh singkatnya ada di <code>apps/demo/sw.js</code>.</p>
+    <p>Saat pertama dipakai, ktp-kit menyimpan model di device (Cache API). Setelah itu baca KTP tetap jalan tanpa internet selama halaman terbuka. Supaya halaman juga bisa di-reload tanpa internet, app Anda butuh service worker yang meng-cache halamannya sendiri (HTML, JS, CSS). Contoh singkatnya ada di <code>apps/demo/sw.js</code>.</p>
 
     <h2 id="privasi">Privasi</h2>
-    <p>Foto dan isi KTP tidak meninggalkan perangkat sampai aplikasi Anda sendiri yang mengirimnya. Satu-satunya permintaan jaringan dari ktp-kit adalah unduhan modelnya. UU PDP meminta data yang dikumpulkan secukupnya, jadi kirim hanya kolom yang Anda butuhkan, dan jangan simpan foto KTP bila tidak wajib.</p>
+    <p>Foto dan data KTP tidak keluar dari device sampai app Anda sendiri yang mengirimnya. Request network dari ktp-kit hanya untuk download modelnya. UU PDP meminta data dikumpulkan seperlunya, jadi kirim field yang dibutuhkan saja, dan tidak usah simpan foto KTP kalau tidak wajib.</p>
   </article>
 </main>
+<script type="module">
+  // Code colours, the same small tokenizer as the main page: comments, strings, tags, keywords, attributes, calls.
+  const TOKENS = /(#[^\n]*|\/\/[^\n]*)|("[^"\n]*"|'[^'\n]*')|(<\/?[A-Za-z][\w-]*|\/?>)|\b(import|from|export|function|return|const|let|new|async|await|if|for|of|npm|npx)\b|(@?[A-Za-z][\w-]*)(?==)|([A-Za-z_]\w*)(?=\()/g;
+  const esc = s => s.replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"})[c]);
+  const highlight = src => {
+    let out = "", last = 0;
+    for (const m of src.matchAll(TOKENS)) {
+      const cls = ["c", "s", "t", "k", "a", "f"][m.slice(1).findIndex(Boolean)];
+      out += esc(src.slice(last, m.index)) + `<span class="tok-${cls}">${esc(m[0])}</span>`;
+      last = m.index + m[0].length;
+    }
+    return out + esc(src.slice(last));
+  };
+  document.querySelectorAll(".docs pre code").forEach(c => { c.innerHTML = highlight(c.textContent); });  // our own fixed text
+</script>
 </body>
 </html>

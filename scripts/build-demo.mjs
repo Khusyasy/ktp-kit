@@ -4,6 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import {execFileSync} from "node:child_process";
+import {prefill} from "../apps/demo/prefill.mjs";
 
 const root = path.resolve(import.meta.dirname, ".."), dist = path.join(root, "apps/demo/dist");
 fs.rmSync(dist, {recursive: true, force: true});
@@ -30,7 +31,8 @@ for (const [dir, name] of [["@fontsource-variable/ibm-plex-sans", "ibm-plex-sans
 
 // 4. The pages, with their import map pointed at the copied files (docs.html is served at /docs by Pages).
 for (const page of ["index.html", "docs.html"]) {
-  const html = fs.readFileSync(path.join(root, "apps/demo", page), "utf8")
+  const raw = fs.readFileSync(path.join(root, "apps/demo", page), "utf8");
+  const html = (page === "index.html" ? prefill(raw) : raw)
     .replaceAll("/node_modules/onnxruntime-web/dist/ort.wasm.min.mjs", "/lib/ort.wasm.min.mjs")
     .replaceAll("/packages/ktp-kit/src/", "/lib/ktp-kit/")
     .replaceAll("/apps/demo/app.build.css", "/app.css");
