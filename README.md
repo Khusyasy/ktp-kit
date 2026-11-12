@@ -24,7 +24,7 @@ Status: **0.1, preview.** Accuracy numbers will be published from a consented te
 ```bash
 npm install ktp-kit                 # web component, engine, CLI
 npm install @ktp-kit/react          # or @ktp-kit/vue
-npx ktp-kit assets public/ktp-kit   # copy the models + runtime (~27 MB) to where your app serves static files
+npx ktp-kit assets public/ktp-kit   # copy the models + runtime (4.9 MB, pre-compressed) to where your app serves static files
 ```
 
 ## Use
@@ -68,7 +68,7 @@ const { videoRef, state, shoot, retake, readFile } = useKtpCapture();
 
 ```js
 import { createKtpReader } from "ktp-kit";
-const engine = createKtpReader({ ort });               // loads only the 2 MB region table for this
+const engine = createKtpReader({ ort });               // loads only the region table (0.5 MB) for this
 await engine.parseNik("3171014501909001");
 // { valid: true, jenis_kelamin: "PEREMPUAN", tanggal_lahir: "05-01-1990", provinsi: "DAERAH KHUSUS IBUKOTA JAKARTA", ... }
 ```
@@ -84,19 +84,30 @@ npx ktp-kit read photos/*.jpg --csv > ktp.csv
 
 ## Styling
 
-The element ships with a default look. Change it with CSS variables (`--ktp-accent`, `--ktp-ok`, `--ktp-warn`,
-`--ktp-bg`, `--ktp-fg`, `--ktp-radius`, `--ktp-font`), `::part(...)` (video, hint, badge, button, result, card,
-notice, field, input), or the `data-state` attribute, Tailwind style:
+The element ships with a default look, with icon buttons (each has a label for screen readers). Change it with:
+
+- CSS variables: `--ktp-accent`, `--ktp-ok`, `--ktp-warn`, `--ktp-bg`, `--ktp-fg`, `--ktp-panel` (buttons and hint
+  over the camera), `--ktp-surface` (result background), `--ktp-muted`, `--ktp-line`, `--ktp-field` (input
+  background), `--ktp-radius`, `--ktp-font`, `--ktp-mono` (the NIK)
+- `::part(...)`: video, hint, badge, actions, button, upload, shutter, retake, result, notice, card, form, field,
+  label, input, nik (the NIK input)
+- the `data-state` attribute (searching, adjust, hold, reading, done, error).
+
+With Tailwind v4, all three work from classes:
 
 ```html
-<ktp-capture class="rounded-2xl ring-4 ring-transparent data-[state=hold]:ring-green-500"></ktp-capture>
+<ktp-capture class="rounded-2xl ring-4 ring-transparent data-[state=hold]:ring-green-500
+  [--ktp-accent:var(--color-sky-500)] [--ktp-surface:var(--color-slate-900)]
+  [&::part(shutter)]:bg-sky-100"></ktp-capture>
 ```
 
-Add `unstyled` to keep only the layout, `form="false"` to skip the built-in form, `upload="false"` to hide uploads.
+The frame takes the camera's shape. It also sets `--ktp-aspect` (width ÷ height, a number) for sizing with `calc()`.
+
+Add `check-ktp` to also warn when a photo doesn't look like a KTP (experimental), `unstyled` to keep only the layout, `form="false"` to skip the built-in form, `upload="false"` to hide uploads.
 
 ## Speed: allow several cores
 
-Reading takes about 2–4 s on a mid-range phone when the page is **cross-origin isolated**, and about 3× longer
+Reading takes about 2-4 s on a mid-range phone when the page is **cross-origin isolated**, and about 3× longer
 without. Send these headers on your page:
 
 ```
@@ -107,18 +118,35 @@ Cross-Origin-Embedder-Policy: require-corp
 ## Offline
 
 `ktp-kit` stores the models and runtime on the device (Cache API, persistent storage requested) the first time. The
+download is 4.9 MB: the CLI compresses the files (brotli) and the browser unpacks them, so the size is the same on any host. The
 element shows the download progress and then "Siap offline". To test: read a card, turn on airplane mode, read again.
+
+Reading keeps working offline while the page is open. For the page to also **reload** offline, your app needs a
+service worker that keeps the page itself (HTML, scripts, styles), the same as any offline web app. ktp-kit's files are
+already stored. The demo's worker is a short example: `apps/demo/sw.js`.
 
 ## Privacy
 
-Nothing about the card leaves the device; the only requests are downloads of ktp-kit's own files. See
+Nothing about the card leaves the device. The only requests are downloads of ktp-kit's own files. See
 [PRIVACY.md](PRIVACY.md) for details for compliance teams.
 
 ## How it works
 
 Card corners (DocAligner, Apache-2.0) → straighten → text lines (PP-OCRv6 small det, Apache-2.0) → each line read by a
 PP-OCRv6 tiny reader fine-tuned for KTP text → fields matched to the fixed KTP layout, snapped to official lists and
-region names, and checked against the NIK. The reader was trained only on generated (synthetic) KTP text lines.
+region names, and checked against the NIK.
+
+### How the reader was trained
+
+The text reader learned from generated KTP text lines only. A script draws lines in the KTP layout: labels,
+values, NIKs and headers. Names come from a hand-written list of common Indonesian name parts plus made-up syllables
+and random letters. Regions come from the public region code list. Lines are drawn in many fonts, then blurred,
+tilted, darkened and given glare, like phone photos. Training started from the stock PP-OCRv6 tiny weights. No real
+KTP photo, NIK or name was used to train it, so the model files hold no one's data.
+
+On 2,400 generated lines not used for training, 92% of NIK lines and 86% of all lines are read exactly. Real photos
+vary more than generated ones, so try it on your own cards before you rely on it. Names are the weakest field: let
+users correct them.
 
 ## License
 

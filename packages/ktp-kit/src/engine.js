@@ -4,17 +4,27 @@ import {readCard, readUpload, warpCard, orderCorners} from "./reader.js";
 import {Wilayah, nikConflicts, ktpLabels} from "./ktp.js";
 import {parseNik} from "./nik.js";
 
-// Files expected under `base` (copy them with `npx ktp-kit assets <dir>`).
+// Files expected under `base` (copy them with `npx ktp-kit assets <dir>`). The CLI compresses them (.br brotli,
+// .gz gzip) and they are unpacked here, so the download is small on any host, whether or not it compresses.
 export const FILES = {
-  corners: "corners.onnx",                 // card corner detector (DocAligner lcnet100, Apache-2.0)
-  det: "det.onnx",                         // text-line finder (PP-OCRv6 small det, Apache-2.0)
-  rec: "rec.onnx",                         // line reader (PP-OCRv6 tiny, fine-tuned on synthetic KTP lines)
-  wilayah: "wilayah.csv",                  // official region codes (cahyadsn/wilayah, MIT)
-  wasm: "ort/ort-wasm-simd-threaded.wasm", // onnxruntime-web runtime (engine)
-  mjs: "ort/ort-wasm-simd-threaded.mjs",   // onnxruntime-web runtime (loader)
+  corners: "corners.onnx.br",                 // card corner detector (DocAligner lcnet100, Apache-2.0)
+  det: "det.onnx.br",                         // text-line finder (PP-OCRv6 small det, Apache-2.0)
+  rec: "rec.onnx.br",                         // line reader (PP-OCRv6 tiny, fine-tuned on synthetic KTP lines)
+  wilayah: "wilayah.csv.br",                  // official region codes (cahyadsn/wilayah, MIT)
+  wasm: "ort/ort-wasm-simd-threaded.wasm.br", // onnxruntime-web runtime (engine)
+  mjs: "ort/ort-wasm-simd-threaded.mjs",      // onnxruntime-web runtime (loader)
+  brotli: "brotli-dec.wasm.gz",               // brotli decoder for browsers without DecompressionStream("brotli")
 };
 // Bump with every model change, or devices keep the old files.
-const CACHE = "ktp-kit-v2";
+const CACHE = "ktp-kit-v5";
+
+// gzip starts with 1f 8b. Hosts that already unpacked a .gz (Content-Encoding) hand over plain bytes: keep them.
+async function gunzip(b) {
+  const u = new Uint8Array(b);
+  if (u[0] !== 0x1f || u[1] !== 0x8b) return b;
+  return new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
+}
+const stored = name => name.replace(/.(gz|br)$/, "");  // the file's own name, before compression
 // Stored on the device; the 24 KB runtime loader is left to the HTTP cache (it can't run from a blob: URL).
 const CACHED = Object.values(FILES).filter(f => f !== FILES.mjs);
 
@@ -66,14 +76,33 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
   // compress on the fly, so it reports compressed bytes while the stream yields uncompressed ones.
   const sizes = load ? Promise.resolve({}) : fetch(url("sizes.json")).then(r => (r.ok ? r.json() : {})).catch(() => ({}));
 
+  // Brotli is ~1.3 MB smaller than gzip here. Firefox and Safari unpack it natively; Chromium (no
+  // DecompressionStream("brotli") yet) gets a 100 KB WebAssembly decoder (brotli-dec-wasm, MIT), itself gzipped.
+  let decoder;
+  async function unbrotli(b) {
+    const u = new Uint8Array(b);
+    try {
+      return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("brotli"))).arrayBuffer();
+    } catch (e) {
+      if (!(e instanceof TypeError)) return b;  // not brotli: a host already unpacked it (Content-Encoding)
+    }
+    decoder ??= Promise.all([import("./brotli-dec.js"), file(FILES.brotli)]).then(([m, wasm]) => {
+      m.initSync({module: new Uint8Array(wasm)});
+      return m;
+    }).catch(e => { decoder = undefined; throw e; });
+    const m = await decoder;
+    try { return m.decompress(u).buffer; } catch { return b; }  // undecodable: already plain bytes
+  }
+  const unpack = (name, b) => name.endsWith(".br") ? unbrotli(b) : gunzip(b);
+
   async function file(name, onBytes = () => {}) {
-    if (load) return load(name);
+    if (load) return load(stored(name));  // Node and tests read the plain files
     const cache = globalThis.caches ? await caches.open(CACHE).catch(() => null) : null;
     const hit = cache && await cache.match(url(name));
     if (hit) {
       const b = await hit.arrayBuffer();
       onBytes(b.byteLength, b.byteLength);
-      return b;
+      return unpack(name, b);
     }
     const res = await fetch(url(name));
     if (!res.ok) throw new Error(`ktp-kit: ${url(name)} returned ${res.status}`);
@@ -86,8 +115,8 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
       onBytes(got, known || got);  // without sizes.json the bar can't know the total: show bytes so far
     }
     const blob = new Blob(parts);
-    await cache?.put(url(name), new Response(blob)).catch(() => {});
-    return blob.arrayBuffer();
+    await cache?.put(url(name), new Response(blob)).catch(() => {});  // stored compressed: less space on the phone
+    return unpack(name, await blob.arrayBuffer());
   }
 
   // The runtime also comes from the device cache, so reading works offline without the app's service worker.
@@ -96,17 +125,17 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
   let rt;
   const runtime = (onBytes = () => {}) => rt ??= (async () => {
     if (load) return;
-    // The 11 MB engine comes from the device cache. Its 24 KB loader must load from its real address: it finds its
+    // The 3.6 MB engine comes from the device cache. Its 24 KB loader must load from its real address: it finds its
     // files relative to its own URL, which fails from a blob: URL ("Invalid URL"). The browser's HTTP cache keeps it.
     ort.env.wasm.wasmBinary = await file(FILES.wasm, onBytes);
-    ort.env.wasm.wasmPaths = {mjs: url(FILES.mjs), wasm: url(FILES.wasm)};
+    ort.env.wasm.wasmPaths = {mjs: url(FILES.mjs), wasm: url(stored(FILES.wasm))};  // plain copy, normally unused
   })().catch(e => { rt = undefined; throw e; });
   const session = async b => {
     await runtime();
     return ort.InferenceSession.create(new Uint8Array(b), {executionProviders: ["wasm"]});
   };
 
-  /** The region table only (~2 MB): enough for parseNik. @param {(p: Progress) => void} [onProgress] */
+  /** The region table only (0.7 MB): enough for parseNik. @param {(p: Progress) => void} [onProgress] */
   function wilayah(onProgress = () => {}) {
     regions ??= file(FILES.wilayah, (loaded, total) => onProgress({loaded, total}))
       .then(b => new Wilayah(typeof b === "string" ? b : new TextDecoder().decode(b)))
@@ -114,7 +143,7 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     return regions;
   }
 
-  /** Only the corner detector (~5 MB): enough for live camera guidance while the rest downloads.
+  /** Only the corner detector and runtime (2 MB): enough for live camera guidance while the rest downloads.
    * @param {(p: Progress) => void} [onProgress] */
   function detector(onProgress = () => {}) {
     corners ??= (async () => {
@@ -126,7 +155,7 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     return corners;
   }
 
-  /** Everything (~27 MB the first time, then from the device).
+  /** Everything (4.9 MB the first time, then from the device).
    * @param {(p: Progress) => void} [onProgress] */
   function preload(onProgress = () => {}) {
     all ??= (async () => {
@@ -154,10 +183,11 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
 
   const clearCache = () => globalThis.caches?.delete(CACHE);
 
-  const result = r => r && {
-    ...r.fields, perlu_dicek: nikConflicts(r.fields), raw: undefined,
-    isKtp: r.fields.nik_valid || ktpLabels(r.lines) >= 3, // experimental: a KTP shows most of its 10 printed labels
-    card: r.card, ms: r.ms,
+  // null when nothing KTP-like was read: uploads always end with a best try, even on a photo of a cat
+  const result = r => {
+    const isKtp = !!r && (r.fields.nik_valid || ktpLabels(r.lines) >= 3);  // a KTP shows most of its 10 printed labels
+    if (!r || (!r.fields.nik && !isKtp)) return null;
+    return {...r.fields, perlu_dicek: nikConflicts(r.fields), raw: undefined, isKtp, card: r.card, ms: r.ms};
   };
 
   return {
@@ -171,7 +201,7 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     },
     /** A camera frame plus the 4 card corners from live detection.
      * @param {RgbaImage} frame @param {number[][]} cornerPoints @param {(step: string) => void} [onStep]
-     * @returns {Promise<KtpResult>} */
+     * @returns {Promise<KtpResult|null>} */
     async readFrame(frame, cornerPoints, onStep) {
       return result(await readCard(warpCard(frame, orderCorners(cornerPoints)), await preload(), onStep));
     },

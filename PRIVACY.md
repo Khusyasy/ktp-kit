@@ -1,6 +1,6 @@
 # Privacy notes
 
-For developers and compliance teams evaluating ktp-kit. This describes what the library does; it is not legal advice,
+For developers and compliance teams evaluating ktp-kit. This describes what the library does. It is not legal advice,
 and you remain the controller of the data your users give you.
 
 ## What leaves the device
@@ -15,7 +15,7 @@ calls. You can verify this in the browser's Network panel, or by reading a card 
 
 ## What is stored on the device
 
-- The model files, runtime and region table (about 27 MB) in the Cache API, under the cache name `ktp-kit-v1`.
+- The model files, runtime and region table (about 11 MB unpacked) in the Cache API, under the cache name `ktp-kit-v5`.
   ktp-kit asks the browser for persistent storage so they are not evicted. `engine.clearCache()` removes them.
 - **No card images and no field values are stored** by ktp-kit. They live in memory until your page drops them.
 
@@ -36,4 +36,4 @@ or when the element is removed. Browsers show their own camera indicator and per
 ## The models
 
 The text reader was trained only on **generated (synthetic) KTP text lines**. The card-corner and text-line models
-are unmodified open-source models (Apache-2.0). No real person's KTP data is contained in the model files.
+are open-source models (Apache-2.0), compressed to int8 and otherwise unchanged. No real person's KTP data is contained in the model files.

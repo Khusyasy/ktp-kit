@@ -2,12 +2,16 @@ node_modules/
 # model files are added at release, not committed
 packages/models/*.onnx
 packages/models/wilayah.csv
+packages/models/ort/
 apps/demo/ktp-kit/
 # copied from the repo root by each package's prepack script
 packages/*/LICENSE.md
 packages/ktp-kit/LICENSES/
+packages/models/LICENSES/
+packages/models/THIRD_PARTY_NOTICES.md
 packages/ktp-kit/THIRD_PARTY_NOTICES.md
 packages/ktp-kit/README.md
 packages/ktp-kit/types/
 packages/ktp-kit/PRIVACY.md
 apps/demo/dist/
+apps/demo/app.build.css
