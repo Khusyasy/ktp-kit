@@ -427,5 +427,37 @@ npx ktp-kit read foto/*.jpg --csv     # baca satu folder foto, hasil CSV`,
     reader.addEventListener("ktp-state", e => { if (e.detail.offline?.ready && !keep.done) { keep.done = true; keep(); } });
   }).catch(() => {});
 </script>
+<script type="module">
+  // ?debug (dev server only): posts camera info, state changes, errors and the result to /log on the dev machine.
+  if (new URLSearchParams(location.search).has("debug")) {
+    const send = (type, data = {}) => fetch("/log", {method: "POST", body: JSON.stringify({t: Date.now(), type, ...data})}).catch(() => {});
+    const el = document.querySelector("ktp-capture");
+    send("start", {ua: navigator.userAgent, dpr: devicePixelRatio, screen: [screen.width, screen.height], isolated: crossOriginIsolated, cores: navigator.hardwareConcurrency});
+    addEventListener("error", e => send("error", {msg: e.message, src: e.filename, line: e.lineno}));
+    addEventListener("unhandledrejection", e => send("error", {msg: String(e.reason?.stack || e.reason)}));
+    el.addEventListener("ktp-error", e => send("ktp-error", {detail: String(e.detail?.detail?.stack || e.detail?.error)}));
+    let last = "", track = null;
+    el.addEventListener("ktp-state", async e => {
+      const s = e.detail, q = s.corners;
+      const key = s.status + "|" + s.hint;
+      const t = el.shadowRoot?.querySelector("video")?.srcObject?.getVideoTracks()[0];
+      if (t && t !== track) {
+        track = t;
+        const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === "videoinput").map(d => d.label);
+        send("camera", {label: t.label, settings: t.getSettings(), caps: t.getCapabilities?.(), cams});
+      }
+      if (key !== last) {
+        last = key;
+        send("state", {status: s.status, hint: s.hint, step: s.step, quality: s.quality,
+          cardPx: q ? Math.round(Math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1])) : null});
+      }
+    });
+    el.addEventListener("ktp-result", e => {
+      const {card, ...r} = e.detail;
+      send("result", {result: r, track: track && {label: track.label, settings: track.getSettings()}});
+      if (card) fetch("/log/card", {method: "POST", body: card}).catch(() => {});
+    });
+  }
+</script>
 </body>
 </html>
