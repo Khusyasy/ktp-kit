@@ -2,7 +2,7 @@
 //   <KtpCapture base="/ktp-kit/" @result="save" />                         ready-made UI (the <ktp-capture> element)
 //   const {videoRef, state, shoot, retake, readFile} = useKtpCapture()      headless: build your own UI
 import {defineComponent, h, onBeforeUnmount, onMounted, shallowRef} from "vue";
-import * as ort from "onnxruntime-web/wasm";
+import * as ort from "ktp-kit/ort";
 import {createKtpReader, createCapture} from "ktp-kit";
 import "ktp-kit/element";
 
@@ -27,7 +27,7 @@ export const KtpCapture = defineComponent({
  */
 export function useKtpCapture({base = "/ktp-kit/", config} = {}) {
   const videoRef = shallowRef(null), state = shallowRef({status: "idle"});
-  const engine = createKtpReader({base, ort});
+  const engine = typeof window === "undefined" ? null : createKtpReader({base, ort});  // null during SSR
   let capture, off;
   onMounted(() => {
     capture = createCapture({video: videoRef.value, engine, config});

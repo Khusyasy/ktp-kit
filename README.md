@@ -75,12 +75,15 @@ const { videoRef, state, shoot, retake, readFile } = useKtpCapture();
 
 ```js
 import { createKtpReader } from "ktp-kit";
+import * as ort from "ktp-kit/ort";
 const engine = createKtpReader({ ort });               // loads only the region table (0.5 MB) for this
 await engine.parseNik("3171014501909001");
 // { valid: true, jenis_kelamin: "PEREMPUAN", tanggal_lahir: "05-01-1990", provinsi: "DAERAH KHUSUS IBUKOTA JAKARTA", ... }
 ```
 
 TypeScript types are included (`KtpResult`, `KtpCaptureState`, ...).
+
+Server rendering (Next.js, Nuxt) works: the component renders as an empty `<ktp-capture>` and the camera and models start in the browser.
 
 ## The result
 

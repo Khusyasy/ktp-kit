@@ -1,6 +1,6 @@
 {
   "name": "ktp-kit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Read Indonesian KTPs on the user's device: camera guidance, all 16 fields, region codes. No upload, works offline.",
   "keywords": [
     "ktp",
@@ -18,6 +18,9 @@
   "repository": {"type": "git", "url": "git+https://github.com/Khusyasy/ktp-kit.git", "directory": "packages/ktp-kit"},
   "author": "Muhammad Luthfi Khusyasy",
   "type": "module",
+  "imports": {
+    "#ort": {"browser": "./src/ort.js", "node": "./src/ort.server.js", "default": "./src/ort.js"}
+  },
   "exports": {
     ".": {
       "types": "./types/index.d.ts",
@@ -38,6 +41,12 @@
     "./parser": {
       "types": "./types/ktp.d.ts",
       "default": "./src/ktp.js"
+    },
+    "./ort": {
+      "types": "./types/ort.d.ts",
+      "browser": "./src/ort.js",
+      "node": "./src/ort.server.js",
+      "default": "./src/ort.js"
     },
     "./nik": {
       "types": "./types/nik.d.ts",
