@@ -6,8 +6,8 @@ export interface KtpCaptureState {
   hint?: string; corners?: number[][] | null; quality?: Record<string, number>; step?: string;
   download?: Progress; offline?: {ready: boolean; bytes: number}; result?: KtpResult; error?: string;
 }
-/** Props: base, lang ("id" | "en"), form, upload, unstyled. Emits: result (fields + card Blob), state, error. */
-export const KtpCapture: DefineComponent<{base?: string; lang?: "id" | "en"; form?: boolean; upload?: boolean; unstyled?: boolean}>;
+/** Props: base, lang ("id" | "en"), upload, unstyled. Emits: result (fields + card Blob), state, error. */
+export const KtpCapture: DefineComponent<{base?: string; lang?: "id" | "en"; upload?: boolean; unstyled?: boolean}>;
 export function useKtpCapture(options?: {base?: string; config?: Record<string, unknown>}): {
   videoRef: ShallowRef<HTMLVideoElement | null>; state: ShallowRef<KtpCaptureState>; engine: unknown;
   shoot(): Promise<KtpResult | null>; retake(): void; readFile(file: Blob): Promise<KtpResult | null>;

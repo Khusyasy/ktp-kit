@@ -7,7 +7,7 @@ export interface KtpCaptureState {
   download?: Progress; offline?: {ready: boolean; bytes: number}; result?: KtpResult; error?: string;
 }
 export interface KtpCaptureProps {
-  base?: string; lang?: "id" | "en"; form?: boolean; upload?: boolean; unstyled?: boolean;
+  base?: string; lang?: "id" | "en"; upload?: boolean; unstyled?: boolean;
   className?: string; style?: CSSProperties;
   /** Fields plus the straightened card as a JPEG Blob. */
   onResult?: (result: Omit<KtpResult, "card"> & {card: Blob}) => void;
