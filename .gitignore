@@ -15,3 +15,4 @@ packages/ktp-kit/types/
 packages/ktp-kit/PRIVACY.md
 apps/demo/dist/
 apps/demo/app.build.css
+benchmark/dist/
