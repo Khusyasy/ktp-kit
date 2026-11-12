@@ -10,11 +10,12 @@ codes and NIK checks, in the browser or Node. The photo is never uploaded, and a
   keeps you out of cross-border transfers and processor contracts under UU PDP.
 - **Guided capture:** live corner detection, checks for distance, tilt, blur and glare, then auto-capture.
 - **Uploads too:** gallery photos, including ones already cropped to the card.
-- **16 fields + region code:** NIK, nama, tempat/tanggal lahir, jenis kelamin, gol. darah, alamat, RT/RW, kel/desa,
-  kecamatan, kabupaten/kota, provinsi, agama, status perkawinan, pekerjaan, kewarganegaraan, berlaku hingga, plus
-  issue city/date and the official Kemendagri region code. Fields that disagree with the NIK are flagged.
+- **16 fields + region code:** NIK, nama, tempat/tanggal lahir, jenis kelamin, golongan darah, alamat, RT/RW,
+  kelurahan/desa, kecamatan, kabupaten/kota, provinsi, agama, status perkawinan, pekerjaan, kewarganegaraan, berlaku
+  hingga, plus issue city/date and the official Kemendagri region code. Fields worth a second look are flagged, with
+  the reason.
 - **Plug and play, or headless:** a styled `<ktp-capture>` web component, React and Vue adapters, or the headless
-  controller for your own UI.
+  controller for your own UI. You get the result once, as JSON. Your form decides which fields to use and edit.
 - **Free for developers and small companies** (see [License](#license)).
 
 Status: **0.1, preview.** Accuracy numbers will be published from a consented test set.
@@ -36,9 +37,15 @@ npx ktp-kit assets public/ktp-kit   # copy the models + runtime (4.9 MB, pre-com
 <ktp-capture base="/ktp-kit/" lang="id"></ktp-capture>
 <script>
   document.querySelector("ktp-capture").addEventListener("ktp-result", e => {
-    const { nik, nama, card } = e.detail;   // card: JPEG Blob of the straightened card
+    const { nik, nama, perlu_dicek, card } = e.detail;   // card: JPEG Blob of the straightened card
   });
 </script>
+```
+
+To fill your own form, give its inputs the result's field names and keep only the ones you need:
+
+```js
+for (const [k, v] of Object.entries(e.detail)) if (form.elements[k]) form.elements[k].value = v ?? "";
 ```
 
 **React**
@@ -75,6 +82,38 @@ await engine.parseNik("3171014501909001");
 
 TypeScript types are included (`KtpResult`, `KtpCaptureState`, ...).
 
+## The result
+
+Field names follow Indonesian KTP OCR APIs (VIDA, GLAIR), so existing code usually fits. Dates are `DD-MM-YYYY`, as
+on the card. Unreadable fields are `null`.
+
+```json
+{
+  "nik": "3171014501909001", "nik_valid": true, "nama": "SITI AMINAH",
+  "tempat_lahir": "JAKARTA", "tanggal_lahir": "05-01-1990", "jenis_kelamin": "PEREMPUAN", "golongan_darah": "O",
+  "alamat": "JL. MERDEKA NO. 1", "rt_rw": "001/002", "kelurahan_desa": "GAMBIR", "kecamatan": "GAMBIR",
+  "kabupaten_kota": "KOTA ADMINISTRASI JAKARTA PUSAT", "provinsi": "DAERAH KHUSUS IBUKOTA JAKARTA",
+  "agama": "ISLAM", "status_perkawinan": "KAWIN", "pekerjaan": "KARYAWAN SWASTA", "kewarganegaraan": "WNI",
+  "berlaku_hingga": "SEUMUR HIDUP", "kota_terbit": "KOTA ADMINISTRASI JAKARTA PUSAT", "tanggal_terbit": "12-08-2020",
+  "kode_wilayah": "3171011001",
+  "perlu_dicek": { "tanggal_lahir": ["from_nik"] },
+  "info": { "is_ktp": true, "ms": 2300, "versi": "0.1.0" },
+  "card": "Blob (image/jpeg)"
+}
+```
+
+`perlu_dicek` lists fields worth a second look, with reason codes. Your app words them for its users:
+
+| Code | Meaning |
+|---|---|
+| `nik_mismatch` | The card disagrees with what the NIK encodes (birth date, sex). One of them was misread. |
+| `from_nik` | The printed value was unreadable, so it was filled from the NIK. |
+| `low_confidence` | Name or address: the reader was unsure of at least one character, often from blur or glare. On held-out photos this flag catches about 3 in 4 wrong names. |
+
+Treat the result as user input on your server: users can edit your form. `nikValid` and `nikConflicts` from
+`ktp-kit` run in Node for the same checks. The [docs page](https://ktp-kit.khusyasy.my.id/docs) has the full field table and
+recipes for forms and servers.
+
 **Node / command line**
 
 ```bash
@@ -87,10 +126,8 @@ npx ktp-kit read photos/*.jpg --csv > ktp.csv
 The element ships with a default look, with icon buttons (each has a label for screen readers). Change it with:
 
 - CSS variables: `--ktp-accent`, `--ktp-ok`, `--ktp-warn`, `--ktp-bg`, `--ktp-fg`, `--ktp-panel` (buttons and hint
-  over the camera), `--ktp-surface` (result background), `--ktp-muted`, `--ktp-line`, `--ktp-field` (input
-  background), `--ktp-radius`, `--ktp-font`, `--ktp-mono` (the NIK)
-- `::part(...)`: video, hint, badge, actions, button, upload, shutter, retake, result, notice, card, form, field,
-  label, input, nik (the NIK input)
+  over the camera), `--ktp-surface` (result background), `--ktp-muted`, `--ktp-font`
+- `::part(...)`: video, hint, badge, actions, button, upload, shutter, retake, result, notice, card
 - the `data-state` attribute (searching, adjust, hold, reading, done, error).
 
 With Tailwind v4, all three work from classes:
@@ -103,7 +140,7 @@ With Tailwind v4, all three work from classes:
 
 The frame takes the camera's shape. It also sets `--ktp-aspect` (width ÷ height, a number) for sizing with `calc()`.
 
-Add `check-ktp` to also warn when a photo doesn't look like a KTP (experimental), `unstyled` to keep only the layout, `form="false"` to skip the built-in form, `upload="false"` to hide uploads.
+Add `check-ktp` to also warn when a photo doesn't look like a KTP (experimental), `unstyled` to keep only the layout, `upload="false"` to hide uploads.
 
 ## Speed: allow several cores
 
@@ -144,9 +181,12 @@ and random letters. Regions come from the public region code list. Lines are dra
 tilted, darkened and given glare, like phone photos. Training started from the stock PP-OCRv6 tiny weights. No real
 KTP photo, NIK or name was used to train it, so the model files hold no one's data.
 
-On 2,400 generated lines not used for training, 92% of NIK lines and 86% of all lines are read exactly. Real photos
-vary more than generated ones, so try it on your own cards before you rely on it. Names are the weakest field: let
-users correct them.
+On 2,400 generated lines never used for training or for choosing the model, ktp-kit reads 91% of NIK lines and 81.5%
+of all text lines exactly. The general PaddleOCR PP-OCRv6 small model reads 92% and 51% of the same lines. The data,
+labels and scripts are in [benchmark/](benchmark/), so you can rerun this or test another reader. The generator makes
+lines hard on purpose (blur, fading, worn print), and real photos vary in other ways, so try it on your own cards before
+you rely on it. Names are the weakest field: check `perlu_dicek` and
+let users correct them.
 
 ## License
 

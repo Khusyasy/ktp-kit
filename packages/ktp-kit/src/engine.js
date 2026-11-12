@@ -1,7 +1,7 @@
 // The engine: downloads the models once (stored on the device with the Cache API), then reads KTPs locally.
 // Works in the browser and in Node (pass `load` to read files from disk). Nothing is ever uploaded.
 import {readCard, readUpload, warpCard, orderCorners} from "./reader.js";
-import {Wilayah, nikConflicts, ktpLabels} from "./ktp.js";
+import {Wilayah, fieldNotes, fieldConfidence, ktpLabels} from "./ktp.js";
 import {parseNik} from "./nik.js";
 
 // Files expected under `base` (copy them with `npx ktp-kit assets <dir>`). The CLI compresses them (.br brotli,
@@ -17,6 +17,18 @@ export const FILES = {
 };
 // Bump with every model change, or devices keep the old files.
 const CACHE = "ktp-kit-v5";
+export const VERSION = "0.1.0";  // = package.json (scripts/check.mjs), reported in each result for audit logs
+
+// Result keys in card order. Names follow Indonesian KTP OCR APIs (VIDA, GLAIR); the parser's own names differ for
+// two fields, kept so it stays line-for-line with ktp.py.
+const KEYS = ["nik", "nik_valid", "nama", "tempat_lahir", "tanggal_lahir", "jenis_kelamin", "golongan_darah", "alamat",
+  "rt_rw", "kelurahan_desa", "kecamatan", "kabupaten_kota", "provinsi", "agama", "status_perkawinan", "pekerjaan",
+  "kewarganegaraan", "berlaku_hingga", "kota_terbit", "tanggal_terbit", "kode_wilayah"];
+const RENAME = {gol_darah: "golongan_darah", kel_desa: "kelurahan_desa"};
+const outName = f => RENAME[f] || f;
+// Below this, name and address get "low_confidence". Held-out photos: catches 73% of wrong names while flagging 13%
+// of right ones. Hand-read cards: 14 of 15 wrong addresses, 9 of 43 right ones.
+const LOW_CONFIDENCE = 0.6;
 
 // gzip starts with 1f 8b. Hosts that already unpacked a .gz (Content-Encoding) hand over plain bytes: keep them.
 async function gunzip(b) {
@@ -24,7 +36,7 @@ async function gunzip(b) {
   if (u[0] !== 0x1f || u[1] !== 0x8b) return b;
   return new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
 }
-const stored = name => name.replace(/.(gz|br)$/, "");  // the file's own name, before compression
+const stored = name => name.replace(/\.(gz|br)$/, "");  // the file's own name, before compression
 // Stored on the device; the 24 KB runtime loader is left to the HTTP cache (it can't run from a blob: URL).
 const CACHED = Object.values(FILES).filter(f => f !== FILES.mjs);
 
@@ -38,10 +50,10 @@ const CACHED = Object.values(FILES).filter(f => f !== FILES.mjs);
  * @property {string|null} tempat_lahir
  * @property {string|null} tanggal_lahir  DD-MM-YYYY
  * @property {string|null} jenis_kelamin  LAKI-LAKI | PEREMPUAN
- * @property {string|null} gol_darah      A, B, AB, O (+/-) or "-"
+ * @property {string|null} golongan_darah A, B, AB, O (+/-) or "-"
  * @property {string|null} alamat
  * @property {string|null} rt_rw          000/000
- * @property {string|null} kel_desa
+ * @property {string|null} kelurahan_desa
  * @property {string|null} kecamatan
  * @property {string|null} kabupaten_kota
  * @property {string|null} provinsi
@@ -52,11 +64,13 @@ const CACHED = Object.values(FILES).filter(f => f !== FILES.mjs);
  * @property {string|null} berlaku_hingga   SEUMUR HIDUP or DD-MM-YYYY
  * @property {string|null} kota_terbit
  * @property {string|null} tanggal_terbit
- * @property {string|null} [kode_wilayah]   official region code of the most specific region matched
- * @property {string[]} perlu_dicek         fields that disagree with what the NIK encodes
- * @property {boolean} isKtp                experimental: false when the card shows few KTP labels and no valid NIK
+ * @property {string|null} kode_wilayah    official region code of the most specific region matched
+ * @property {Object<string, string[]>} perlu_dicek  fields worth a second look, with reasons:
+ *   nik_mismatch (disagrees with the NIK), from_nik (unreadable, filled from the NIK), low_confidence (name or
+ *   address: the reader was unsure of at least one character)
+ * @property {{is_ktp: boolean, ms: number, versi: string}} info  is_ktp (experimental): false when the card shows
+ *   few KTP labels and no valid NIK. ms: reading time on this device. versi: ktp-kit version.
  * @property {RgbaImage} card               the straightened 856x540 card (the element turns it into a JPEG Blob)
- * @property {number} ms                    reading time on this device
  */
 
 /**
@@ -187,7 +201,13 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
   const result = r => {
     const isKtp = !!r && (r.fields.nik_valid || ktpLabels(r.lines) >= 3);  // a KTP shows most of its 10 printed labels
     if (!r || (!r.fields.nik && !isKtp)) return null;
-    return {...r.fields, perlu_dicek: nikConflicts(r.fields), raw: undefined, isKtp, card: r.card, ms: r.ms};
+    const f = Object.fromEntries(Object.entries(r.fields).map(([k, v]) => [outName(k), v]));
+    const notes = fieldNotes(r.fields);
+    for (const [k, c] of Object.entries(fieldConfidence(r.fields, r.lines)))
+      if (c < LOW_CONFIDENCE) (notes[k] ||= []).push("low_confidence");
+    return {...Object.fromEntries(KEYS.map(k => [k, f[k] ?? null])),
+      perlu_dicek: Object.fromEntries(Object.entries(notes).map(([k, v]) => [outName(k), v])),
+      info: {is_ktp: isKtp, ms: r.ms, versi: VERSION}, card: r.card};
   };
 
   return {

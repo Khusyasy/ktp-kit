@@ -6,8 +6,8 @@ import * as ort from "onnxruntime-web/wasm";
 import {createKtpReader, createCapture} from "ktp-kit";
 import "ktp-kit/element";
 
-/** Ready-made capture UI. Props: base, lang ("id" | "en"), form, upload, unstyled, className, style, onResult, onStateChange, onError. */
-export function KtpCapture({onResult, onStateChange, onError, base, lang, form = true, upload = true, unstyled, className, style}) {
+/** Ready-made capture UI. Props: base, lang ("id" | "en"), upload, unstyled, className, style, onResult, onStateChange, onError. */
+export function KtpCapture({onResult, onStateChange, onError, base, lang, upload = true, unstyled, className, style}) {
   const ref = useRef(null), handlers = useRef({});
   handlers.current = {onResult, onStateChange, onError};
   useEffect(() => {
@@ -17,7 +17,7 @@ export function KtpCapture({onResult, onStateChange, onError, base, lang, form =
     return () => offs.forEach(f => f());
   }, []);
   return createElement("ktp-capture", {ref, base, lang, className, style,
-    form: form ? undefined : "false", upload: upload ? undefined : "false", unstyled: unstyled ? "" : undefined});
+    upload: upload ? undefined : "false", unstyled: unstyled ? "" : undefined});
 }
 
 /**

@@ -141,7 +141,7 @@ export function nikBirthDate(nik, text, now = new Date().getFullYear()) {
   let day = +nik.slice(6, 8);
   const yy = +nik.slice(10, 12);
   if (day > 40) day -= 40;
-  const seen = [...translate(text || "", TO_DIGIT).matchAll(/(?<!d)(19|20)(?=d)/g)];
+  const seen = [...translate(text || "", TO_DIGIT).matchAll(/(?<!\d)(19|20)(?=\d)/g)];
   let century = seen.length ? +seen.at(-1)[1] * 100 : (2000 + yy <= now - 17 ? 2000 : 1900);
   if (century + yy > now) century = 1900;
   return `${pad(day, 2)}-${nik.slice(8, 10)}-${century + yy}`;
@@ -351,6 +351,33 @@ export function ktpLabels(items) {
   const texts = items.map(([t]) => letters(t));
   return KTP_LABELS.filter(l => texts.some(t => t.length >= 3 && ratio(t.slice(0, l.length + 2), l) >= 0.75 ||
     t.length > l.length && ratio(t.slice(0, l.length), l) >= 0.8)).length;
+}
+
+// Why a field needs a second look, from extractFields' output: {field: [code, ...]}, internal field names.
+//   nik_mismatch: disagrees with what the NIK encodes   from_nik: unreadable, filled from the NIK
+// Snapping to official names and lists is not flagged: on 60 hand-read cards it was never wrong (0 of 44).
+// Browser API only, so there is no Python twin.
+export function fieldNotes(out) {
+  const raw = out.raw || {}, notes = {}, add = (f, code) => (notes[f] ||= []).push(code);
+  for (const f of nikConflicts(out)) add(f, "nik_mismatch");
+  if (out.tanggal_lahir && !date(raw.tempat_tgl_lahir)) add("tanggal_lahir", "from_nik");
+  if (out.jenis_kelamin && !snap(raw.jenis_kelamin, JENIS_KELAMIN, 0.6)) add("jenis_kelamin", "from_nik");
+  return notes;
+}
+
+// Reader confidence for name and address: the lowest of the OCR lines their raw text came from (items [text, box,
+// conf]; a line counts when its value part, after any label and ':', is inside the field's raw text). Other fields
+// are snapped to official names or lists, which repairs low-confidence reads, so their confidence says little.
+export function fieldConfidence(out, items) {
+  const raw = out.raw || {}, conf = {};
+  for (const f of ["nama", "alamat"]) {
+    const v = letters(raw[f]);
+    if (!v) continue;
+    const cs = items.filter(([t, , c]) => c !== undefined && letters(t.replace(/^.*[:;]/, "")).length >= 2 &&
+      v.includes(letters(t.replace(/^.*[:;]/, "")))).map(([, , c]) => c);
+    if (cs.length) conf[f] = Math.min(...cs);
+  }
+  return conf;
 }
 
 // All fields from a flattened upright card's OCR items. respace (optional, may be async) re-reads free text.

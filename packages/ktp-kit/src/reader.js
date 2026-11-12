@@ -219,19 +219,21 @@ function lineInput(g, cw, ch, b) { // train_rec.line_crop + to_input("tiny") on 
   return [x, W];
 }
 
-function decode(logp, T, C) { // greedy CTC
-  let out = "", prev = 0;
+// Greedy CTC. conf: probability of the least certain character read (1 for an empty line).
+function decode(logp, T, C) {
+  let out = "", prev = 0, conf = 1;
   for (let t = 0; t < T; t++) {
     let k = 0;
     for (let c = 1; c < C; c++) if (logp[t * C + c] > logp[t * C + k]) k = c;
-    if (k !== prev && k !== 0) out += CHARS[k - 1];
+    if (k !== prev && k !== 0) { out += CHARS[k - 1]; conf = Math.min(conf, Math.exp(logp[t * C + k])); }
     prev = k;
   }
-  return out;
+  return [out, conf];
 }
 
 const breathe = () => new Promise(r => setTimeout(r, 0)); // let the page repaint between steps
 
+// [text, conf], or null when the box is too small to read
 async function readLine(g, card, b, {rec, ort}) {
   const input = lineInput(g, card.w, card.h, b);
   if (!input) return null;
@@ -239,14 +241,15 @@ async function readLine(g, card, b, {rec, ort}) {
   return decode(y.data, y.dims[1], y.dims[2]);
 }
 
+// OCR items [text, box, conf]. The parser only uses text and box, like ktp.py.
 async function items(card, g, models, progress) {
   progress("Mencari teks...");
   await breathe();
   const boxes = await findLines(card, models.det, models.ort), out = [];
   for (const [i, b] of boxes.entries()) {
     if (i % 4 === 0) { progress(`Membaca baris ${i + 1}/${boxes.length}...`); await breathe(); }
-    const text = await readLine(g, card, b, models);
-    if (text !== null) out.push([text, b]);
+    const read = await readLine(g, card, b, models);
+    if (read !== null) out.push([read[0], b, read[1]]);
   }
   return out;
 }
@@ -264,7 +267,7 @@ function respacer(card, g, lines, models) {
       const xs = b.map(p => p[0]), ys = b.map(p => p[1]), pad = Math.trunc((Math.max(...ys) - Math.min(...ys)) * 0.3);
       const x0 = Math.max(Math.trunc(Math.min(...xs)) - pad, 0), x1 = Math.min(Math.trunc(Math.max(...xs)) + pad, card.w - 1);
       const y0 = Math.max(Math.trunc(Math.min(...ys)) - pad, 0), y1 = Math.min(Math.trunc(Math.max(...ys)) + pad, card.h - 1);
-      let got = await readLine(g, card, [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], models);
+      let got = (await readLine(g, card, [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], models))?.[0];
       got = trim(got || "").replace(/\s+/g, " ");
       const spaces = s => s.split(" ").length;
       if (got && spaces(got) > spaces(t) && alnum(got) === alnum(t)) text = text.replace(t, () => got);
