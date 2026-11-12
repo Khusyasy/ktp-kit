@@ -16,7 +16,7 @@ codes and NIK checks, in the browser or Node. The photo is never uploaded, and a
   the reason.
 - **Plug and play, or headless:** a styled `<ktp-capture>` web component, React and Vue adapters, or the headless
   controller for your own UI. You get the result once, as JSON. Your form decides which fields to use and edit.
-- **Free for developers and small companies** (see [License](#license)).
+- **Free and open source:** Apache-2.0, commercial use included (see [License](#license)).
 
 Status: **0.1, preview.** Accuracy numbers will be published from a consented test set.
 
@@ -190,9 +190,5 @@ let users correct them.
 
 ## License
 
-Source-available, **free** under either:
-
-- [PolyForm Noncommercial 1.0.0](LICENSES/PolyForm-Noncommercial-1.0.0.md): personal, research, education, charity, government.
-- [PolyForm Small Business 1.0.0](LICENSES/PolyForm-Small-Business-1.0.0.md): companies with fewer than 100 people and under USD 1M revenue.
-
-Larger companies: commercial license, contact luthfik.job@gmail.com. Third-party parts: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+[Apache-2.0](LICENSE.md): free for any use, commercial included, the same license as the PaddleOCR and DocAligner
+models it builds on. Third-party parts: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

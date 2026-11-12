@@ -2,7 +2,7 @@
   "name": "@ktp-kit/vue",
   "version": "0.1.0",
   "description": "Vue 3 component and composable for ktp-kit: read Indonesian KTPs on the user's device.",
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "Apache-2.0",
   "homepage": "https://ktp-kit.khusyasy.my.id",
   "repository": {"type": "git", "url": "git+https://github.com/Khusyasy/ktp-kit.git", "directory": "packages/vue"},
   "author": "Muhammad Luthfi Khusyasy",

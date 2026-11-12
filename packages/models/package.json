@@ -2,7 +2,7 @@
   "name": "@ktp-kit/models",
   "version": "0.1.0",
   "description": "Model files for ktp-kit: card corners (DocAligner, Apache-2.0), text lines (PP-OCRv6 small det, Apache-2.0), KTP line reader (PP-OCRv6 tiny fine-tuned on synthetic KTP lines), region codes (MIT).",
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "Apache-2.0",
   "homepage": "https://ktp-kit.khusyasy.my.id",
   "repository": {"type": "git", "url": "git+https://github.com/Khusyasy/ktp-kit.git", "directory": "packages/models"},
   "author": "Muhammad Luthfi Khusyasy",
@@ -18,6 +18,6 @@
     "README.md"
   ],
   "scripts": {
-    "prepack": "node check.mjs && cp ../../LICENSE.md ../../THIRD_PARTY_NOTICES.md . && cp -r ../../LICENSES ."
+    "prepack": "node check.mjs && cp ../../LICENSE.md ../../THIRD_PARTY_NOTICES.md . && rm -rf LICENSES && cp -r ../../LICENSES ."
   }
 }
