@@ -16,11 +16,11 @@ Download the images: [ktp-kit-bench-synth-v1.zip](https://github.com/Khusyasy/kt
 
 Exact match after upper-casing and collapsing spaces. A blank strip counts when nothing is read.
 
-| Reader | NIK lines | All text lines | Blank strips |
-|---|---|---|---|
-| ktp-kit 0.1.0 (`rec.onnx`, int8) | 90.8% | **81.5%** | **97.0%** |
-| PaddleOCR PP-OCRv6 small (RapidOCR 3.10.0) | **91.6%** | 51.4% | 70.5% |
-| PaddleOCR PP-OCRv6 tiny (RapidOCR 3.10.0) | 87.8% | 48.7% | 71.1% |
+| Reader | NIK lines | All text lines | Blank strips | Model file |
+|---|---|---|---|---|
+| ktp-kit 0.1.0 (`rec.onnx`, int8) | 90.8% | **81.5%** | **97.0%** | **0.7 MB** |
+| PaddleOCR PP-OCRv6 small (RapidOCR 3.10.0) | **91.6%** | 51.4% | 70.5% | 21.2 MB |
+| PaddleOCR PP-OCRv6 tiny (RapidOCR 3.10.0) | 87.8% | 48.7% | 71.1% | 4.5 MB |
 
 PP-OCRv6 tiny is the model ktp-kit's reader was fine-tuned from. All readers get the same cut-out line images and no
 hints. On the NIK the general models are about as good. The gain is on names, addresses and other words, and on not

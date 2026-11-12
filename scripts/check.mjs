@@ -7,7 +7,7 @@ for (const f of files) execFileSync(process.execPath, ["--check", f], {stdio: "i
 const kit = await import("ktp-kit");
 const fields = await kit.extractFields([["3171234567890123", [[300, 90], [700, 90], [700, 120], [300, 120]]]]);
 if (fields.nik !== "3171234567890123" || fields.nik_valid) throw new Error("parser smoke test failed");
-const p = kit.parseNik("3171014501909001");  // made-up NIK: region 317101, born 05-01-1990, female
+const p = kit.parseNik("3171014501909001");  // made-up NIK (sequence 9001, never real): region 317101, born 05-01-1990, female
 if (!p.valid || p.jenis_kelamin !== "PEREMPUAN" || p.tanggal_lahir !== "05-01-1990" || kit.parseNik("3171234567890123").valid)
   throw new Error("parseNik smoke test failed");
 const pkg = JSON.parse(fs.readFileSync("packages/ktp-kit/package.json", "utf8"));
