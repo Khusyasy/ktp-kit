@@ -26,7 +26,7 @@ export const MESSAGES = {
     blur: "Gambar buram, tahan kamera", hold: "Tahan sebentar...", reading: "Membaca KTP di perangkat ini...",
     noCard: "KTP tidak terdeteksi, coba lagi", noCardPhoto: "KTP tidak ditemukan di foto ini. Coba foto lain.",
     failed: "Gagal membaca, coba lagi", badNik: "NIK tidak terbaca. Silakan ambil ulang.",
-    invalidNik: "NIK terbaca tapi tidak valid. Periksa KTP lalu ambil ulang.", notKtp: "Sepertinya ini bukan KTP.",
+    invalidNik: "NIK terbaca tapi tidak valid. Periksa KTP lalu ambil ulang.", notKtp: "Sepertinya ini bukan KTP.", notImage: "Berkas ini bukan foto. Pilih foto JPEG atau PNG.",
     local: s => `Dibaca di perangkat ini dalam ${s} detik. Foto tidak dikirim ke mana pun.`,
     offline: mb => `Siap offline · ${mb} MB tersimpan di perangkat`, download: (p, mb) => `Mengunduh pembaca KTP ${p}% (${mb} MB)`,
     shutter: "Ambil foto", upload: "Unggah foto", retake: "Ambil ulang", check: "cek lagi, tidak cocok dengan NIK",
@@ -38,7 +38,7 @@ export const MESSAGES = {
     blur: "Image is blurry, hold still", hold: "Hold still...", reading: "Reading the KTP on this device...",
     noCard: "No KTP found, try again", noCardPhoto: "No KTP found in this photo. Try another one.",
     failed: "Couldn't read it, try again", badNik: "NIK not readable. Please retake.",
-    invalidNik: "NIK read but not valid. Check the card and retake.", notKtp: "This doesn't look like a KTP.",
+    invalidNik: "NIK read but not valid. Check the card and retake.", notKtp: "This doesn't look like a KTP.", notImage: "This file isn't a photo. Pick a JPEG or PNG.",
     local: s => `Read on this device in ${s} s. The photo was not sent anywhere.`,
     offline: mb => `Ready offline · ${mb} MB stored on this device`, download: (p, mb) => `Downloading KTP reader ${p}% (${mb} MB)`,
     shutter: "Take photo", upload: "Upload photo", retake: "Retake", check: "check again, doesn't match the NIK",
@@ -56,7 +56,7 @@ const canvas = (w, h) => Object.assign(document.createElement("canvas"), {width:
  */
 export function createCapture({video, engine, config = {}}) {
   const cfg = {...DEFAULTS, ...config}, listeners = new Set();
-  let state = {status: "idle"}, session, prev = null, stable = 0, running = false, stream;
+  let state = {status: "idle"}, session, prev = null, stable = 0, running = false, stream, gen = 0, paused = false;
   const set = patch => { state = {...state, ...patch}; listeners.forEach(f => f(state)); };
 
   const S = 256, inX = canvas(S, S).getContext("2d", {willReadFrequently: true}), input = new Float32Array(3 * S * S);
@@ -128,47 +128,88 @@ export function createCapture({video, engine, config = {}}) {
     return {ok: true, hint: "hold", ...info};
   }
 
-  async function loop() {
-    if (!running || state.status === "reading" || state.status === "done") return;
-    const q = await detect(), a = assess(q);
+  // Start (or restart) guidance. Each call ends any older loop, so a retake never runs two loops at once.
+  const kick = () => { const g = ++gen; requestAnimationFrame(() => loop(g)); };
+
+  async function loop(g) {
+    if (g !== gen || !running || state.status === "reading" || state.status === "done") return;
+    let q;
+    try { q = await detect(); } catch (e) { set({status: "error", error: "failed", detail: e}); return; }
+    if (g !== gen) return;
+    const a = assess(q);
     const move = q && prev ? Math.max(...q.map((p, i) => dist(p, prev[i]))) / Math.hypot(video.videoWidth, video.videoHeight) : 1;
     prev = q;
     stable = a.ok && move < cfg.stableMove ? stable + 1 : 0;
     set({status: !q ? "searching" : a.ok ? "hold" : "adjust", hint: a.hint, corners: q, quality: a});
     if (stable >= cfg.stableFrames) return shoot(q);
-    requestAnimationFrame(loop);
+    requestAnimationFrame(() => loop(g));
   }
 
   // preview: an RGBA image to show at once while reading (the straightened card, or the uploaded photo).
-  async function finish(read, preview) {
+  // miss: the error to show when no card is found
+  async function finish(read, preview, miss) {
     set({status: "reading", hint: "reading", step: undefined, preview});
+    // let the screen show this photo before the heavy work starts (it keeps the page busy until it ends)
+    await new Promise(r => { requestAnimationFrame(() => setTimeout(r, 0)); setTimeout(r, 100); });  // 100 ms: hidden tabs get no frames
     try {
       const r = await read(text => set({step: text}));
-      set(r ? {status: "done", result: r} : {status: "error", error: "noCardPhoto"});
+      set(r ? {status: "done", result: r} : {status: "error", error: miss});
       return r;
     } catch (e) {
       set({status: "error", error: "failed", detail: e});
     }
   }
 
+  // One read at a time: a shutter tap just as auto-capture fires, or two uploads, must not start two reads.
+  // The flag is set before the first await, so a second call made in the same moment sees it.
+  let busy = false;
+  const once = fn => async (...a) => {
+    if (busy) return null;
+    busy = true;
+    try { return await fn(...a); } finally { busy = false; }
+  };
+
   /** Take the current frame now (auto-capture calls this too). */
-  async function shoot(q) {
+  const shoot = once(async q => {
     q ??= state.corners ?? await detect();
     if (!q) { set({status: "error", error: "noCard"}); return null; }
     const vw = video.videoWidth, vh = video.videoHeight, cx = canvas(vw, vh).getContext("2d");
     cx.drawImage(video, 0, 0);
     const frame = {w: vw, h: vh, data: cx.getImageData(0, 0, vw, vh).data};
-    return finish(step => engine.readFrame(frame, q, step), warpCard(frame, orderCorners(q)));
-  }
+    return finish(step => engine.readFrame(frame, q, step), warpCard(frame, orderCorners(q)), "noCard");
+  });
 
   /** Read a photo file (gallery / upload) instead of the camera. */
-  async function readFile(fileOrBlob) {
-    const bmp = await createImageBitmap(fileOrBlob, {imageOrientation: "from-image"});
+  const readFile = once(async fileOrBlob => {
+    let bmp;
+    try { bmp = await createImageBitmap(fileOrBlob, {imageOrientation: "from-image"}); }
+    catch (e) { set({status: "error", error: "notImage", detail: e}); return null; }
     const f = Math.min(1, 3000 / Math.max(bmp.width, bmp.height)), w = Math.round(bmp.width * f), h = Math.round(bmp.height * f);
     const cx = canvas(w, h).getContext("2d");
     cx.drawImage(bmp, 0, 0, w, h);
     const img = {w, h, data: cx.getImageData(0, 0, w, h).data};
-    return finish(step => engine.readImage(img, step), img);
+    return finish(step => engine.readImage(img, step), img, "noCardPhoto");
+  });
+
+  async function openCamera() {
+    stream = await navigator.mediaDevices.getUserMedia({audio: false,
+      video: {facingMode: {ideal: "environment"}, width: {ideal: 1920}, height: {ideal: 1080}}});
+    video.srcObject = stream;
+    video.setAttribute("playsinline", "");
+    video.muted = true;
+    await video.play();
+    running = true; prev = null; stable = 0;
+  }
+  function closeCamera() { running = false; gen++; stream?.getTracks().forEach(t => t.stop()); stream = undefined; }
+
+  // Turn the camera off while the tab is hidden (battery, and the camera light), back on when it returns.
+  async function onVisibility() {
+    if (document.hidden && stream) { closeCamera(); paused = true; }
+    else if (!document.hidden && paused) {
+      paused = false;
+      try { await openCamera(); if (state.status !== "reading" && state.status !== "done") kick(); }
+      catch (e) { set({status: "error", error: "noCamera", detail: e}); }
+    }
   }
 
   return {
@@ -179,24 +220,22 @@ export function createCapture({video, engine, config = {}}) {
       set({status: "starting", hint: "loading"});
       // Download the reader right away, camera or not: uploads and the offline badge must work without a camera.
       engine.preload(p => set({download: p})).then(() => engine.status()).then(o => set({offline: o}), () => {});
+      document.addEventListener("visibilitychange", onVisibility);
       try {
         session = await engine.detector();
-        stream = await navigator.mediaDevices.getUserMedia({audio: false,
-          video: {facingMode: {ideal: "environment"}, width: {ideal: 1920}, height: {ideal: 1080}}});
-        video.srcObject = stream;
-        video.setAttribute("playsinline", "");
-        video.muted = true;
-        await video.play();
-        running = true; prev = null; stable = 0;
+        await openCamera();
         set({status: "searching", hint: "find"});
-        loop();
+        kick();
       } catch (e) {
         set({status: "error", error: e.name === "NotAllowedError" || e.name === "NotFoundError" ? "noCamera" : "failed", detail: e});
       }
     },
-    stop() { running = false; stream?.getTracks().forEach(t => t.stop()); set({status: "idle"}); },
+    stop() {
+      document.removeEventListener("visibilitychange", onVisibility);
+      closeCamera(); paused = false; set({status: "idle"});
+    },
     shoot, readFile,
     /** Back to the camera after a result or an error. */
-    retake() { prev = null; stable = 0; set({status: "searching", hint: "find", result: undefined, error: undefined}); requestAnimationFrame(loop); },
+    retake() { prev = null; stable = 0; set({status: "searching", hint: "find", result: undefined, error: undefined}); kick(); },
   };
 }

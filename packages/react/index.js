@@ -27,14 +27,14 @@ export function KtpCapture({onResult, onStateChange, onError, base, lang, form =
 export function useKtpCapture({base = "/ktp-kit/", config} = {}) {
   const videoRef = useRef(null), [state, setState] = useState({status: "idle"});
   const engine = useMemo(() => createKtpReader({base, ort}), [base]);
-  const capture = useRef(null);
+  const capture = useRef(null), configKey = JSON.stringify(config ?? {});
   useEffect(() => {
     const c = createCapture({video: videoRef.current, engine, config});
     capture.current = c;
     const off = c.subscribe(setState);
     c.start();
     return () => { off(); c.stop(); };
-  }, [engine]);
+  }, [engine, configKey]);  // new thresholds restart the capture
   return {
     videoRef, state, engine,
     shoot: () => capture.current?.shoot(),
