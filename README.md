@@ -193,5 +193,5 @@ let users correct them.
 
 ## License
 
-[Apache-2.0](LICENSE.md): free for any use, commercial included, the same license as the PaddleOCR and DocAligner
+[Apache-2.0](LICENSE): free for any use, commercial included, the same license as the PaddleOCR and DocAligner
 models it builds on. Third-party parts: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

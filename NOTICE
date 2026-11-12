@@ -1,0 +1,8 @@
+ktp-kit
+Copyright 2026 Muhammad Luthfi Khusyasy
+
+The code in this repository and the model files distributed with it (such as rec.onnx in @ktp-kit/models) are
+licensed under the Apache License, Version 2.0 (see LICENSE). The model files carry a hidden watermark that
+identifies them.
+
+Third-party parts keep their own licenses: see THIRD_PARTY_NOTICES.md and the LICENSES folder.

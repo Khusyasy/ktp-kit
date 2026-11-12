@@ -59,7 +59,8 @@
   "files": [
     "src",
     "bin",
-    "LICENSE.md",
+    "LICENSE",
+    "NOTICE",
     "LICENSES",
     "THIRD_PARTY_NOTICES.md",
     "README.md",
@@ -76,7 +77,7 @@
     "./src/element.js"
   ],
   "scripts": {
-    "prepack": "npm run types --prefix ../.. && cp ../../LICENSE.md ../../README.md ../../THIRD_PARTY_NOTICES.md ../../PRIVACY.md . && rm -rf LICENSES && cp -r ../../LICENSES ."
+    "prepack": "npm run types --prefix ../.. && cp ../../LICENSE ../../NOTICE ../../README.md ../../THIRD_PARTY_NOTICES.md ../../PRIVACY.md . && rm -rf LICENSES && cp -r ../../LICENSES ."
   },
   "types": "./types/index.d.ts"
 }
