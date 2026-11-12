@@ -38,6 +38,7 @@ for (const page of ["index.html", "docs.html"]) {
     .replaceAll("/apps/demo/app.build.css", "/app.css");
   fs.writeFileSync(path.join(dist, page), html);
 }
+fs.copyFileSync(path.join(root, "apps/demo/favicon.ico"), path.join(dist, "favicon.ico"));  // for clients that skip the inline SVG icon
 fs.copyFileSync(path.join(root, "apps/demo/sw.js"), path.join(dist, "sw.js"));  // keeps the page itself for offline reloads
 
 // 5. Headers: cross-origin isolation everywhere, long caching for the big files (their names change with versions).
