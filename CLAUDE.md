@@ -12,8 +12,8 @@ ktp-kit reads Indonesian KTPs on the user's device (browser or Node). npm worksp
 - `apps/demo`: `npm run demo` (needs `npx ktp-kit assets apps/demo/ktp-kit` first).
 
 Rules:
-- Plain JavaScript with JSDoc, no build step; `.d.ts` files are generated at release.
+- Plain JavaScript with JSDoc, no build step. `.d.ts` files are generated at release.
 - `reader.js` mirrors RapidOCR's detector settings and box steps, and `ktp.js` is checked field-by-field against a
-  reference implementation; keep their behaviour unchanged unless a measured test says otherwise.
+  reference implementation. Keep their behaviour unchanged unless a measured test says otherwise.
 - Never add real KTP photos, NIKs or names to the repo, tests or docs. Use the specimen NIK 3171234567890123 or made-up data.
 - Run `npm run check` (syntax) before committing.

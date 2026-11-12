@@ -3,18 +3,24 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
+import {spawn} from "node:child_process";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const assets = path.join(root, "apps/demo/ktp-kit");  // filled by: npx ktp-kit assets apps/demo/ktp-kit
 // Self-hosted fonts (cross-origin isolation blocks font CDNs): /fonts/<file> from the @fontsource packages.
-const FONT_DIRS = ["node_modules/@fontsource-variable/plus-jakarta-sans/files", "node_modules/@fontsource/ibm-plex-mono/files"];
+const FONT_DIRS = ["node_modules/@fontsource-variable/ibm-plex-sans/files", "node_modules/@fontsource/ibm-plex-mono/files"];
 const font = name => FONT_DIRS.map(d => path.join(root, d, name)).find(f => fs.existsSync(f));
 const types = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript",
   ".wasm": "application/wasm", ".csv": "text/csv", ".json": "application/json", ".woff2": "font/woff2", ".css": "text/css"};
 
+// Tailwind rebuilds apps/demo/app.build.css whenever the page or app.css changes.
+spawn(process.execPath, [path.join(root, "node_modules/@tailwindcss/cli/dist/index.mjs"), "-i", path.join(root, "apps/demo/app.css"),
+  "-o", path.join(root, "apps/demo/app.build.css"), "--watch=always"], {cwd: root, stdio: "inherit"});
+
 http.createServer((req, res) => {
   const url = decodeURIComponent(new URL(req.url, "http://x").pathname);
   const file = url === "/" ? path.join(root, "apps/demo/index.html")
+    : url === "/sw.js" ? path.join(root, "apps/demo/sw.js")
     : url.startsWith("/fonts/") ? font(path.basename(url)) ?? ""
     : url.startsWith("/ktp-kit/") ? path.join(assets, url.slice(9)) : path.join(root, url);
   if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end(); }
