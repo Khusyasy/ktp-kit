@@ -192,8 +192,22 @@ export function createCapture({video, engine, config = {}}) {
   });
 
   async function openCamera() {
-    stream = await navigator.mediaDevices.getUserMedia({audio: false,
-      video: {facingMode: {ideal: "environment"}, width: {ideal: 1920}, height: {ideal: 1080}}});
+    const size = {width: {ideal: 1920}, height: {ideal: 1080}}, open = video => navigator.mediaDevices.getUserMedia({audio: false, video});
+    stream = await open({facingMode: {ideal: "environment"}, ...size});
+    // Phones with several back lenses: Chrome on Android may open the ultra-wide (no autofocus, soft up close).
+    // Android numbers the main back camera 0 and Chrome labels it "camera2 0, facing back" (newer: "camera 0, facing back"), so move to the lowest
+    // number. Other labels (iPhone, Firefox, desktops) keep the browser's choice.
+    // ponytail: label convention, as in Scandit's web SDK. A phone that breaks it gets the browser's choice back.
+    const lens = label => +(/camera2? (\d+), facing back/.exec(label)?.[1] ?? NaN);
+    const now = lens(stream.getVideoTracks()[0]?.label);
+    if (now > 0) {
+      const main = (await navigator.mediaDevices.enumerateDevices())
+        .filter(d => d.kind === "videoinput" && lens(d.label) < now).sort((a, b) => lens(a.label) - lens(b.label))[0];
+      if (main) {
+        stream.getTracks().forEach(t => t.stop());  // many phones can't open two cameras at once
+        stream = await open({deviceId: {exact: main.deviceId}, ...size}).catch(() => open({facingMode: {ideal: "environment"}, ...size}));
+      }
+    }
     video.srcObject = stream;
     video.setAttribute("playsinline", "");
     video.muted = true;
