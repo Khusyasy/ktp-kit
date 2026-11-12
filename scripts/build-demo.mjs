@@ -20,10 +20,11 @@ try {
   process.exit(1);  // the CLI already said what is missing
 }
 
-// 3. Design tokens and self-hosted fonts.
-fs.copyFileSync(path.join(root, "apps/demo/tokens.css"), path.join(dist, "tokens.css"));
+// 3. Styles (Tailwind v4, minified) and the self-hosted font.
+execFileSync(process.execPath, [path.join(root, "node_modules/@tailwindcss/cli/dist/index.mjs"), "-i", path.join(root, "apps/demo/app.css"),
+  "-o", path.join(dist, "app.css"), "--minify"], {stdio: "inherit"});
 fs.mkdirSync(path.join(dist, "fonts"));
-for (const [dir, name] of [["@fontsource-variable/plus-jakarta-sans", "plus-jakarta-sans-latin-wght-normal.woff2"],
+for (const [dir, name] of [["@fontsource-variable/ibm-plex-sans", "ibm-plex-sans-latin-wght-normal.woff2"],
   ["@fontsource/ibm-plex-mono", "ibm-plex-mono-latin-400-normal.woff2"], ["@fontsource/ibm-plex-mono", "ibm-plex-mono-latin-500-normal.woff2"]])
   fs.copyFileSync(path.join(root, "node_modules", dir, "files", name), path.join(dist, "fonts", name));
 
@@ -31,8 +32,9 @@ for (const [dir, name] of [["@fontsource-variable/plus-jakarta-sans", "plus-jaka
 const html = fs.readFileSync(path.join(root, "apps/demo/index.html"), "utf8")
   .replaceAll("/node_modules/onnxruntime-web/dist/ort.wasm.min.mjs", "/lib/ort.wasm.min.mjs")
   .replaceAll("/packages/ktp-kit/src/", "/lib/ktp-kit/")
-  .replaceAll("/apps/demo/tokens.css", "/tokens.css");
+  .replaceAll("/apps/demo/app.build.css", "/app.css");
 fs.writeFileSync(path.join(dist, "index.html"), html);
+fs.copyFileSync(path.join(root, "apps/demo/sw.js"), path.join(dist, "sw.js"));  // keeps the page itself for offline reloads
 
 // 5. Headers: cross-origin isolation everywhere, long caching for the big files (their names change with versions).
 fs.writeFileSync(path.join(dist, "_headers"), `/*

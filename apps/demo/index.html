@@ -4,232 +4,247 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ktp-kit</title>
-<meta name="description" content="Baca KTP langsung di perangkat pengguna: 16 kolom, kode wilayah resmi, cek NIK. Tanpa API OCR, tanpa upload, bisa offline.">
-<link rel="stylesheet" href="/apps/demo/tokens.css">
+<meta name="description" content="Baca KTP di browser. Foto tidak dikirim ke server. Setelah diunduh sekali, tetap jalan tanpa internet.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M1.5%208.75V5.25h3.5M19%205.25h3.5v3.5M22.5%2015.25v3.5H19M5%2018.75H1.5v-3.5%22%20fill%3D%22none%22%20stroke%3D%22%23579be8%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22square%22%2F%3E%3Cg%20fill%3D%22%23579be8%22%3E%3Crect%20x%3D%224.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2210.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2216.5%22%20y%3D%2210.75%22%20width%3D%223%22%20height%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<link rel="stylesheet" href="/apps/demo/app.build.css">
 <script type="importmap">
   {"imports": {"onnxruntime-web/wasm": "/node_modules/onnxruntime-web/dist/ort.wasm.min.mjs",
                "ktp-kit": "/packages/ktp-kit/src/index.js", "ktp-kit/element": "/packages/ktp-kit/src/element.js"}}
 </script>
 <script type="module" src="/packages/ktp-kit/src/element.js"></script>
-<style>
-  * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 var(--step-0)/1.6 var(--font-sans);
-         padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-  a { color: var(--accent); text-underline-offset: 3px; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-  .wrap { max-width: 1120px; margin: 0 auto; }
-  .mono, code, pre, .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-
-  /* header */
-  header.top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
-               padding-block: var(--space-6); border-bottom: 1px solid var(--line); }
-  .mark { font-weight: 800; font-size: var(--step-1); letter-spacing: -0.02em; color: var(--ink); text-decoration: none; }
-  .mark span { color: var(--accent); }
-  nav { display: flex; gap: var(--space-6); font-size: var(--step--1); font-weight: 600; }
-  nav a { color: var(--muted); text-decoration: none; }
-  nav a:hover { color: var(--ink); }
-
-  /* hero: proof first */
-  .hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); column-gap: var(--space-12);
-          row-gap: var(--space-8); grid-template-areas: "intro demo" "code demo"; align-items: start;
-          padding-block: var(--space-12) var(--space-16); }
-  .intro { grid-area: intro; } .demo { grid-area: demo; } .snippet { grid-area: code; }
-  .hero > * { min-width: 0; }
-  .tag { display: inline-flex; gap: var(--space-2); align-items: center; font-size: var(--step--1); font-weight: 600;
-         color: var(--muted); letter-spacing: 0.02em; }
-  .tag b { color: var(--ink); font-weight: 700; }
-  h1 { font-size: var(--step-3); line-height: 1.04; letter-spacing: -0.035em; font-weight: 800; margin: var(--space-4) 0;
-       text-wrap: balance; }
-  .lead { font-size: var(--step-1); line-height: 1.5; color: var(--muted); max-width: 34ch; margin: 0 0 var(--space-8); }
-  .lead strong { color: var(--ink); font-weight: 700; }
-
-  /* the one signature move */
-  .resolve { animation: resolve var(--resolve-dur) var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms); }
-  h1 .w { display: inline-block; }
-  @keyframes resolve {
-    from { filter: blur(7px); opacity: 0.3; font-weight: 250; letter-spacing: 0.03em; }
-    to   { filter: blur(0); opacity: 1; }
-  }
-  @media (prefers-reduced-motion: reduce) { .resolve { animation: none; } }
-
-  /* proof strip */
-  .proof { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-block: 1px solid var(--line); margin: 0; }
-  .proof div { padding: var(--space-4) var(--space-3) var(--space-4) 0; }
-  .proof div + div { padding-left: var(--space-4); border-left: 1px solid var(--line); }
-  .proof dt { font-size: var(--step--1); color: var(--muted); }
-  .proof dd { margin: var(--space-1) 0 0; font: 500 var(--step-1)/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
-  .proof dd.ok { color: var(--ok); }
-  .proof dd.text { font-family: var(--font-sans); font-weight: 700; font-size: var(--step-0); padding-top: 3px; }
-
-  /* snippet */
-  .snippet { border-radius: var(--radius); background: var(--code-bg); color: var(--code-ink); overflow: hidden; }
-  .tabs { display: flex; align-items: center; gap: var(--space-1); padding: var(--space-2); border-bottom: 1px solid #ffffff1a; }
-  .tabs button { font: 600 var(--step--1) var(--font-sans); color: #9fb0ba; background: none; border: 0; padding: 6px 10px;
-                 border-radius: var(--radius-sm); cursor: pointer; }
-  .tabs button[aria-selected="true"] { color: #fff; background: #ffffff14; }
-  .tabs .copy { margin-left: auto; }
-  .snippet pre { margin: 0; padding: var(--space-4); overflow-x: auto; font-size: var(--step--1); line-height: 1.7; }
-
-  /* demo */
-  .demo { display: grid; gap: var(--space-3); }
-  .frame { border: 1px solid var(--line); border-radius: calc(var(--radius) + 4px); padding: 6px; background: var(--surface);
-           box-shadow: 0 1px 0 var(--line), 0 24px 48px -32px #0d141855; }
-  ktp-capture { --ktp-accent: var(--accent); --ktp-ok: var(--ok); --ktp-warn: var(--warn); --ktp-radius: 8px;
-                --ktp-font: var(--font-sans); border-radius: var(--radius); height: min(68vh, 560px); aspect-ratio: auto; }
-  .note { font-size: var(--step--1); color: var(--muted); margin: 0; }
-
-  section { padding-block: var(--space-16); border-top: 1px solid var(--line); }
-  h2 { font-size: var(--step-2); letter-spacing: -0.02em; line-height: 1.2; margin: 0 0 var(--space-2); text-wrap: balance; }
-  .sub { color: var(--muted); margin: 0 0 var(--space-8); max-width: var(--measure); }
-
-  /* result: laid out like the card's own rows, without imitating the card */
-  .result { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: var(--space-12); align-items: start; }
-  .result > * { min-width: 0; }
-  .cardimg { width: 100%; aspect-ratio: 856 / 540; border-radius: var(--radius); border: 1px solid var(--line);
-             background: var(--surface); object-fit: cover; display: grid; place-items: center; color: var(--muted);
-             font-size: var(--step--1); text-align: center; padding: var(--space-4); }
-  div.cardimg { border-style: dashed; background: transparent; }
-  .nik { font: 500 clamp(1.4rem, 1rem + 1.6vw, 2rem)/1.2 var(--font-mono); letter-spacing: 0.06em; margin: 0 0 var(--space-2);
-         overflow-wrap: anywhere; }
-  .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0 0 var(--space-6); }
-  .chip { font-size: var(--step--1); font-weight: 600; padding: 2px 10px; border-radius: 999px; border: 1px solid currentColor; }
-  .chip.ok { color: var(--ok); } .chip.warn { color: var(--warn); } .chip.muted { color: var(--muted); }
-  dl.fields { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-6); margin: 0; }
-  dl.fields dt { color: var(--muted); font-size: var(--step--1); padding-top: 3px; }
-  dl.fields dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
-  dl.fields dd.warn { color: var(--warn); }
-  .example { font-size: var(--step--1); color: var(--muted); margin: 0 0 var(--space-3); }
-
-  /* how it works: a real sequence, so numbered */
-  ol.steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-8); counter-reset: s; }
-  ol.steps li { counter-increment: s; }
-  ol.steps li::before { content: counter(s); font: 500 var(--step--1) var(--font-mono); color: var(--accent); display: block; margin-bottom: var(--space-2); }
-  ol.steps h3 { margin: 0 0 var(--space-1); font-size: var(--step-0); }
-  ol.steps p { margin: 0; color: var(--muted); font-size: var(--step--1); }
-
-  table { width: 100%; border-collapse: collapse; font-size: var(--step--1); }
-  .tablewrap { overflow-x: auto; }
-  th, td { text-align: left; padding: var(--space-3) var(--space-4) var(--space-3) 0; border-bottom: 1px solid var(--line); vertical-align: top; }
-  th { color: var(--muted); font-weight: 600; }
-  td.us { font-weight: 700; }
-
-  footer { padding-block: var(--space-12); border-top: 1px solid var(--line); color: var(--muted); font-size: var(--step--1);
-           display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-8); justify-content: space-between; }
-
-  @media (max-width: 860px) {
-    .hero, .result { grid-template-columns: minmax(0, 1fr); gap: var(--space-8); }
-    .hero { grid-template-areas: "intro" "demo" "code"; }
-    .hero { padding-block: var(--space-8) var(--space-12); }
-    .proof { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .proof div:nth-child(3) { border-left: 0; padding-left: 0; }
-    .proof div:nth-child(n+3) { border-top: 1px solid var(--line); }
-    ol.steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    ktp-capture { height: auto; aspect-ratio: 3 / 4; }
-    nav a.hide-sm { display: none; }
-    nav { gap: var(--space-4); }
-  }
-</style>
 </head>
-<body>
-<div class="wrap">
-  <header class="top">
-    <a class="mark" href="/">ktp<span>-</span>kit</a>
-    <nav aria-label="Utama">
-      <a class="hide-sm" href="#cara-kerja">Cara kerja</a>
-      <a class="hide-sm" href="https://github.com/Khusyasy/ktp-kit#readme">Dokumentasi</a>
-      <a href="https://github.com/Khusyasy/ktp-kit">GitHub</a>
-      <a href="https://www.npmjs.com/package/ktp-kit">npm</a>
+<body class="min-h-dvh font-sans text-ink antialiased">
+
+<!-- Icons: Lucide (ISC) and Simple Icons (CC0), as one sprite. -->
+<svg width="0" height="0" class="absolute" aria-hidden="true">
+  <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+  <symbol id="i-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></symbol>
+  <symbol id="i-scan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></symbol>
+  <symbol id="i-npm" viewBox="0 0 24 24" fill="currentColor"><path d="M1.763 0C.786 0 0 .786 0 1.763v20.474C0 23.214.786 24 1.763 24h20.474c.977 0 1.763-.786 1.763-1.763V1.763C24 .786 23.214 0 22.237 0zM5.13 5.323l13.837.019-.009 13.836h-3.464l.01-10.382h-3.456L12.04 19.17H5.113z"/></symbol>
+</svg>
+
+<!-- Header: sticky, blurred -->
+<header class="sticky top-0 z-20 border-b border-line/70 bg-bg/75 backdrop-blur-md">
+  <div class="mx-auto flex h-16 max-w-6xl items-center gap-6 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]">
+    <a href="#" class="flex items-center gap-2 font-mono text-[15px] font-medium"><svg class="size-7 text-accent" viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 8.75V5.25h3.5M19 5.25h3.5v3.5M22.5 15.25v3.5H19M5 18.75H1.5v-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/><g fill="currentColor"><rect x="4.5" y="8.25" width="4.5" height="7.5"/><rect x="10.5" y="8.25" width="4.5" height="7.5"/><rect x="16.5" y="10.75" width="3" height="5"/></g></svg>ktp-kit</a>
+    <nav class="hidden gap-6 text-sm text-muted md:flex" aria-label="Bagian" data-t-aria="navLabel">
+      <a href="#demo" class="transition-colors hover:text-ink aria-[current=true]:text-ink" data-t="nDemo">Demo</a>
+      <a href="#banding" class="transition-colors hover:text-ink aria-[current=true]:text-ink" data-t="nBanding">Banding</a>
+      <a href="#pasang" class="transition-colors hover:text-ink aria-[current=true]:text-ink" data-t="nPasang">Pasang</a>
+      <a href="#akurasi" class="transition-colors hover:text-ink aria-[current=true]:text-ink" data-t="nAkurasi">Akurasi</a>
+      <a href="#lisensi" class="transition-colors hover:text-ink aria-[current=true]:text-ink" data-t="nLisensi">Lisensi</a>
     </nav>
-  </header>
+    <div class="ml-auto flex items-center">
+      <button type="button" id="lang" class="h-10 rounded-md px-2.5 text-sm font-medium text-muted transition-colors hover:text-ink" aria-label="Read in English">EN</button>
+      <a class="grid size-10 place-items-center rounded-md text-muted transition-colors hover:text-ink" href="https://www.npmjs.com/package/ktp-kit" aria-label="npm"><svg class="size-5"><use href="#i-npm"/></svg></a>
+      <a class="grid size-10 place-items-center rounded-md text-muted transition-colors hover:text-ink" href="https://github.com/Khusyasy/ktp-kit" aria-label="GitHub"><svg class="size-5"><use href="#i-github"/></svg></a>
+    </div>
+  </div>
+</header>
 
-  <main>
-    <div class="hero">
-      <div class="intro">
-        <span class="tag"><b>v0.1</b> pratinjau · untuk developer</span>
-        <h1 id="headline">Baca KTP langsung di HP pengguna.</h1>
-        <p class="lead">16 kolom KTP, kode wilayah resmi, dan cek NIK. <strong>Tanpa API OCR, tanpa upload,</strong> tetap jalan saat offline.</p>
+<main class="mx-auto max-w-6xl max-md:overflow-x-clip pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]">
 
-        <dl class="proof" aria-live="polite">
-          <div><dt>Permintaan jaringan saat membaca</dt><dd class="ok" id="p-req">0</dd></div>
-          <div><dt>Waktu baca</dt><dd id="p-ms">–</dd></div>
-          <div><dt>Kolom terbaca dari 16</dt><dd id="p-fields">–</dd></div>
-          <div><dt>Bisa offline</dt><dd class="text" id="p-off">menyiapkan</dd></div>
-        </dl>
-      </div>
+  <!-- Hero: claim and the offline test on the left, the working reader on the right -->
+  <section id="demo" class="grid items-center gap-x-16 gap-y-10 pt-12 pb-20 md:grid-cols-[minmax(0,1fr)_auto] md:pt-20
+                           [grid-template-areas:'intro'_'reader'_'test'] md:[grid-template-areas:'intro_reader'_'test_reader']">
+    <div class="[grid-area:intro] md:self-end">
+      <h1 class="max-w-[14ch] text-4xl font-semibold leading-[1.08] tracking-tight text-balance motion-safe:animate-rise md:text-6xl" data-t="h1">KTP dicek di HP.</h1>
+      <p class="mt-5 max-w-[42ch] text-lg text-muted motion-safe:animate-rise motion-safe:[animation-delay:80ms]" data-t="sub">Tanpa pihak ketiga, langsung ke server Anda. Tetap jalan tanpa internet.</p>
+    </div>
 
-      <div class="snippet">
-          <div class="tabs" role="tablist" aria-label="Contoh pemasangan">
-            <button role="tab" aria-selected="true" data-tab="html" id="tab-html">HTML</button>
-            <button role="tab" aria-selected="false" data-tab="react" id="tab-react">React</button>
-            <button role="tab" aria-selected="false" data-tab="vue" id="tab-vue">Vue</button>
-            <button role="tab" aria-selected="false" data-tab="cli" id="tab-cli">CLI</button>
-            <button class="copy" id="copy" type="button">Salin</button>
-          </div>
-          <pre><code id="code"></code></pre>
-      </div>
-
-      <div class="demo">
-        <div class="frame"><ktp-capture id="reader" base="/ktp-kit/" lang="id" form="false"></ktp-capture></div>
-        <p class="note">Coba dengan kamera atau unggah foto KTP. Gambar diproses di perangkat ini dan tidak dikirim ke mana pun.</p>
+    <!-- The reader, with a soft light behind it -->
+    <div class="relative w-full [grid-area:reader] md:w-auto motion-safe:animate-rise motion-safe:[animation-delay:160ms]">
+      <div class="pointer-events-none absolute -inset-16 -z-10 rounded-full bg-accent/12 blur-3xl" aria-hidden="true"></div>
+      <div class="rounded-[28px] border border-line bg-sunk p-2 shadow-[0_40px_80px_-40px_rgb(0_0_0/0.8)]">
+        <ktp-capture id="reader" base="/ktp-kit/" lang="id"
+          class="block min-h-0 w-full rounded-[20px] md:w-[min(max(420px,calc(330px*var(--ktp-aspect,0.75))),46vw,calc(72svh*var(--ktp-aspect,0.75)))]
+                 data-[state=reading]:aspect-[3/4] data-[state=done]:aspect-[3/4]
+                 [--ktp-accent:var(--color-accent)] [--ktp-ok:var(--color-ok)] [--ktp-warn:var(--color-warn)]
+                 [--ktp-surface:var(--color-surface)] [--ktp-field:var(--color-sunk)] [--ktp-line:var(--color-line)]
+                 [--ktp-muted:var(--color-muted)] [--ktp-font:var(--font-sans)] [--ktp-mono:var(--font-mono)]
+                 [&::part(badge)]:hidden"></ktp-capture>
       </div>
     </div>
 
-    <section aria-labelledby="h-hasil">
-      <h2 id="h-hasil">Hasil</h2>
-      <p class="sub" id="result-sub">Contoh dari kartu spesimen. Baca KTP di atas untuk melihat hasil Anda sendiri; hasilnya hanya ada di halaman ini.</p>
-      <div class="result">
-        <div id="cardbox" class="cardimg">Gambar kartu yang sudah diluruskan muncul di sini.</div>
-        <div>
-          <p class="nik" id="r-nik">3171234567890123</p>
-          <div class="chips" id="r-chips"><span class="chip muted">NIK spesimen, sengaja tidak valid</span></div>
-          <dl class="fields" id="r-fields"></dl>
-        </div>
-      </div>
-    </section>
+    <!-- The offline test: a real sequence, each step ticks itself -->
+    <ol class="space-y-5 [grid-area:test] md:self-start motion-safe:animate-rise motion-safe:[animation-delay:240ms]">
+      <li class="group flex items-center gap-4" id="t-download" data-done="false">
+        <span class="relative grid size-11 shrink-0 place-items-center rounded-full border border-line text-muted transition-colors duration-300 group-data-[done=true]:border-ok/60 group-data-[done=true]:text-ok">
+          <svg class="size-5"><use href="#i-download"/></svg>
+          <span class="absolute -right-1 -bottom-1 grid size-5 scale-0 place-items-center rounded-full bg-ok text-bg transition-transform duration-300 ease-[cubic-bezier(.3,1.6,.5,1)] group-data-[done=true]:scale-100"><svg class="size-3"><use href="#i-check"/></svg></span>
+        </span>
+        <span><span class="block font-medium" id="t1">Unduh model</span>
+          <span class="block text-sm text-muted transition-colors duration-300 group-data-[done=true]:text-ok" data-status></span></span>
+      </li>
+      <li class="group flex items-center gap-4" id="t-offline" data-done="false">
+        <span class="relative grid size-11 shrink-0 place-items-center rounded-full border border-line text-muted transition-colors duration-300 group-data-[done=true]:border-ok/60 group-data-[done=true]:text-ok">
+          <svg class="size-5"><use href="#i-plane"/></svg>
+          <span class="absolute -right-1 -bottom-1 grid size-5 scale-0 place-items-center rounded-full bg-ok text-bg transition-transform duration-300 ease-[cubic-bezier(.3,1.6,.5,1)] group-data-[done=true]:scale-100"><svg class="size-3"><use href="#i-check"/></svg></span>
+        </span>
+        <span><span class="block font-medium" data-t="t2">Nyalakan mode pesawat</span>
+          <span class="block text-sm text-muted transition-colors duration-300 group-data-[done=true]:text-ok" data-status></span></span>
+      </li>
+      <li class="group flex items-center gap-4" id="t-read" data-done="false">
+        <span class="relative grid size-11 shrink-0 place-items-center rounded-full border border-line text-muted transition-colors duration-300 group-data-[done=true]:border-ok/60 group-data-[done=true]:text-ok">
+          <svg class="size-5"><use href="#i-scan"/></svg>
+          <span class="absolute -right-1 -bottom-1 grid size-5 scale-0 place-items-center rounded-full bg-ok text-bg transition-transform duration-300 ease-[cubic-bezier(.3,1.6,.5,1)] group-data-[done=true]:scale-100"><svg class="size-3"><use href="#i-check"/></svg></span>
+        </span>
+        <span><span class="block font-medium" data-t="t3">Foto KTP</span>
+          <span class="block text-sm text-muted transition-colors duration-300 group-data-[done=true]:text-ok" data-status></span></span>
+      </li>
+      <li class="hidden pt-1 text-sm text-muted md:block" data-t="laptop">Kamera laptop biasanya terlalu buram untuk teks KTP. Coba dari HP, atau unggah foto dari HP.</li>
+    </ol>
+  </section>
 
-    <section id="cara-kerja" aria-labelledby="h-cara">
-      <h2 id="h-cara">Cara kerja</h2>
-      <p class="sub">Empat langkah, semuanya di perangkat pengguna. Model diunduh sekali (sekitar 27 MB), lalu disimpan untuk dipakai offline.</p>
-      <ol class="steps">
-        <li><h3>Temukan kartu</h3><p>Model sudut kartu memandu kamera: jarak, kemiringan, blur, dan pantulan cahaya.</p></li>
-        <li><h3>Luruskan</h3><p>Kartu dipotong dan diluruskan ke ukuran KTP, 85,6 × 54 mm.</p></li>
-        <li><h3>Baca tiap baris</h3><p>Baris teks ditemukan, lalu dibaca oleh model yang dilatih khusus untuk huruf KTP.</p></li>
-        <li><h3>Isi 16 kolom</h3><p>Nilai dicocokkan dengan tata letak KTP, daftar resmi, dan kode wilayah Kemendagri. Yang tidak cocok dengan NIK ditandai.</p></li>
-      </ol>
-    </section>
-
-    <section aria-labelledby="h-banding">
-      <h2 id="h-banding">Dibanding API OCR KTP</h2>
-      <p class="sub">API OCR mengirim foto KTP ke server pihak ketiga. ktp-kit membaca di perangkat pengguna.</p>
-      <div class="tablewrap">
-        <table>
-          <thead><tr><th></th><th>ktp-kit</th><th>API OCR KTP</th></tr></thead>
+  <div class="mx-auto max-w-3xl">
+    <!-- Comparison: facts from the providers' own pages, including the row where they win -->
+    <section id="banding" class="border-t border-line py-16">
+      <h2 class="text-2xl font-semibold tracking-tight" data-t="cH">Dibanding API OCR</h2>
+      <p class="mt-3 text-muted" data-t="cIntro"></p>
+      <div class="mt-6 overflow-x-auto">
+        <table class="w-full min-w-[34rem] border-b border-line text-[15px]">
+          <thead><tr class="text-sm text-muted"><th class="w-[28%] pb-3 text-left font-normal"></th><th class="pb-3 text-left font-mono font-medium text-accent">ktp-kit</th><th class="pb-3 text-left font-normal" data-t="cApi"></th></tr></thead>
           <tbody>
-            <tr><th>Foto KTP keluar dari perangkat</th><td class="us">Tidak</td><td>Ya, ke server penyedia</td></tr>
-            <tr><th>Biaya per scan</th><td class="us">Rp 0</td><td>sekitar Rp 150–500</td></tr>
-            <tr><th>Tanpa internet</th><td class="us">Bisa, setelah dimuat sekali</td><td>Tidak</td></tr>
-            <tr><th>Hasil</th><td class="us">16 kolom, kode wilayah, cek NIK</td><td>Bervariasi per penyedia</td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c1l"></th><td class="py-3 pr-4 text-ink" data-t="c1k"></td><td class="py-3 text-muted" data-t="c1a"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c2l"></th><td class="py-3 pr-4 text-ink" data-t="c2k"></td><td class="py-3 text-muted" data-t="c2a"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c3l"></th><td class="py-3 pr-4 text-ink" data-t="c3k"></td><td class="py-3 text-muted" data-t="c3a"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c4l"></th><td class="py-3 pr-4 text-ink" data-t="c4k"></td><td class="py-3 text-muted" data-t="c4a"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c5l"></th><td class="py-3 pr-4 text-ink" data-t="c5k"></td><td class="py-3 text-muted" data-t="c5a"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c6l"></th><td class="py-3 pr-4 text-ink" data-t="c6k"></td><td class="py-3 text-muted" data-t="c6a"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="c7l"></th><td class="py-3 pr-4 text-muted" data-t="c7k"></td><td class="py-3 text-ok" data-t="c7a"></td></tr>
           </tbody>
         </table>
       </div>
+      <p class="mt-4 text-sm text-muted"><span data-t="cNote"></span> <a class="underline underline-offset-4 transition-colors hover:text-ink" href="https://api.co.id/ktp-ocr-api/">api.co.id OCR</a>, <a class="underline underline-offset-4 transition-colors hover:text-ink" href="https://api.co.id/id-verification-api/">api.co.id ID Verification</a>, <a class="underline underline-offset-4 transition-colors hover:text-ink" href="https://docs.xendit.co/docs/id/pricing">Xendit</a>.</p>
     </section>
-  </main>
 
-  <footer>
-    <span>© 2026 Muhammad Luthfi Khusyasy · Gratis untuk nonkomersial dan usaha kecil (PolyForm). Lisensi komersial: luthfik.job@gmail.com</span>
-    <span><a href="https://github.com/Khusyasy/ktp-kit/blob/main/PRIVACY.md">Privasi</a></span>
-  </footer>
-</div>
+    <!-- Install -->
+    <section id="pasang" class="border-t border-line py-16">
+      <h2 class="text-2xl font-semibold tracking-tight" data-t="nPasang">Pasang</h2>
+      <p class="mt-3 text-muted" data-t="pasang">Satu elemen HTML, dengan pembungkus React dan Vue. Hasilnya JSON: NIK, nama, alamat, sampai kode wilayah Kemendagri.</p>
+      <div class="mt-6 overflow-hidden rounded-xl border border-line bg-sunk">
+        <div class="flex items-center gap-1 border-b border-line p-1.5" role="tablist" aria-label="Contoh">
+          <button role="tab" data-tab="html" class="rounded-md px-3 py-1.5 text-sm text-muted transition-colors hover:text-ink aria-selected:bg-surface aria-selected:text-ink">HTML</button>
+          <button role="tab" data-tab="react" class="rounded-md px-3 py-1.5 text-sm text-muted transition-colors hover:text-ink aria-selected:bg-surface aria-selected:text-ink">React</button>
+          <button role="tab" data-tab="vue" class="rounded-md px-3 py-1.5 text-sm text-muted transition-colors hover:text-ink aria-selected:bg-surface aria-selected:text-ink">Vue</button>
+          <button role="tab" data-tab="cli" class="rounded-md px-3 py-1.5 text-sm text-muted transition-colors hover:text-ink aria-selected:bg-surface aria-selected:text-ink">CLI</button>
+          <button type="button" class="copy ml-auto grid size-9 place-items-center rounded-md text-muted transition-colors hover:text-ink" data-t-aria="copy" aria-label="Salin">
+            <svg class="size-[18px]"><use href="#i-copy"/></svg>
+          </button>
+        </div>
+        <pre class="overflow-x-auto p-4 font-mono text-[13px] leading-relaxed"><code id="code" class="block transition-opacity duration-150"></code></pre>
+      </div>
+      <p class="mt-4 text-sm text-muted" id="cli-note" hidden>Untuk Node.js, misalnya di server Anda. Perintah <code class="font-mono text-ink">assets</code> menyalin model ke folder web Anda. Perintah <code class="font-mono text-ink">read</code> membaca banyak foto KTP sekaligus dan menulis hasilnya ke CSV. Foto diproses di mesin Anda sendiri.</p>
+    </section>
+
+    <!-- Trust: why the result holds up, then the numbers and how they were measured -->
+    <section id="akurasi" class="border-t border-line py-16">
+      <h2 class="text-2xl font-semibold tracking-tight" data-t="vH">Bisa dipercaya karena</h2>
+      <dl class="mt-6 divide-y divide-line border-y border-line">
+        <div class="grid gap-1 py-4 sm:grid-cols-[13rem_minmax(0,1fr)] sm:gap-6">
+          <dt class="font-medium text-ink"><span data-t="v1"></span></dt>
+          <dd class="text-muted" data-t="v1d"></dd>
+        </div>
+        <div class="grid gap-1 py-4 sm:grid-cols-[13rem_minmax(0,1fr)] sm:gap-6">
+          <dt class="font-medium text-ink"><a href="#demo" class="underline decoration-accent/40 underline-offset-4 transition-colors hover:decoration-accent" data-t="v3"></a></dt>
+          <dd class="text-muted" data-t="v3d"></dd>
+        </div>
+      </dl>
+      <p class="mt-4 text-sm text-muted" data-t="vNum"></p>
+    </section>
+
+    <!-- License -->
+    <section id="lisensi" class="border-t border-line py-16">
+      <h2 class="text-2xl font-semibold tracking-tight" data-t="nLisensi">Lisensi</h2>
+      <p class="mt-3"><span data-t="lisensi">Gratis untuk proyek nonkomersial dan usaha kecil (di bawah 100 orang dan omzet US$1 juta). Selain itu:</span>
+        <a class="text-accent underline decoration-accent/40 underline-offset-4 transition-colors hover:decoration-accent" href="mailto:luthfik.job@gmail.com">luthfik.job@gmail.com</a></p>
+    </section>
+
+    <footer class="flex flex-wrap gap-x-6 gap-y-1 border-t border-line py-8 text-sm text-muted">
+      <span>© 2026 Muhammad Luthfi Khusyasy</span>
+      <span data-t="analitik">Halaman ini tidak memakai analitik.</span>
+      <a class="underline underline-offset-4 transition-colors hover:text-ink" href="https://github.com/Khusyasy/ktp-kit/blob/main/PRIVACY.md" data-t="privasi">Privasi</a>
+    </footer>
+  </div>
+</main>
 
 <script type="module">
   const $ = id => document.getElementById(id);
+  const reader = $("reader");
 
-  // Signature move: the headline resolves word by word, like a photo becoming text.
-  const h1 = $("headline");
-  h1.innerHTML = h1.textContent.split(" ").map((w, i) => `<span class="w resolve" style="--i:${i}">${w}</span>`).join(" ");
+  // The agreed Indonesian and English copy.
+  const T = {
+    id: {h1: "KTP dicek di HP.", sub: "Tanpa pihak ketiga, langsung ke server Anda. Tetap jalan tanpa internet.",
+      nDemo: "Demo", nPasang: "Pasang", nAkurasi: "Akurasi", nLisensi: "Lisensi", navLabel: "Bagian",
+      t1: mb => mb ? `Unduh model, ${mb} MB` : "Unduh model", t2: "Nyalakan mode pesawat", t3: "Foto KTP",
+      saved: "Tersimpan di perangkat", downloading: p => `Mengunduh ${p}%`, offline: "Offline", online: "Masih online",
+      read: (s, n) => `Terbaca dalam ${s} detik, ${n} permintaan jaringan`, waiting: "Belum ada",
+      pasang: "Satu elemen HTML, dengan pembungkus React dan Vue. Hasilnya JSON: NIK, nama, alamat, sampai kode wilayah Kemendagri.",
+      cli: "Untuk Node.js, misalnya di server Anda. Perintah <code>assets</code> menyalin model ke folder web Anda. Perintah <code>read</code> membaca banyak foto KTP sekaligus dan menulis hasilnya ke CSV. Foto diproses di mesin Anda sendiri.",
+      laptop: "Kamera laptop biasanya terlalu buram untuk teks KTP. Coba dari HP, atau unggah foto dari HP.", wifi: "Masih online. Matikan Wi-Fi juga.",
+      nBanding: "Banding", cH: "Dibanding API OCR", cIntro: "API OCR membaca KTP di server mereka. ktp-kit membaca di HP pengguna.", cApi: "API OCR cloud", c1l: "Foto KTP", c1k: "Tetap di HP pengguna", c1a: "Diunggah ke server mereka, dihapus setelah dibaca", c2l: "Tanpa internet", c2k: "Jalan", c2a: "Tidak jalan", c3l: "Biaya per scan", c3k: "Rp0", c3a: "Rp150 (api.co.id), Rp500 (Xendit)", c4l: "Foto buram", c4k: "Ditolak kamera sebelum difoto", c4a: "Ditolak setelah diunggah", c5l: "Wilayah", c5k: "Nama dan kode Kemendagri", c5a: "Nama saja", c6l: "Cek NIK", c6k: "Struktur, tanggal lahir, jenis kelamin dan wilayah. Di HP, gratis", c6a: "Lewat API terpisah, Rp4.000", c7l: "Cek ke data resmi", c7k: "Tidak ada", c7a: "Ada, Rp4.000", cNote: "Dicek 12 November 2026. Butuh cek ke data resmi? Baca dengan ktp-kit, lalu panggil cek resmi dari server Anda hanya saat perlu. Sumber:", vH: "Bisa dipercaya karena", v1: "NIK memeriksa dirinya sendiri", v1d: "16 digit NIK memuat kode wilayah, tanggal lahir dan jenis kelamin. ktp-kit mencocokkannya dengan isi kartu. Hasilnya menyertakan nik_valid dan perlu_dicek, jadi aplikasi Anda tahu kolom mana yang perlu diperiksa ulang.", v3: "Coba dengan KTP Anda", v3d: "Angka di bawah berasal dari teks buatan. KTP Anda sendiri adalah uji yang lebih jujur, dan fotonya tidak ke mana-mana.", vNum: "Pada 2.400 baris teks KTP buatan yang tidak dipakai untuk melatih, 92% baris NIK dan 86% semua baris terbaca persis. Membaca satu kartu butuh 2-5 detik di HP Android kelas menengah. Uji dengan KTP asli dari sukarelawan menyusul.",
+      lisensi: "Gratis untuk proyek nonkomersial dan usaha kecil (di bawah 100 orang dan omzet US$1 juta). Selain itu:",
+      analitik: "Halaman ini tidak memakai analitik.", privasi: "Privasi", copy: "Salin", copied: "Tersalin",
+      other: "EN", otherLabel: "Read in English", decimal: ","},
+    en: {h1: "KTP checked on the phone.", sub: "No third party, straight to your server. Works offline.",
+      nDemo: "Demo", nPasang: "Install", nAkurasi: "Accuracy", nLisensi: "License", navLabel: "Sections",
+      t1: mb => mb ? `Download the model, ${mb} MB` : "Download the model", t2: "Turn on airplane mode", t3: "Photograph a KTP",
+      saved: "Saved on this device", downloading: p => `Downloading ${p}%`, offline: "Offline", online: "Still online",
+      read: (s, n) => `Read in ${s} s, ${n} network requests`, waiting: "Not yet",
+      pasang: "One HTML element, with React and Vue wrappers. You get JSON: NIK, name, address, down to the official region code.",
+      cli: "For Node.js, for example on your server. <code>assets</code> copies the model into your web folder. <code>read</code> reads many KTP photos at once and writes the results to CSV. Photos are processed on your own machine.",
+      laptop: "Laptop cameras are usually too blurry for KTP text. Try a phone, or upload a photo taken with one.", wifi: "Still online. Turn off Wi-Fi too.",
+      nBanding: "Compare", cH: "Compared with OCR APIs", cIntro: "OCR APIs read the KTP on their servers. ktp-kit reads it on the user's phone.", cApi: "Cloud OCR API", c1l: "KTP photo", c1k: "Stays on the user's phone", c1a: "Uploaded to their server, deleted after reading", c2l: "Offline", c2k: "Works", c2a: "Doesn't work", c3l: "Cost per scan", c3k: "Rp 0", c3a: "Rp 150 (api.co.id), Rp 500 (Xendit)", c4l: "Blurry photo", c4k: "Rejected by the camera before it's taken", c4a: "Rejected after upload", c5l: "Region", c5k: "Names and the official Kemendagri code", c5a: "Names only", c6l: "NIK check", c6k: "Structure, birth date, sex and region. On the phone, free", c6a: "Separate API, Rp 4,000", c7l: "Check against official records", c7k: "No", c7a: "Yes, Rp 4,000", cNote: "Checked on 12 November 2026. Need the official records check? Read with ktp-kit, then call the official check from your server only when needed. Sources:", vH: "Why the result holds up", v1: "The NIK checks itself", v1d: "The 16 digits encode region, birth date and sex. ktp-kit matches them against the rest of the card. The result includes nik_valid and perlu_dicek, so your app knows which fields to double-check.", v3: "Try it with your own KTP", v3d: "The numbers below come from generated text. Your own card is a fairer test, and the photo goes nowhere.", vNum: "On 2,400 generated KTP text lines not used for training, 92% of NIK lines and 86% of all lines read exactly. Reading one card takes 2-5 s on a mid-range Android phone. A test on real KTPs from volunteers is coming.",
+      lisensi: "Free for non-commercial use and small businesses (under 100 people and US$1M revenue). Otherwise:",
+      analitik: "This page has no analytics.", privasi: "Privacy", copy: "Copy", copied: "Copied",
+      other: "ID", otherLabel: "Baca dalam bahasa Indonesia", decimal: "."},
+  };
+  let lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "id";
+  try { lang = localStorage.getItem("ktp-kit-lang") || lang; } catch {}
+  const t = () => T[lang];
 
-  // Install snippets (each runs as written).
+  // The offline test
+  const row = (id, done, text) => { $(id).dataset.done = String(done); $(id).querySelector("[data-status]").textContent = text; };
+  let saved = false, pct = 0, lastRead = null, offline = !navigator.onLine;
+  function paintTest() {
+    row("t-download", saved, saved ? t().saved : pct ? t().downloading(pct) : "");
+    row("t-offline", offline, offline ? t().offline : t().wifi);
+    row("t-read", !!lastRead, lastRead ? t().read(lastRead.s.replace(".", t().decimal), lastRead.n) : t().waiting);
+  }
+  async function probe() {
+    if (since !== null) return;  // never while a card is being read: that count must stay honest
+    try {
+      await fetch("/ktp-kit/sizes.json?online=" + Date.now(), {method: "HEAD", cache: "no-store", signal: AbortSignal.timeout(2500)});
+      offline = !navigator.onLine;
+    } catch { offline = true; }
+    paintTest();
+  }
+  addEventListener("online", probe); addEventListener("offline", probe);
+  setInterval(probe, 3000);
+
+  // Count network requests made while a card is read: the proof that nothing is uploaded.
+  let since = null, requests = 0;
+  new PerformanceObserver(list => {
+    for (const e of list.getEntries()) if (since !== null && e.startTime >= since && !/^(blob|data):/.test(e.name)) requests++;
+  }).observe({type: "resource", buffered: true});
+  reader.addEventListener("ktp-state", e => {
+    const s = e.detail;
+    if (s.status === "reading" && since === null) { since = performance.now(); requests = 0; }
+    saved = !!s.offline?.ready;
+    pct = s.download?.total ? Math.round(100 * s.download.loaded / s.download.total) : 0;
+    paintTest();
+  });
+  reader.addEventListener("ktp-result", e => {
+    lastRead = {s: (e.detail.ms / 1000).toFixed(1), n: requests};
+    since = null;
+    paintTest();
+  });
+
+  // Install snippets, highlighted by a small tokenizer (comments, strings, tags, keywords, attributes, calls).
   const SNIPPETS = {
     html: `<script type="module">import "ktp-kit/element";<\/script>
 <ktp-capture base="/ktp-kit/" lang="id"></ktp-capture>
@@ -250,81 +265,83 @@ const simpan = r => console.log(r.nik, r.nama);
 <template>
   <KtpCapture base="/ktp-kit/" @result="simpan" />
 </template>`,
-    cli: `npm install ktp-kit
+    cli: `npm i ktp-kit
 npx ktp-kit assets public/ktp-kit     # model untuk browser
-npx ktp-kit read foto/*.jpg --csv     # baca banyak foto di server sendiri`,
+npx ktp-kit read foto/*.jpg --csv     # baca satu folder foto, hasil CSV`,
+  };
+  const TOKENS = /(#[^\n]*|\/\/[^\n]*)|("[^"\n]*"|'[^'\n]*')|(<\/?[A-Za-z][\w-]*|\/?>)|\b(import|from|export|function|return|const|npm|npx)\b|(@?[A-Za-z][\w-]*)(?==)|([A-Za-z_]\w*)(?=\()/g;
+  const esc = s => s.replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"})[c]);
+  const highlight = src => {
+    let out = "", last = 0;
+    for (const m of src.matchAll(TOKENS)) {
+      const cls = ["c", "s", "t", "k", "a", "f"][m.slice(1).findIndex(Boolean)];
+      out += esc(src.slice(last, m.index)) + `<span class="tok-${cls}">${esc(m[0])}</span>`;
+      last = m.index + m[0].length;
+    }
+    return out + esc(src.slice(last));
   };
   let tab = "html";
-  const showTab = t => {
-    tab = t;
-    $("code").textContent = SNIPPETS[t];
-    document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+  const showTab = k => {
+    tab = k;
+    const code = $("code");
+    code.style.opacity = "0";
+    setTimeout(() => { code.innerHTML = highlight(SNIPPETS[k]); code.style.opacity = "1"; }, 120);  // our own fixed strings
+    document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === k)));
+    $("cli-note").hidden = k !== "cli";
   };
   document.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
   showTab("html");
-  $("copy").addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText(SNIPPETS[tab]); $("copy").textContent = "Tersalin"; }
-    catch { getSelection().selectAllChildren($("code")); $("copy").textContent = "Pilih lalu salin"; }
-    setTimeout(() => { $("copy").textContent = "Salin"; }, 1600);
-  });
 
-  // Result rows, in the card's own order. The example is the official specimen card.
-  const ROWS = [["nama", "Nama"], ["tempat_lahir", "Tempat lahir"], ["tanggal_lahir", "Tanggal lahir"],
-    ["jenis_kelamin", "Jenis kelamin"], ["gol_darah", "Gol. darah"], ["alamat", "Alamat"], ["rt_rw", "RT/RW"],
-    ["kel_desa", "Kel/Desa"], ["kecamatan", "Kecamatan"], ["kabupaten_kota", "Kabupaten/Kota"], ["provinsi", "Provinsi"],
-    ["agama", "Agama"], ["status_perkawinan", "Status perkawinan"], ["pekerjaan", "Pekerjaan"],
-    ["kewarganegaraan", "Kewarganegaraan"], ["berlaku_hingga", "Berlaku hingga"], ["kode_wilayah", "Kode wilayah"]];
-  const SPECIMEN = {nama: "MIRA SETIAWAN", tempat_lahir: "JAKARTA", tanggal_lahir: "18-02-1986", jenis_kelamin: "PEREMPUAN",
-    gol_darah: "B", alamat: "JL. PASTI CEPAT A7/66", rt_rw: "007/008", kel_desa: "PEGADUNGAN", kecamatan: "KALIDERES",
-    kabupaten_kota: "KOTA ADMINISTRASI JAKARTA BARAT", provinsi: "DAERAH KHUSUS IBUKOTA JAKARTA", agama: "ISLAM",
-    status_perkawinan: "KAWIN", pekerjaan: "PEGAWAI SWASTA", kewarganegaraan: "WNI", berlaku_hingga: "22-02-2017",
-    kode_wilayah: null, perlu_dicek: []};
-  function showFields(r) {
-    $("r-fields").replaceChildren(...ROWS.flatMap(([k, label], i) => {
-      const dt = document.createElement("dt"), dd = document.createElement("dd");
-      dt.textContent = label;
-      dd.textContent = r[k] || "–";            // textContent: OCR output is untrusted
-      dd.className = "resolve" + ((r.perlu_dicek || []).includes(k) ? " warn" : "");
-      dd.style.setProperty("--i", i);
-      return [dt, dd];
-    }));
+  // Copy: the icon becomes a tick for a moment.
+  document.querySelectorAll(".copy").forEach(b => b.addEventListener("click", async () => {
+    const use = b.querySelector("use");
+    try { await navigator.clipboard.writeText(SNIPPETS[tab]); }
+    catch { return getSelection().selectAllChildren($("code")); }
+    use.setAttribute("href", "#i-check"); b.classList.add("text-ok"); b.setAttribute("aria-label", t().copied);
+    setTimeout(() => { use.setAttribute("href", "#i-copy"); b.classList.remove("text-ok"); b.setAttribute("aria-label", t().copy); }, 1500);
+  }));
+
+  // Language
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.querySelectorAll("[data-t]").forEach(el => { el.textContent = t()[el.dataset.t]; });
+    $("cli-note").innerHTML = t().cli.replace(/<code>/g, '<code class="font-mono text-ink">');  // fixed strings from T
+    document.querySelectorAll("[data-t-aria]").forEach(el => el.setAttribute("aria-label", t()[el.dataset.tAria]));
+    $("lang").textContent = t().other; $("lang").setAttribute("aria-label", t().otherLabel);
+    reader.setAttribute("lang", lang);
+    $("t1").textContent = t().t1(downloadMb?.toFixed(1).replace(".", t().decimal));
+    paintTest();
   }
-  showFields(SPECIMEN);
 
-  // Live proof: count network requests made while a card is being read.
-  const reader = $("reader");
-  let readingSince = null, requests = 0;
-  new PerformanceObserver(list => {
-    for (const e of list.getEntries())
-      if (readingSince !== null && e.startTime >= readingSince && !/^(blob|data):/.test(e.name)) requests++;
-  }).observe({type: "resource", buffered: true});
-
-  reader.addEventListener("ktp-state", e => {
-    const s = e.detail;
-    if (s.status === "reading" && readingSince === null) { readingSince = performance.now(); requests = 0; }
-    if (s.offline?.ready) $("p-off").textContent = `ya · ${Math.round(s.offline.bytes / 1e6)} MB tersimpan`;
-    else if (s.download?.total) $("p-off").textContent = `mengunduh ${Math.round(100 * s.download.loaded / s.download.total)}%`;
-    $("p-off").classList.toggle("ok", !!s.offline?.ready);
+  // The real download size: the files are pre-compressed, so their size on the server is what gets sent.
+  let downloadMb = null;
+  fetch("/ktp-kit/sizes.json").then(r => r.json()).then(sizes => {
+    downloadMb = Object.values(sizes).reduce((a, b) => a + b, 0) / 1e6;
+    applyLang();
+  }).catch(() => {});
+  $("lang").addEventListener("click", () => {
+    lang = lang === "id" ? "en" : "id";
+    try { localStorage.setItem("ktp-kit-lang", lang); } catch {}
+    applyLang();
   });
+  applyLang();
 
-  reader.addEventListener("ktp-result", e => {
-    const r = e.detail;
-    $("p-req").textContent = String(requests);
-    $("p-req").classList.toggle("ok", requests === 0);
-    readingSince = null;
-    $("p-ms").textContent = `${(r.ms / 1000).toFixed(1)} s`;
-    $("p-fields").textContent = String(ROWS.slice(0, 16).filter(([k]) => r[k]).length);
-    $("result-sub").textContent = "Hasil dari kartu Anda. Hanya ada di halaman ini; muat ulang untuk menghapusnya.";
-    $("r-nik").textContent = r.nik || "NIK tidak terbaca";
-    const chips = [r.nik_valid ? ["ok", "NIK valid"] : ["warn", r.nik ? "NIK tidak valid" : "NIK tidak terbaca"]];
-    for (const k of r.perlu_dicek || []) chips.push(["warn", `Cek ${k.replace("_", " ")}: tidak cocok dengan NIK`]);
-    if (!r.isKtp) chips.push(["warn", "Mungkin bukan KTP"]);
-    $("r-chips").replaceChildren(...chips.map(([c, t]) => Object.assign(document.createElement("span"), {className: `chip ${c}`, textContent: t})));
-    const img = document.createElement("img");
-    img.className = "cardimg"; img.alt = "KTP yang sudah diluruskan"; img.src = URL.createObjectURL(r.card);
-    $("cardbox").replaceWith(img); img.id = "cardbox";
-    showFields(r);  // no auto-scroll: the result stays in the reader, the field list is below for whoever scrolls
-  });
+  // Mark the section in view in the header menu.
+  const links = [...document.querySelectorAll("header nav a")];
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) if (e.isIntersecting)
+      links.forEach(a => a.setAttribute("aria-current", String(a.getAttribute("href") === "#" + e.target.id)));
+  }, {rootMargin: "-45% 0px -50% 0px"});
+  document.querySelectorAll("main section").forEach(s => io.observe(s));
+
+  // Keep the page itself on the device, so it also reloads offline (the models are kept by ktp-kit).
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").then(async () => {
+    const worker = (await navigator.serviceWorker.ready).active;
+    const keep = () => worker?.postMessage({cache: [location.pathname,
+      ...performance.getEntriesByType("resource").map(e => e.name).filter(u => !u.includes("online="))]});
+    keep();
+    reader.addEventListener("ktp-state", e => { if (e.detail.offline?.ready && !keep.done) { keep.done = true; keep(); } });
+  }).catch(() => {});
 </script>
 </body>
 </html>
