@@ -1,28 +1,19 @@
-// <ktp-capture>: camera guidance, upload, on-device reading and an editable result form, styled by default.
+// <ktp-capture>: camera guidance, upload and on-device reading, styled by default. It shows the straightened card
+// and hands over the result once: what to show, edit or save is up to the app (see the README recipes).
 //
 //   <ktp-capture base="/ktp-kit/" lang="id"></ktp-capture>
-//   el.addEventListener("ktp-result", e => save(e.detail))   // fields, card image (Blob), timing
+//   el.addEventListener("ktp-result", e => save(e.detail))   // all fields, perlu_dicek, info, card image (Blob)
 //
-// Attributes: base (where `npx ktp-kit assets` put the files), lang ("id" | "en"), form="false" (no built-in
-// form: just emit the result), upload="false" (hide the upload button), check-ktp (also say when the photo doesn't look like a KTP;
+// Attributes: base (where `npx ktp-kit assets` put the files), lang ("id" | "en"), upload="false" (hide the upload button), check-ktp (also say when the photo doesn't look like a KTP;
 // experimental), unstyled (keep only layout).
 // Styling: CSS variables (--ktp-accent, --ktp-ok, --ktp-warn, --ktp-bg, --ktp-fg, --ktp-panel, --ktp-surface, --ktp-muted,
-// --ktp-line, --ktp-field, --ktp-radius, --ktp-font, --ktp-mono), ::part(video | hint | badge | actions | button | upload |
-// shutter | retake | result | notice | card | form | field | label | input | nik), and the host's data-state
+// --ktp-font), ::part(video | hint | badge | actions | button | upload |
+// shutter | retake | result | notice | card), and the host's data-state
 // attribute (searching | adjust | hold | reading | done | error) for Tailwind: data-[state=hold]:ring-green-500.
 // Events: ktp-result (detail: result), ktp-state (detail: state), ktp-error (detail: {error, detail}).
 import * as ort from "onnxruntime-web/wasm";
 import {createKtpReader} from "./engine.js";
 import {createCapture, MESSAGES} from "./capture.js";
-
-const FIELDS = [
-  ["nik", "NIK"], ["nama", "Nama"], ["tempat_lahir", "Tempat lahir"], ["tanggal_lahir", "Tanggal lahir"],
-  ["jenis_kelamin", "Jenis kelamin"], ["gol_darah", "Gol. darah"], ["alamat", "Alamat"], ["rt_rw", "RT/RW"],
-  ["kel_desa", "Kel/Desa"], ["kecamatan", "Kecamatan"], ["kabupaten_kota", "Kabupaten/Kota"], ["provinsi", "Provinsi"],
-  ["agama", "Agama"], ["status_perkawinan", "Status perkawinan"], ["pekerjaan", "Pekerjaan"],
-  ["kewarganegaraan", "Kewarganegaraan"], ["berlaku_hingga", "Berlaku hingga"], ["kota_terbit", "Kota terbit"],
-  ["tanggal_terbit", "Tanggal terbit"],
-];
 
 // Lucide icons (ISC licence), inlined so the component needs no extra files.
 const svg = d => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -33,8 +24,7 @@ const ICONS = {
 
 const STYLE = `
 :host { --ktp-accent: #2563eb; --ktp-ok: #16a34a; --ktp-warn: #f59e0b; --ktp-bg: #000; --ktp-fg: #fff;
-  --ktp-panel: rgba(0,0,0,.6); --ktp-surface: #111; --ktp-muted: #a3a3a3; --ktp-line: #333; --ktp-field: #1c1c1c;
-  --ktp-radius: 12px; --ktp-font: system-ui, sans-serif; --ktp-mono: ui-monospace, monospace;
+  --ktp-panel: rgba(0,0,0,.6); --ktp-surface: #111; --ktp-muted: #a3a3a3; --ktp-font: system-ui, sans-serif;
   display: block; position: relative; overflow: hidden; background: var(--ktp-bg); color: var(--ktp-fg);
   font: 16px/1.4 var(--ktp-font); min-height: 320px; aspect-ratio: var(--ktp-ratio, 3 / 4); }
 video, canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
@@ -64,20 +54,11 @@ button:focus-visible { outline: 3px solid var(--ktp-accent); outline-offset: 3px
   overflow: auto; background: var(--ktp-surface); }
 :host([data-state=reading]) .result, :host([data-state=done]) .result { display: flex; animation: ktp-in .28s ease-out; }
 .card { animation: ktp-in .3s ease-out; }
-label { animation: ktp-in .3s ease-out both; animation-delay: calc(var(--i, 0) * 25ms); }
 @keyframes ktp-in { from { opacity: 0; transform: translateY(8px); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 .bar { display: flex; align-items: center; gap: 12px; }
 .notice { flex: 1; white-space: pre-line; font-size: 14px; color: var(--ktp-muted); }
 .card { display: block; position: static; flex: none; width: 100%; height: auto; border-radius: 8px; }  /* not the full-frame canvas rule above */
-form { display: grid; gap: 10px; }
-label { display: grid; gap: 4px; font-size: 13px; color: var(--ktp-muted); }
-input { font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--ktp-line);
-  background: var(--ktp-field); color: var(--ktp-fg); width: 100%; box-sizing: border-box; }
-input:focus-visible { outline: 2px solid var(--ktp-accent); outline-offset: 0; }
-input[name=nik] { font-family: var(--ktp-mono); letter-spacing: .04em; }
-label.check input { border-color: var(--ktp-warn); }
-label.check span::after { content: ": " attr(data-check); color: var(--ktp-warn); }
 [hidden] { display: none !important; }
 `;
 const LAYOUT_ONLY = `:host { display: block; position: relative; } video, canvas { width: 100%; }
@@ -106,11 +87,11 @@ export class KtpCapture extends HTMLElement {
       <div class="result" part="result">
         <div class="bar"><div class="notice" part="notice" aria-live="polite"></div>
           <button class="icon" part="button retake" data-k="retake" type="button">${ICONS.retake}</button></div>
-        <canvas class="card" part="card" role="img" aria-label="KTP"></canvas><form part="form"></form></div>`;
+        <canvas class="card" part="card" role="img" aria-label="KTP"></canvas></div>`;
     const $ = s => root.querySelector(s);
     this.ui = {video: $("video"), overlay: $("canvas"), badge: $(".badge"), hint: $(".hint"), file: $("input[type=file]"),
       upload: $("[data-k=upload]"), shutter: $("[data-k=shutter]"), retake: $("[data-k=retake]"), card: $(".card"),
-      notice: $(".notice"), form: $("form")};
+      notice: $(".notice")};
     this.engine = createKtpReader({base: this.getAttribute("base") || "/ktp-kit/", ort});
     this.capture = createCapture({video: this.ui.video, engine: this.engine});
     // the frame takes the camera's own shape, so there are no black bars
@@ -146,7 +127,7 @@ export class KtpCapture extends HTMLElement {
         this.previewed = s.preview;
         paint(ui.card, s.preview);  // a canvas paints at once (an <img> would keep the old picture until it decodes)
       }
-      ui.notice.textContent = s.step || t.reading; ui.form.replaceChildren(); ui.retake.hidden = true;
+      ui.notice.textContent = s.step || t.reading; ui.retake.hidden = true;
     }
     if (s.status === "error") {
       this.dispatchEvent(new CustomEvent("ktp-error", {detail: {error: s.error, detail: s.detail}}));
@@ -158,8 +139,8 @@ export class KtpCapture extends HTMLElement {
 
   notice(r) {
     const t = this.messages, en = this.getAttribute("lang") === "en";
-    return [this.hasAttribute("check-ktp") && !r.isKtp && t.notKtp, !r.nik_valid && (r.nik ? t.invalidNik : t.badNik),
-      t.local((r.ms / 1000).toFixed(1).replace(".", en ? "." : ","))].filter(Boolean).join("\n");
+    return [this.hasAttribute("check-ktp") && !r.info.is_ktp && t.notKtp, !r.nik_valid && (r.nik ? t.invalidNik : t.badNik),
+      t.local((r.info.ms / 1000).toFixed(1).replace(".", en ? "." : ","))].filter(Boolean).join("\n");
   }
 
   draw(q, ok) {
@@ -182,19 +163,6 @@ export class KtpCapture extends HTMLElement {
     ui.retake.hidden = false;
     ui.notice.textContent = this.notice(r);
     const detail = {...r, card: blob};
-    if (this.getAttribute("form") !== "false") {
-      ui.form.replaceChildren(...FIELDS.map(([key, label]) => {
-        const row = document.createElement("label"), name = document.createElement("span"), input = document.createElement("input");
-        row.setAttribute("part", "field"); name.setAttribute("part", "label"); input.setAttribute("part", key === "nik" ? "input nik" : "input");
-        name.textContent = label; name.dataset.check = t.check;
-        input.name = key; input.value = r[key] || ""; // .value, never innerHTML: OCR text is untrusted
-        input.oninput = () => { detail[key] = input.value; };
-        row.classList.toggle("check", r.perlu_dicek.includes(key));
-        row.style.setProperty("--i", String(FIELDS.findIndex(f => f[0] === key)));  // fields appear one after another
-        row.append(name, input);
-        return row;
-      }));
-    }
     this.dispatchEvent(new CustomEvent("ktp-result", {detail}));
   }
 }

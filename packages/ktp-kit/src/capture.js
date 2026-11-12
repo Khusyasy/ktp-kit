@@ -29,7 +29,7 @@ export const MESSAGES = {
     invalidNik: "NIK terbaca tapi tidak valid. Periksa KTP lalu ambil ulang.", notKtp: "Sepertinya ini bukan KTP.", notImage: "Berkas ini bukan foto. Pilih foto JPEG atau PNG.",
     local: s => `Dibaca di perangkat ini dalam ${s} detik. Foto tidak dikirim ke mana pun.`,
     offline: mb => `Siap offline · ${mb} MB tersimpan di perangkat`, download: (p, mb) => `Mengunduh pembaca KTP ${p}% (${mb} MB)`,
-    shutter: "Ambil foto", upload: "Unggah foto", retake: "Ambil ulang", check: "cek lagi, tidak cocok dengan NIK",
+    shutter: "Ambil foto", upload: "Unggah foto", retake: "Ambil ulang",
   },
   en: {
     loading: "Loading models...", noCamera: "Can't open the camera. Allow camera access and reload.",
@@ -41,7 +41,7 @@ export const MESSAGES = {
     invalidNik: "NIK read but not valid. Check the card and retake.", notKtp: "This doesn't look like a KTP.", notImage: "This file isn't a photo. Pick a JPEG or PNG.",
     local: s => `Read on this device in ${s} s. The photo was not sent anywhere.`,
     offline: mb => `Ready offline · ${mb} MB stored on this device`, download: (p, mb) => `Downloading KTP reader ${p}% (${mb} MB)`,
-    shutter: "Take photo", upload: "Upload photo", retake: "Retake", check: "check again, doesn't match the NIK",
+    shutter: "Take photo", upload: "Upload photo", retake: "Retake",
   },
 };
 

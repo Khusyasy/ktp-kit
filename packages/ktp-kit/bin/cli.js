@@ -51,8 +51,8 @@ if (cmd === "assets") {
   };
   const csv = args.includes("--csv"), files = args.filter(a => !a.startsWith("--")).flatMap(expand);
   if (!files.length) { console.error("ktp-kit read: no JPEG photos found in " + args.filter(a => !a.startsWith("--")).join(" ")); process.exit(1); }
-  const cols = ["file", "nik", "nik_valid", "nama", "tempat_lahir", "tanggal_lahir", "jenis_kelamin", "gol_darah", "alamat",
-    "rt_rw", "kel_desa", "kecamatan", "kabupaten_kota", "provinsi", "agama", "status_perkawinan", "pekerjaan",
+  const cols = ["file", "nik", "nik_valid", "nama", "tempat_lahir", "tanggal_lahir", "jenis_kelamin", "golongan_darah", "alamat",
+    "rt_rw", "kelurahan_desa", "kecamatan", "kabupaten_kota", "provinsi", "agama", "status_perkawinan", "pekerjaan",
     "kewarganegaraan", "berlaku_hingga", "kota_terbit", "tanggal_terbit", "kode_wilayah", "perlu_dicek"];
   const cell = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
   if (csv) console.log(cols.join(","));
@@ -61,11 +61,11 @@ if (cmd === "assets") {
     try {
       const {width: w, height: h, data} = jpeg.decode(fs.readFileSync(file), {useTArray: true, formatAsRGBA: true, maxMemoryUsageInMB: 1024});
       const r = await engine.readImage({w, h, data});
-      out = r ? {file, ...r, card: undefined, raw: undefined} : {file, error: "no KTP found"};
+      out = r ? {file, ...r, card: undefined} : {file, error: "no KTP found"};
     } catch (e) {
       out = {file, error: e.message.includes("SOI") ? "only JPEG photos are supported" : e.message};
     }
-    console.log(csv ? cols.map(c => cell(Array.isArray(out[c]) ? out[c].join(" ") : out[c])).join(",") : JSON.stringify(out));
+    console.log(csv ? cols.map(c => cell(c === "perlu_dicek" && out[c] ? Object.entries(out[c]).map(([f, why]) => `${f}:${why.join("+")}`).join(" ") : out[c])).join(",") : JSON.stringify(out));
   }
 } else {
   console.log(`ktp-kit: read Indonesian KTPs on your own machine (nothing is uploaded)

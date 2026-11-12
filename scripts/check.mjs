@@ -10,4 +10,6 @@ if (fields.nik !== "3171234567890123" || fields.nik_valid) throw new Error("pars
 const p = kit.parseNik("3171014501909001");  // made-up NIK: region 317101, born 05-01-1990, female
 if (!p.valid || p.jenis_kelamin !== "PEREMPUAN" || p.tanggal_lahir !== "05-01-1990" || kit.parseNik("3171234567890123").valid)
   throw new Error("parseNik smoke test failed");
+const pkg = JSON.parse(fs.readFileSync("packages/ktp-kit/package.json", "utf8"));
+if (kit.VERSION !== pkg.version) throw new Error(`engine.js VERSION ${kit.VERSION} != package.json ${pkg.version}`);
 console.log(`ok: ${files.length} files, exports: ${Object.keys(kit).join(", ")}`);

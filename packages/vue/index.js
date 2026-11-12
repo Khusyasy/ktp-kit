@@ -6,15 +6,15 @@ import * as ort from "onnxruntime-web/wasm";
 import {createKtpReader, createCapture} from "ktp-kit";
 import "ktp-kit/element";
 
-/** Ready-made capture UI. Props: base, lang, form, upload, unstyled. Emits: result, state, error. */
+/** Ready-made capture UI. Props: base, lang, upload, unstyled. Emits: result, state, error. */
 export const KtpCapture = defineComponent({
   name: "KtpCapture",
-  props: {base: String, lang: String, form: {type: Boolean, default: true}, upload: {type: Boolean, default: true}, unstyled: Boolean},
+  props: {base: String, lang: String, upload: {type: Boolean, default: true}, unstyled: Boolean},
   emits: ["result", "state", "error"],
   setup(props, {emit}) {
     // Rendered with h(), so templates need no isCustomElement setting.
     return () => h("ktp-capture", {
-      base: props.base, lang: props.lang, form: props.form ? undefined : "false", upload: props.upload ? undefined : "false",
+      base: props.base, lang: props.lang, upload: props.upload ? undefined : "false",
       unstyled: props.unstyled ? "" : undefined,
       onKtpResult: e => emit("result", e.detail), onKtpState: e => emit("state", e.detail), onKtpError: e => emit("error", e.detail),
     });
