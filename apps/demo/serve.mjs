@@ -39,7 +39,7 @@ http.createServer((req, res) => {
     return;
   }
   const file = url === "/" ? path.join(root, "apps/demo/index.html") : url === "/docs" ? path.join(root, "apps/demo/docs.html")
-    : url === "/sw.js" ? path.join(root, "apps/demo/sw.js")
+    : url === "/sw.js" || url === "/favicon.ico" ? path.join(root, "apps/demo", url)
     : url.startsWith("/fonts/") ? font(path.basename(url)) ?? ""
     : url.startsWith("/ktp-kit/") ? path.join(assets, url.slice(9)) : path.join(root, url);
   if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end(); }
