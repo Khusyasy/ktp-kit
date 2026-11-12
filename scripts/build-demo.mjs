@@ -28,12 +28,14 @@ for (const [dir, name] of [["@fontsource-variable/ibm-plex-sans", "ibm-plex-sans
   ["@fontsource/ibm-plex-mono", "ibm-plex-mono-latin-400-normal.woff2"], ["@fontsource/ibm-plex-mono", "ibm-plex-mono-latin-500-normal.woff2"]])
   fs.copyFileSync(path.join(root, "node_modules", dir, "files", name), path.join(dist, "fonts", name));
 
-// 4. The page, with its import map pointed at the copied files.
-const html = fs.readFileSync(path.join(root, "apps/demo/index.html"), "utf8")
-  .replaceAll("/node_modules/onnxruntime-web/dist/ort.wasm.min.mjs", "/lib/ort.wasm.min.mjs")
-  .replaceAll("/packages/ktp-kit/src/", "/lib/ktp-kit/")
-  .replaceAll("/apps/demo/app.build.css", "/app.css");
-fs.writeFileSync(path.join(dist, "index.html"), html);
+// 4. The pages, with their import map pointed at the copied files (docs.html is served at /docs by Pages).
+for (const page of ["index.html", "docs.html"]) {
+  const html = fs.readFileSync(path.join(root, "apps/demo", page), "utf8")
+    .replaceAll("/node_modules/onnxruntime-web/dist/ort.wasm.min.mjs", "/lib/ort.wasm.min.mjs")
+    .replaceAll("/packages/ktp-kit/src/", "/lib/ktp-kit/")
+    .replaceAll("/apps/demo/app.build.css", "/app.css");
+  fs.writeFileSync(path.join(dist, page), html);
+}
 fs.copyFileSync(path.join(root, "apps/demo/sw.js"), path.join(dist, "sw.js"));  // keeps the page itself for offline reloads
 
 // 5. Headers: cross-origin isolation everywhere, long caching for the big files (their names change with versions).

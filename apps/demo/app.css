@@ -3,6 +3,7 @@
    Motion: one entrance on load, then only feedback (test steps ticking, copy, tabs). Off with reduced motion. */
 @import "tailwindcss" source(none);
 @source "./index.html";
+@source "./docs.html";
 
 @font-face {
   font-family: "IBM Plex Sans";
@@ -58,4 +59,20 @@
   .tok-k { color: #8fb8f2; }        /* keyword, command */
   .tok-a { color: #b9c7f5; }        /* attribute */
   .tok-f { color: #e8edf3; font-weight: 500; }  /* function */
+}
+
+/* Docs page prose: written as plain HTML, styled here. */
+@layer components {
+  .docs h2 { @apply mt-14 border-t border-line pt-10 text-2xl font-semibold tracking-tight; }
+  .docs h3 { @apply mt-8 font-semibold; }
+  .docs p, .docs ol { @apply mt-4 leading-relaxed text-muted; }
+  .docs ol { @apply list-decimal space-y-4 pl-5; }
+  .docs li { @apply pl-1; }
+  .docs pre { @apply mt-3 overflow-x-auto rounded-lg border border-line bg-sunk p-4 font-mono text-[13px] leading-relaxed text-ink; }
+  .docs :not(pre) > code { @apply font-mono text-[0.9em] whitespace-nowrap text-ink; }
+  .docs table { @apply mt-4 w-full min-w-[30rem] border-b border-line text-left text-[15px]; }
+  .docs th { @apply pb-2 text-sm font-normal text-muted; }
+  .docs td { @apply border-t border-line py-2.5 pr-4 align-top text-muted; }
+  .docs td:first-child { @apply whitespace-nowrap; }
+  .docs td:not(:first-child) code { @apply whitespace-normal break-words; }
 }
