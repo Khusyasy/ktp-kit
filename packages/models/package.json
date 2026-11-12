@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "description": "Model files for ktp-kit: card corners (DocAligner, Apache-2.0), text lines (PP-OCRv6 small det, Apache-2.0), KTP line reader (PP-OCRv6 tiny fine-tuned on synthetic KTP lines), region codes (MIT).",
   "license": "SEE LICENSE IN LICENSE.md",
+  "homepage": "https://ktp-kit.khusyasy.my.id",
+  "repository": {"type": "git", "url": "git+https://github.com/Khusyasy/ktp-kit.git", "directory": "packages/models"},
   "author": "Muhammad Luthfi Khusyasy",
   "files": [
     "corners.onnx",
