@@ -15,7 +15,8 @@
   },
   "files": [
     "index.js",
-    "LICENSE.md",
+    "LICENSE",
+    "NOTICE",
     "README.md",
     "index.d.ts"
   ],
@@ -26,7 +27,7 @@
     "react": ">=18"
   },
   "scripts": {
-    "prepack": "cp ../../LICENSE.md ."
+    "prepack": "cp ../../LICENSE ../../NOTICE ."
   },
   "types": "./index.d.ts"
 }

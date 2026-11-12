@@ -5,7 +5,8 @@ packages/models/wilayah.csv
 packages/models/ort/
 apps/demo/ktp-kit/
 # copied from the repo root by each package's prepack script
-packages/*/LICENSE.md
+packages/*/LICENSE
+packages/*/NOTICE
 packages/ktp-kit/LICENSES/
 packages/models/LICENSES/
 packages/models/THIRD_PARTY_NOTICES.md
