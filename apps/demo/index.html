@@ -37,6 +37,7 @@
       <a href="#pasang" class="transition-colors hover:text-ink aria-[current=true]:text-ink" data-t="nPasang">Pasang</a>
       <a href="#akurasi" class="transition-colors hover:text-ink aria-[current=true]:text-ink" data-t="nAkurasi">Akurasi</a>
       <a href="#lisensi" class="transition-colors hover:text-ink aria-[current=true]:text-ink" data-t="nLisensi">Lisensi</a>
+      <a href="/docs" class="transition-colors hover:text-ink" data-t="nDocs">Panduan</a>
     </nav>
     <div class="ml-auto flex items-center">
       <button type="button" id="lang" class="h-10 rounded-md px-2.5 text-sm font-medium text-muted transition-colors hover:text-ink" aria-label="Read in English">EN</button>
@@ -64,8 +65,7 @@
           class="block min-h-0 w-full rounded-[20px] md:w-[min(max(420px,calc(330px*var(--ktp-aspect,0.75))),46vw,calc(72svh*var(--ktp-aspect,0.75)))]
                  data-[state=reading]:aspect-[3/4] data-[state=done]:aspect-[3/4]
                  [--ktp-accent:var(--color-accent)] [--ktp-ok:var(--color-ok)] [--ktp-warn:var(--color-warn)]
-                 [--ktp-surface:var(--color-surface)] [--ktp-field:var(--color-sunk)] [--ktp-line:var(--color-line)]
-                 [--ktp-muted:var(--color-muted)] [--ktp-font:var(--font-sans)] [--ktp-mono:var(--font-mono)]
+                 [--ktp-surface:var(--color-surface)] [--ktp-muted:var(--color-muted)] [--ktp-font:var(--font-sans)]
                  [&::part(badge)]:hidden"></ktp-capture>
       </div>
     </div>
@@ -98,6 +98,43 @@
       </li>
       <li class="hidden pt-1 text-sm text-muted md:block" data-t="laptop">Kamera laptop biasanya terlalu buram untuk teks KTP. Coba dari HP, atau unggah foto dari HP.</li>
     </ol>
+  </section>
+
+  <!-- The result: ktp-kit hands it over once; this form is the app's own (the recipe from the docs) -->
+  <section id="hasil" class="border-t border-line py-16">
+    <h2 class="text-2xl font-semibold tracking-tight" data-t="hH">Hasilnya</h2>
+    <p class="mt-3 max-w-[65ch] text-muted" data-t="hIntro"></p>
+    <div class="mt-8 grid gap-6 md:grid-cols-2">
+      <form id="contoh" class="grid content-start gap-4 rounded-xl border border-line bg-surface p-5" novalidate>
+        <p class="text-sm font-medium text-muted" data-t="hForm"></p>
+        <label class="grid gap-1.5 text-sm"><span data-t="fNik">NIK</span>
+          <input name="nik" inputmode="numeric" maxlength="16" class="rounded-md border border-line bg-sunk px-3 py-2.5 font-mono text-base tracking-wide text-ink outline-none focus-visible:border-accent">
+          <span class="text-warn empty:hidden" data-why="nik"></span></label>
+        <label class="grid gap-1.5 text-sm"><span data-t="fNama">Nama</span>
+          <input name="nama" class="rounded-md border border-line bg-sunk px-3 py-2.5 text-base text-ink outline-none focus-visible:border-accent">
+          <span class="text-warn empty:hidden" data-why="nama"></span></label>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="grid gap-1.5 text-sm"><span data-t="fTempat">Tempat lahir</span>
+            <input name="tempat_lahir" class="rounded-md border border-line bg-sunk px-3 py-2.5 text-base text-ink outline-none focus-visible:border-accent">
+            <span class="text-warn empty:hidden" data-why="tempat_lahir"></span></label>
+          <label class="grid gap-1.5 text-sm"><span data-t="fTanggal">Tanggal lahir</span>
+            <input name="tanggal_lahir" placeholder="DD-MM-YYYY" class="rounded-md border border-line bg-sunk px-3 py-2.5 text-base text-ink outline-none focus-visible:border-accent">
+            <span class="text-warn empty:hidden" data-why="tanggal_lahir"></span></label>
+        </div>
+        <label class="grid gap-1.5 text-sm"><span data-t="fAlamat">Alamat</span>
+          <input name="alamat" class="rounded-md border border-line bg-sunk px-3 py-2.5 text-base text-ink outline-none focus-visible:border-accent">
+          <span class="text-warn empty:hidden" data-why="alamat"></span></label>
+        <div class="flex flex-wrap items-center gap-4 pt-1">
+          <button class="rounded-md bg-accent px-4 py-2.5 font-medium text-bg transition-opacity hover:opacity-90" data-t="fDaftar">Daftar</button>
+          <span id="contoh-note" class="text-sm text-muted" aria-live="polite"></span>
+        </div>
+      </form>
+      <div class="min-w-0 overflow-hidden rounded-xl border border-line bg-sunk">
+        <p class="border-b border-line px-4 py-3 text-sm font-medium text-muted"><code class="font-mono">ktp-result</code> <span data-t="hJson"></span></p>
+        <pre class="max-h-[34rem] overflow-auto p-4 font-mono text-[13px] leading-relaxed"><code id="json" class="block text-muted"></code></pre>
+      </div>
+    </div>
+    <p class="mt-6"><a href="/docs" class="text-accent underline decoration-accent/40 underline-offset-4 transition-colors hover:decoration-accent" data-t="hDocs">Panduan lengkap: pemasangan, isi hasil, dan contoh kode</a></p>
   </section>
 
   <div class="mx-auto max-w-3xl">
@@ -186,10 +223,11 @@
       pasang: "Satu elemen HTML, dengan pembungkus React dan Vue. Hasilnya JSON: NIK, nama, alamat, sampai kode wilayah Kemendagri.",
       cli: "Untuk Node.js, misalnya di server Anda. Perintah <code>assets</code> menyalin model ke folder web Anda. Perintah <code>read</code> membaca banyak foto KTP sekaligus dan menulis hasilnya ke CSV. Foto diproses di mesin Anda sendiri.",
       laptop: "Kamera laptop biasanya terlalu buram untuk teks KTP. Coba dari HP, atau unggah foto dari HP.", wifi: "Masih online. Matikan Wi-Fi juga.",
-      nBanding: "Banding", cH: "Dibanding API OCR", cIntro: "API OCR membaca KTP di server mereka. ktp-kit membaca di HP pengguna.", cApi: "API OCR cloud", c1l: "Foto KTP", c1k: "Tetap di HP pengguna", c1a: "Diunggah ke server mereka, dihapus setelah dibaca", c2l: "Tanpa internet", c2k: "Jalan", c2a: "Tidak jalan", c3l: "Biaya per scan", c3k: "Rp0", c3a: "Rp150 (api.co.id), Rp500 (Xendit)", c4l: "Foto buram", c4k: "Ditolak kamera sebelum difoto", c4a: "Ditolak setelah diunggah", c5l: "Wilayah", c5k: "Nama dan kode Kemendagri", c5a: "Nama saja", c6l: "Cek NIK", c6k: "Struktur, tanggal lahir, jenis kelamin dan wilayah. Di HP, gratis", c6a: "Lewat API terpisah, Rp4.000", c7l: "Cek ke data resmi", c7k: "Tidak ada", c7a: "Ada, Rp4.000", cNote: "Dicek 12 November 2026. Butuh cek ke data resmi? Baca dengan ktp-kit, lalu panggil cek resmi dari server Anda hanya saat perlu. Sumber:", vH: "Bisa dipercaya karena", v1: "NIK memeriksa dirinya sendiri", v1d: "16 digit NIK memuat kode wilayah, tanggal lahir dan jenis kelamin. ktp-kit mencocokkannya dengan isi kartu. Hasilnya menyertakan nik_valid dan perlu_dicek, jadi aplikasi Anda tahu kolom mana yang perlu diperiksa ulang.", v3: "Coba dengan KTP Anda", v3d: "Angka di bawah berasal dari teks buatan. KTP Anda sendiri adalah uji yang lebih jujur, dan fotonya tidak ke mana-mana.", vNum: "Pada 2.400 baris teks KTP buatan yang tidak dipakai untuk melatih, 92% baris NIK dan 86% semua baris terbaca persis. Membaca satu kartu butuh 2-5 detik di HP Android kelas menengah. Uji dengan KTP asli dari sukarelawan menyusul.",
+      nBanding: "Banding", cH: "Dibanding API OCR", cIntro: "API OCR membaca KTP di server mereka. ktp-kit membaca di HP pengguna.", cApi: "API OCR cloud", c1l: "Foto KTP", c1k: "Tetap di HP pengguna", c1a: "Diunggah ke server mereka, dihapus setelah dibaca", c2l: "Tanpa internet", c2k: "Jalan", c2a: "Tidak jalan", c3l: "Biaya per scan", c3k: "Rp0", c3a: "Rp150 (api.co.id), Rp500 (Xendit)", c4l: "Foto buram", c4k: "Ditolak kamera sebelum difoto", c4a: "Ditolak setelah diunggah", c5l: "Wilayah", c5k: "Nama dan kode Kemendagri", c5a: "Nama saja", c6l: "Cek NIK", c6k: "Struktur, tanggal lahir, jenis kelamin dan wilayah. Di HP, gratis", c6a: "Lewat API terpisah, Rp4.000", c7l: "Cek ke data resmi", c7k: "Tidak ada", c7a: "Ada, Rp4.000", cNote: "Dicek 12 November 2026. Butuh cek ke data resmi? Baca dengan ktp-kit, lalu panggil cek resmi dari server Anda hanya saat perlu. Sumber:", vH: "Bisa dipercaya karena", v1: "NIK memeriksa dirinya sendiri", v1d: "16 digit NIK memuat kode wilayah, tanggal lahir dan jenis kelamin. ktp-kit mencocokkannya dengan isi kartu. Hasilnya menyertakan nik_valid dan perlu_dicek, jadi aplikasi Anda tahu kolom mana yang perlu diperiksa ulang.", v3: "Coba dengan KTP Anda", v3d: "Angka di bawah berasal dari teks buatan. KTP Anda sendiri adalah uji yang lebih jujur, dan fotonya tidak ke mana-mana.", vNum: "Pada 2.400 baris teks KTP buatan yang tidak dipakai untuk melatih maupun memilih model, ktp-kit membaca persis 91% baris NIK dan 81,5% semua baris. Model umum PaddleOCR PP-OCRv6 small: 92% dan 51%. Baris buatan sengaja dibuat sulit: buram, pudar, dan aus. Data dan skripnya terbuka di folder benchmark di GitHub. Membaca satu kartu butuh 2-5 detik di HP Android kelas menengah. Uji dengan KTP asli dari sukarelawan menyusul.",
       lisensi: "Gratis untuk proyek nonkomersial dan usaha kecil (di bawah 100 orang dan omzet US$1 juta). Selain itu:",
       analitik: "Halaman ini tidak memakai analitik.", privasi: "Privasi", copy: "Salin", copied: "Tersalin",
-      other: "EN", otherLabel: "Read in English", decimal: ","},
+      other: "EN", otherLabel: "Read in English", decimal: ",",
+      nDocs: "Panduan", hH: "Hasilnya", hIntro: "ktp-kit memberi hasil sekali, sebagai JSON. Aplikasi Anda yang menentukan kolom mana yang dipakai, boleh diubah, dan dikirim. Formulir ini contohnya: lima baris kode mengisinya, dan kolom yang perlu dicek diberi tanda.", hForm: "Contoh formulir pendaftaran", hJson: "lengkap", hDocs: "Panduan lengkap: pemasangan, isi hasil, dan contoh kode", hEmpty: "// Foto KTP di atas. Hasilnya muncul di sini.", fNik: "NIK", fNama: "Nama", fTempat: "Tempat lahir", fTanggal: "Tanggal lahir", fAlamat: "Alamat", fDaftar: "Daftar", fSent: "Contoh saja. Tidak ada yang dikirim.", why: {nik_mismatch: "Tidak cocok dengan NIK, cek lagi", from_nik: "Tidak terbaca, diisi dari NIK", low_confidence: "Kurang jelas, cek lagi"}},
     en: {h1: "KTP checked on the phone.", sub: "No third party, straight to your server. Works offline.",
       nDemo: "Demo", nPasang: "Install", nAkurasi: "Accuracy", nLisensi: "License", navLabel: "Sections",
       t1: mb => mb ? `Download the model, ${mb} MB` : "Download the model", t2: "Turn on airplane mode", t3: "Photograph a KTP",
@@ -198,10 +236,11 @@
       pasang: "One HTML element, with React and Vue wrappers. You get JSON: NIK, name, address, down to the official region code.",
       cli: "For Node.js, for example on your server. <code>assets</code> copies the model into your web folder. <code>read</code> reads many KTP photos at once and writes the results to CSV. Photos are processed on your own machine.",
       laptop: "Laptop cameras are usually too blurry for KTP text. Try a phone, or upload a photo taken with one.", wifi: "Still online. Turn off Wi-Fi too.",
-      nBanding: "Compare", cH: "Compared with OCR APIs", cIntro: "OCR APIs read the KTP on their servers. ktp-kit reads it on the user's phone.", cApi: "Cloud OCR API", c1l: "KTP photo", c1k: "Stays on the user's phone", c1a: "Uploaded to their server, deleted after reading", c2l: "Offline", c2k: "Works", c2a: "Doesn't work", c3l: "Cost per scan", c3k: "Rp 0", c3a: "Rp 150 (api.co.id), Rp 500 (Xendit)", c4l: "Blurry photo", c4k: "Rejected by the camera before it's taken", c4a: "Rejected after upload", c5l: "Region", c5k: "Names and the official Kemendagri code", c5a: "Names only", c6l: "NIK check", c6k: "Structure, birth date, sex and region. On the phone, free", c6a: "Separate API, Rp 4,000", c7l: "Check against official records", c7k: "No", c7a: "Yes, Rp 4,000", cNote: "Checked on 12 November 2026. Need the official records check? Read with ktp-kit, then call the official check from your server only when needed. Sources:", vH: "Why the result holds up", v1: "The NIK checks itself", v1d: "The 16 digits encode region, birth date and sex. ktp-kit matches them against the rest of the card. The result includes nik_valid and perlu_dicek, so your app knows which fields to double-check.", v3: "Try it with your own KTP", v3d: "The numbers below come from generated text. Your own card is a fairer test, and the photo goes nowhere.", vNum: "On 2,400 generated KTP text lines not used for training, 92% of NIK lines and 86% of all lines read exactly. Reading one card takes 2-5 s on a mid-range Android phone. A test on real KTPs from volunteers is coming.",
+      nBanding: "Compare", cH: "Compared with OCR APIs", cIntro: "OCR APIs read the KTP on their servers. ktp-kit reads it on the user's phone.", cApi: "Cloud OCR API", c1l: "KTP photo", c1k: "Stays on the user's phone", c1a: "Uploaded to their server, deleted after reading", c2l: "Offline", c2k: "Works", c2a: "Doesn't work", c3l: "Cost per scan", c3k: "Rp 0", c3a: "Rp 150 (api.co.id), Rp 500 (Xendit)", c4l: "Blurry photo", c4k: "Rejected by the camera before it's taken", c4a: "Rejected after upload", c5l: "Region", c5k: "Names and the official Kemendagri code", c5a: "Names only", c6l: "NIK check", c6k: "Structure, birth date, sex and region. On the phone, free", c6a: "Separate API, Rp 4,000", c7l: "Check against official records", c7k: "No", c7a: "Yes, Rp 4,000", cNote: "Checked on 12 November 2026. Need the official records check? Read with ktp-kit, then call the official check from your server only when needed. Sources:", vH: "Why the result holds up", v1: "The NIK checks itself", v1d: "The 16 digits encode region, birth date and sex. ktp-kit matches them against the rest of the card. The result includes nik_valid and perlu_dicek, so your app knows which fields to double-check.", v3: "Try it with your own KTP", v3d: "The numbers below come from generated text. Your own card is a fairer test, and the photo goes nowhere.", vNum: "On 2,400 generated KTP text lines never used for training or for choosing the model, ktp-kit reads 91% of NIK lines and 81.5% of all lines exactly. The general PaddleOCR PP-OCRv6 small model: 92% and 51%. The lines are hard on purpose: blurred, faded and worn. The data and scripts are open in the benchmark folder on GitHub. Reading one card takes 2-5 s on a mid-range Android phone. A test on real KTPs from volunteers is coming.",
       lisensi: "Free for non-commercial use and small businesses (under 100 people and US$1M revenue). Otherwise:",
       analitik: "This page has no analytics.", privasi: "Privacy", copy: "Copy", copied: "Copied",
-      other: "ID", otherLabel: "Baca dalam bahasa Indonesia", decimal: "."},
+      other: "ID", otherLabel: "Baca dalam bahasa Indonesia", decimal: ".",
+      nDocs: "Docs", hH: "The result", hIntro: "ktp-kit hands over the result once, as JSON. Your app decides which fields to use, allow edits on, and send. This form is an example: five lines of code fill it, and fields worth checking are marked.", hForm: "Example sign-up form", hJson: "in full", hDocs: "Full docs: installation, result fields and code recipes", hEmpty: "// Photograph a KTP above. The result shows up here.", fNik: "NIK", fNama: "Name", fTempat: "Place of birth", fTanggal: "Date of birth", fAlamat: "Address", fDaftar: "Sign up", fSent: "Example only. Nothing was sent.", why: {nik_mismatch: "Doesn't match the NIK, check again", from_nik: "Unreadable, filled from the NIK", low_confidence: "Unclear, check again"}},
   };
   let lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "id";
   try { lang = localStorage.getItem("ktp-kit-lang") || lang; } catch {}
@@ -238,8 +277,25 @@
     pct = s.download?.total ? Math.round(100 * s.download.loaded / s.download.total) : 0;
     paintTest();
   });
+  // The example form: the recipe from the docs, then the reasons in this app's own words.
+  const form = $("contoh");
+  let result = null;
+  function paintResult() {
+    const r = result;
+    $("json").textContent = r ? JSON.stringify({...r, card: `Blob (${r.card.type}, ${Math.round(r.card.size / 1024)} KB)`}, null, 2) : t().hEmpty;
+    document.querySelectorAll("[data-why]").forEach(el => {
+      el.textContent = (r?.perlu_dicek[el.dataset.why] || []).map(code => t().why[code] || code).join(". ");
+    });
+  }
   reader.addEventListener("ktp-result", e => {
-    lastRead = {s: (e.detail.ms / 1000).toFixed(1), n: requests};
+    result = e.detail;
+    for (const [k, v] of Object.entries(e.detail)) if (form.elements[k]) form.elements[k].value = v ?? "";
+    paintResult();
+  });
+  form.addEventListener("submit", e => { e.preventDefault(); $("contoh-note").textContent = t().fSent; });
+
+  reader.addEventListener("ktp-result", e => {
+    lastRead = {s: (e.detail.info.ms / 1000).toFixed(1), n: requests};
     since = null;
     paintTest();
   });
@@ -311,6 +367,7 @@ npx ktp-kit read foto/*.jpg --csv     # baca satu folder foto, hasil CSV`,
     reader.setAttribute("lang", lang);
     $("t1").textContent = t().t1(downloadMb?.toFixed(1).replace(".", t().decimal));
     paintTest();
+    paintResult();
   }
 
   // The real download size: the files are pre-compressed, so their size on the server is what gets sent.

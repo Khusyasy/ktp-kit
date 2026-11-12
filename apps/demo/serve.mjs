@@ -19,7 +19,7 @@ spawn(process.execPath, [path.join(root, "node_modules/@tailwindcss/cli/dist/ind
 
 http.createServer((req, res) => {
   const url = decodeURIComponent(new URL(req.url, "http://x").pathname);
-  const file = url === "/" ? path.join(root, "apps/demo/index.html")
+  const file = url === "/" ? path.join(root, "apps/demo/index.html") : url === "/docs" ? path.join(root, "apps/demo/docs.html")
     : url === "/sw.js" ? path.join(root, "apps/demo/sw.js")
     : url.startsWith("/fonts/") ? font(path.basename(url)) ?? ""
     : url.startsWith("/ktp-kit/") ? path.join(assets, url.slice(9)) : path.join(root, url);
