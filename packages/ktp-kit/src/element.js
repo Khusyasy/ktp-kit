@@ -11,7 +11,7 @@
 // shutter | retake | result | notice | card), and the host's data-state
 // attribute (searching | adjust | hold | reading | done | error) for Tailwind: data-[state=hold]:ring-green-500.
 // Events: ktp-result (detail: result), ktp-state (detail: state), ktp-error (detail: {error, detail}).
-import * as ort from "onnxruntime-web/wasm";
+import * as ort from "#ort";  // browser: onnxruntime-web/wasm, server: empty (package.json "imports")
 import {createKtpReader} from "./engine.js";
 import {createCapture, MESSAGES} from "./capture.js";
 
@@ -65,7 +65,8 @@ const LAYOUT_ONLY = `:host { display: block; position: relative; } video, canvas
 .result { display: none; } :host([data-state=reading]) .result, :host([data-state=done]) .result { display: block; }
 [hidden] { display: none !important; }`;
 
-export class KtpCapture extends HTMLElement {
+// Server-side rendering imports this file too: no HTMLElement or customElements there, so define nothing.
+export class KtpCapture extends (globalThis.HTMLElement ?? class {}) {
   static get observedAttributes() { return ["lang", "upload"]; }
 
   connectedCallback() {
@@ -178,4 +179,4 @@ function toCanvas({w, h, data}) {
   return c;
 }
 
-if (!customElements.get("ktp-capture")) customElements.define("ktp-capture", KtpCapture);
+if (globalThis.customElements && !customElements.get("ktp-capture")) customElements.define("ktp-capture", KtpCapture);

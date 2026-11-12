@@ -17,7 +17,7 @@ export const FILES = {
 };
 // Bump with every model change, or devices keep the old files.
 const CACHE = "ktp-kit-v5";
-export const VERSION = "0.1.0";  // = package.json (scripts/check.mjs), reported in each result for audit logs
+export const VERSION = "0.1.1";  // = package.json (scripts/check.mjs), reported in each result for audit logs
 
 // Result keys in card order. Names follow Indonesian KTP OCR APIs (VIDA, GLAIR); the parser's own names differ for
 // two fields, kept so it stays line-for-line with ktp.py.
@@ -76,12 +76,12 @@ const CACHED = Object.values(FILES).filter(f => f !== FILES.mjs);
 /**
  * @param {object} o
  * @param {string} [o.base="/ktp-kit/"]  where the files from `npx ktp-kit assets` are served
- * @param {object} o.ort                 `import * as ort from "onnxruntime-web"`
+ * @param {object} o.ort                 `import * as ort from "ktp-kit/ort"` (browser only)
  * @param {(name: string) => Promise<ArrayBuffer|Uint8Array>} [o.load]  custom loader (Node, tests); skips caching
  * @param {number} [o.threads]           WebAssembly threads; default 4 when the page is cross-origin isolated, else 1
  */
 export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
-  if (!ort) throw new Error('ktp-kit: pass {ort} (import * as ort from "onnxruntime-web")');
+  if (!ort?.InferenceSession) throw new Error('ktp-kit: pass {ort} (import * as ort from "ktp-kit/ort"). Reading runs in the browser only.');
   const isolated = globalThis.crossOriginIsolated === true;
   ort.env.wasm.numThreads = threads ?? (isolated ? Math.min(4, globalThis.navigator?.hardwareConcurrency || 1) : 1);
   const url = name => new URL(base + name, globalThis.location?.href).href;

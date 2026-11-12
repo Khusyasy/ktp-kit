@@ -11,7 +11,8 @@
 <link rel="stylesheet" href="/apps/demo/app.build.css">
 <script type="importmap">
   {"imports": {"onnxruntime-web/wasm": "/node_modules/onnxruntime-web/dist/ort.wasm.min.mjs",
-               "ktp-kit": "/packages/ktp-kit/src/index.js", "ktp-kit/element": "/packages/ktp-kit/src/element.js"}}
+               "ktp-kit": "/packages/ktp-kit/src/index.js", "ktp-kit/element": "/packages/ktp-kit/src/element.js",
+               "#ort": "/packages/ktp-kit/src/ort.js"}}
 </script>
 <!-- async: the page script below must not wait for the reader code (400 KB) before filling in the page -->
 <script type="module" async src="/packages/ktp-kit/src/element.js"></script>

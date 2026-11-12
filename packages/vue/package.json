@@ -1,6 +1,6 @@
 {
   "name": "@ktp-kit/vue",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Vue 3 component and composable for ktp-kit: read Indonesian KTPs on the user's device.",
   "license": "Apache-2.0",
   "homepage": "https://ktp-kit.khusyasy.my.id",
@@ -20,8 +20,7 @@
     "index.d.ts"
   ],
   "dependencies": {
-    "ktp-kit": "0.1.0",
-    "onnxruntime-web": "1.20.1"
+    "ktp-kit": "0.1.1"
   },
   "peerDependencies": {
     "vue": ">=3.3"

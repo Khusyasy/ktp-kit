@@ -2,7 +2,7 @@
 //   <KtpCapture base="/ktp-kit/" onResult={r => save(r)} />               ready-made UI (the <ktp-capture> element)
 //   const {videoRef, state, shoot, retake, readFile} = useKtpCapture()      headless: build your own UI
 import {createElement, useEffect, useMemo, useRef, useState} from "react";
-import * as ort from "onnxruntime-web/wasm";
+import * as ort from "ktp-kit/ort";
 import {createKtpReader, createCapture} from "ktp-kit";
 import "ktp-kit/element";
 
@@ -26,7 +26,7 @@ export function KtpCapture({onResult, onStateChange, onError, base, lang, upload
  */
 export function useKtpCapture({base = "/ktp-kit/", config} = {}) {
   const videoRef = useRef(null), [state, setState] = useState({status: "idle"});
-  const engine = useMemo(() => createKtpReader({base, ort}), [base]);
+  const engine = useMemo(() => typeof window === "undefined" ? null : createKtpReader({base, ort}), [base]);  // null during SSR
   const capture = useRef(null), configKey = JSON.stringify(config ?? {});
   useEffect(() => {
     const c = createCapture({video: videoRef.current, engine, config});
