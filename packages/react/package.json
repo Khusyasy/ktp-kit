@@ -1,6 +1,6 @@
 {
   "name": "@ktp-kit/react",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "React component and hook for ktp-kit: read Indonesian KTPs on the user's device.",
   "license": "Apache-2.0",
   "homepage": "https://ktp-kit.khusyasy.my.id",
@@ -21,7 +21,7 @@
     "index.d.ts"
   ],
   "dependencies": {
-    "ktp-kit": "0.1.1"
+    "ktp-kit": "0.1.2"
   },
   "peerDependencies": {
     "react": ">=18"
