@@ -1,5 +1,5 @@
-// Builds the public demo into apps/demo/dist, ready for static hosting with custom headers (Cloudflare Pages:
-// `npx wrangler pages deploy apps/demo/dist --project-name ktp-kit`). Everything is served from the same origin,
+// Builds the public demo into apps/demo/dist, ready for static hosting with custom headers (Cloudflare Workers:
+// `npx wrangler deploy` from apps/demo, see wrangler.jsonc). Everything is served from the same origin,
 // which cross-origin isolation (COOP/COEP, needed for multi-threaded WebAssembly) requires.
 import fs from "node:fs";
 import path from "node:path";
@@ -51,4 +51,4 @@ fs.writeFileSync(path.join(dist, "_headers"), `/*
 
 const files = fs.readdirSync(dist, {recursive: true}).filter(f => fs.statSync(path.join(dist, f)).isFile());
 const big = files.map(f => [f, fs.statSync(path.join(dist, f)).size]).sort((a, b) => b[1] - a[1])[0];
-console.log(`demo built: ${files.length} files in apps/demo/dist; largest ${big[0]} ${(big[1] / 1e6).toFixed(1)} MB (Cloudflare Pages limit 25 MiB)`);
+console.log(`demo built: ${files.length} files in apps/demo/dist; largest ${big[0]} ${(big[1] / 1e6).toFixed(1)} MB (Cloudflare limit 25 MiB)`);

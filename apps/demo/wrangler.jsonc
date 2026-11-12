@@ -1,0 +1,9 @@
+// Demo site on Cloudflare Workers (static files only, no server code).
+// Deploy: npm run build:demo, then `npx wrangler deploy` from apps/demo. Live at https://ktp-kit.khusyasy.my.id
+{
+  "name": "ktp-kit",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "./dist" },
+  "workers_dev": false,
+  "routes": [{ "pattern": "ktp-kit.khusyasy.my.id", "custom_domain": true }]
+}
