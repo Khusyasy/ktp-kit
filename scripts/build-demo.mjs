@@ -29,16 +29,19 @@ for (const [dir, name] of [["@fontsource-variable/ibm-plex-sans", "ibm-plex-sans
   ["@fontsource/ibm-plex-mono", "ibm-plex-mono-latin-400-normal.woff2"], ["@fontsource/ibm-plex-mono", "ibm-plex-mono-latin-500-normal.woff2"]])
   fs.copyFileSync(path.join(root, "node_modules", dir, "files", name), path.join(dist, "fonts", name));
 
-// 4. The pages, with their import map pointed at the copied files (docs.html is served at /docs by Pages).
-for (const page of ["index.html", "docs.html"]) {
+// 4. The pages, with their import map pointed at the copied files (Workers serves docs.html at /docs, en.html at /en).
+// index.html is built twice: Indonesian at / and English at /en (en.html).
+for (const [page, out, lang] of [["index.html", "index.html", "id"], ["index.html", "en.html", "en"], ["docs.html", "docs.html"], ["docs-en.html", "en/docs.html"]]) {
   const raw = fs.readFileSync(path.join(root, "apps/demo", page), "utf8");
-  const html = (page === "index.html" ? prefill(raw) : raw)
+  const html = (lang ? prefill(raw, lang) : raw)
     .replaceAll("/node_modules/onnxruntime-web/dist/ort.wasm.min.mjs", "/lib/ort.wasm.min.mjs")
     .replaceAll("/packages/ktp-kit/src/", "/lib/ktp-kit/")
     .replaceAll("/apps/demo/app.build.css", "/app.css");
-  fs.writeFileSync(path.join(dist, page), html);
+  fs.mkdirSync(path.dirname(path.join(dist, out)), {recursive: true});
+  fs.writeFileSync(path.join(dist, out), html);
 }
 fs.copyFileSync(path.join(root, "apps/demo/favicon.ico"), path.join(dist, "favicon.ico"));  // for clients that skip the inline SVG icon
+for (const f of ["og-id.png", "og-en.png", "sitemap.xml", "robots.txt"]) fs.copyFileSync(path.join(root, "apps/demo", f), path.join(dist, f));  // link previews, and the page list for search engines
 fs.copyFileSync(path.join(root, "apps/demo/sw.js"), path.join(dist, "sw.js"));  // keeps the page itself for offline reloads
 
 // 5. Headers: cross-origin isolation everywhere, long caching for the big files (their names change with versions).

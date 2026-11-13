@@ -3,8 +3,16 @@
 Read Indonesian ID cards (KTP) **on the user's device**. Camera guidance, all 16 printed fields, official region
 codes and NIK checks, in the browser or Node. The photo is never uploaded, and after the first load it works offline.
 
-> **Bahasa Indonesia:** ktp-kit membaca KTP langsung di HP/laptop pengguna: panduan kamera, 16 kolom KTP, kode
-> wilayah resmi, dan pengecekan NIK. Foto tidak dikirim ke server mana pun, dan setelah dimuat sekali bisa offline.
+> **Bahasa Indonesia:** ktp-kit adalah OCR KTP yang jalan di browser. Ambil NIK, nama, alamat dan 16 kolom KTP
+> dari foto langsung di HP/laptop user, lengkap dengan panduan kamera, kode wilayah resmi dan pengecekan NIK.
+> Hasilnya JSON.
+>
+> - **Privasi:** foto KTP tidak di-upload ke server mana pun, tanpa API dan tanpa pihak ketiga. Lebih mudah sesuai
+>   UU PDP karena data tidak berpindah tangan.
+> - **Offline:** setelah model diunduh sekali (4,9 MB), tetap jalan tanpa internet.
+> - **Gratis:** tanpa biaya per scan, Apache-2.0, boleh untuk komersial.
+>
+> Coba [demo](https://ktp-kit.khusyasy.my.id) atau baca [docs](https://ktp-kit.khusyasy.my.id/docs) dalam bahasa Indonesia.
 
 - **Private by design:** no API, no third party, nothing to send. Your users' KTP never leaves their device, which
   keeps you out of cross-border transfers and processor contracts under UU PDP.

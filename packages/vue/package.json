@@ -1,6 +1,6 @@
 {
   "name": "@ktp-kit/vue",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Vue 3 component and composable for ktp-kit: read Indonesian KTPs on the user's device.",
   "license": "Apache-2.0",
   "homepage": "https://ktp-kit.khusyasy.my.id",
@@ -29,5 +29,6 @@
   "scripts": {
     "prepack": "cp ../../LICENSE ../../NOTICE ."
   },
-  "types": "./index.d.ts"
+  "types": "./index.d.ts",
+  "keywords": ["ktp", "e-ktp", "ocr", "indonesia", "nik", "on-device", "offline", "vue", "vue3"]
 }

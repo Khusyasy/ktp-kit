@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ktp-kit docs: install KTP OCR in the browser, JSON result, code examples</title>
+<meta name="description" content="How to install ktp-kit, what the result holds, and code examples for forms and servers. KTP OCR runs on the user's phone, the photo is never uploaded, works offline.">
+<link rel="canonical" href="https://ktp-kit.khusyasy.my.id/en/docs">
+<link rel="alternate" hreflang="id" href="https://ktp-kit.khusyasy.my.id/docs">
+<link rel="alternate" hreflang="en" href="https://ktp-kit.khusyasy.my.id/en/docs">
+<link rel="alternate" hreflang="x-default" href="https://ktp-kit.khusyasy.my.id/docs">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ktp-kit">
+<meta property="og:url" content="https://ktp-kit.khusyasy.my.id/en/docs">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="ktp-kit docs: install KTP OCR in the browser, JSON result, code examples">
+<meta property="og:description" content="How to install ktp-kit, what the result holds, and code examples for forms and servers. KTP OCR runs on the user's phone, the photo is never uploaded, works offline.">
+<meta property="og:image" content="https://ktp-kit.khusyasy.my.id/og-en.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ktp-kit reads a KTP in the browser and returns JSON">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M1.5%208.75V5.25h3.5M19%205.25h3.5v3.5M22.5%2015.25v3.5H19M5%2018.75H1.5v-3.5%22%20fill%3D%22none%22%20stroke%3D%22%23579be8%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22square%22%2F%3E%3Cg%20fill%3D%22%23579be8%22%3E%3Crect%20x%3D%224.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2210.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2216.5%22%20y%3D%2210.75%22%20width%3D%223%22%20height%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<link rel="preload" href="/fonts/ibm-plex-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/apps/demo/app.build.css">
+</head>
+<body class="min-h-dvh font-sans text-ink antialiased">
+
+<header class="sticky top-0 z-20 border-b border-line/70 bg-bg/75 backdrop-blur-md">
+  <div class="mx-auto flex h-16 max-w-6xl items-center gap-6 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))]">
+    <a href="/en" class="flex items-center gap-2 font-mono text-[15px] font-medium"><svg class="size-7 text-accent" viewBox="0 0 24 24" aria-hidden="true"><path d="M1.5 8.75V5.25h3.5M19 5.25h3.5v3.5M22.5 15.25v3.5H19M5 18.75H1.5v-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/><g fill="currentColor"><rect x="4.5" y="8.25" width="4.5" height="7.5"/><rect x="10.5" y="8.25" width="4.5" height="7.5"/><rect x="16.5" y="10.75" width="3" height="5"/></g></svg>ktp-kit</a>
+    <span class="text-sm text-muted">Docs</span>
+    <a href="/en#demo" class="ml-auto text-sm text-muted transition-colors hover:text-ink">Try the demo</a>
+    <a href="/docs" class="text-sm font-medium text-muted transition-colors hover:text-ink" hreflang="id" aria-label="Baca dalam bahasa Indonesia">ID</a>
+    <a href="https://github.com/Khusyasy/ktp-kit" class="text-sm text-muted transition-colors hover:text-ink">GitHub</a>
+  </div>
+</header>
+
+<main class="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-12 pt-10 pb-24 pl-[max(16px,env(safe-area-inset-left))] pr-[max(16px,env(safe-area-inset-right))] lg:grid-cols-[12rem_minmax(0,1fr)]">
+  <nav class="hidden text-sm lg:block" aria-label="Contents">
+    <ol class="sticky top-24 grid gap-2 text-muted">
+      <li><a class="hover:text-ink" href="#install">Install</a></li>
+      <li><a class="hover:text-ink" href="#usage">Usage</a></li>
+      <li><a class="hover:text-ink" href="#result">Result</a></li>
+      <li><a class="hover:text-ink" href="#form">Example form</a></li>
+      <li><a class="hover:text-ink" href="#server">Send to a server</a></li>
+      <li><a class="hover:text-ink" href="#offline">Offline</a></li>
+      <li><a class="hover:text-ink" href="#privacy">Privacy</a></li>
+    </ol>
+  </nav>
+
+  <article class="docs max-w-4xl min-w-0">
+    <h1 class="text-4xl font-semibold tracking-tight">Docs</h1>
+    <p class="mt-4 text-lg text-muted">ktp-kit reads the KTP on the user's device and hands you the result as JSON. Forms, validation and storage stay in your app. These docs go from install to the data reaching your server.</p>
+
+    <h2 id="install">Install</h2>
+    <ol>
+      <li>Install the package:
+        <pre><code>npm install ktp-kit</code></pre></li>
+      <li>Copy the models and runtime (4.9 MB, pre-compressed) to your app's public folder:
+        <pre><code>npx ktp-kit assets public/ktp-kit</code></pre>
+        Run it again after every ktp-kit update. This folder's path is your <code>base</code>.</li>
+      <li>Send these two headers on pages that use ktp-kit, so WebAssembly can use several threads. Reads get about 3x faster, 2-4 seconds per KTP on a mid-range phone:
+        <pre><code>Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp</code></pre>
+        The side effect: scripts, images and iframes from other domains must allow cross-origin use. Without these headers ktp-kit still works, just slower.</li>
+    </ol>
+
+    <h2 id="usage">Usage</h2>
+    <p>Pick one. The result is the same.</p>
+    <h3>HTML (Laravel Blade, PHP, Django, Rails, Svelte...)</h3>
+    <pre><code>&lt;script type="module"&gt;import "ktp-kit/element";&lt;/script&gt;
+&lt;ktp-capture base="/ktp-kit/" lang="en"&gt;&lt;/ktp-capture&gt;
+&lt;script&gt;
+  document.querySelector("ktp-capture").addEventListener("ktp-result", e =&gt; {
+    console.log(e.detail);   // see Result below
+  });
+&lt;/script&gt;</code></pre>
+    <p>Attributes: <code>base</code> (the path from step 2), <code>lang</code> (<code>id</code> or <code>en</code>), <code>upload="false"</code> to hide the upload button. Events: <code>ktp-result</code>, <code>ktp-state</code>, <code>ktp-error</code>. Style it with CSS variables and <code>::part()</code>, see the README.</p>
+    <h3>React</h3>
+    <pre><code>npm install @ktp-kit/react
+
+import { KtpCapture } from "@ktp-kit/react";
+&lt;KtpCapture base="/ktp-kit/" onResult={r =&gt; setKtp(r)} /&gt;</code></pre>
+    <h3>Vue</h3>
+    <pre><code>npm install @ktp-kit/vue
+
+&lt;KtpCapture base="/ktp-kit/" @result="r =&gt; ktp = r" /&gt;</code></pre>
+    <h3>Headless (your own UI)</h3>
+    <pre><code>import { useKtpCapture } from "@ktp-kit/react";   // same in @ktp-kit/vue
+const { videoRef, state, shoot, retake, readFile } = useKtpCapture({ base: "/ktp-kit/" });
+// state.status: searching | adjust | hold | reading | done | error
+// state.hint: a message key (MESSAGES), state.corners: card corners to draw
+// state.result: the result when status is "done" (card as pixels, not a Blob)</code></pre>
+    <h3>Node.js and CLI</h3>
+    <pre><code>npx ktp-kit read foto/*.jpg          # one JSON line per photo
+npx ktp-kit read foto/*.jpg --csv    # or CSV</code></pre>
+
+    <h2 id="result">Result</h2>
+    <p>Field names follow the common Indonesian KTP OCR APIs (VIDA, GLAIR), so existing code usually works as is. Fields that could not be read are <code>null</code>. Dates are written as on the card, <code>DD-MM-YYYY</code>.</p>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>Field</th><th>Example</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>nik</code></td><td><code>3171014501909001</code></td><td>16 digits</td></tr>
+          <tr><td><code>nik_valid</code></td><td><code>true</code></td><td>The region code, birth date and sequence number make sense. This is not a check against Dukcapil records.</td></tr>
+          <tr><td><code>nama</code></td><td><code>NAMA CONTOH</code></td><td>As printed, titles included</td></tr>
+          <tr><td><code>tempat_lahir</code></td><td><code>JAKARTA</code></td><td></td></tr>
+          <tr><td><code>tanggal_lahir</code></td><td><code>05-01-1990</code></td><td></td></tr>
+          <tr><td><code>jenis_kelamin</code></td><td><code>PEREMPUAN</code></td><td><code>LAKI-LAKI</code> or <code>PEREMPUAN</code></td></tr>
+          <tr><td><code>golongan_darah</code></td><td><code>O</code></td><td><code>A</code>, <code>B</code>, <code>AB</code>, <code>O</code>, optionally with <code>+</code>/<code>-</code>, or <code>-</code> when blank on the card</td></tr>
+          <tr><td><code>alamat</code></td><td><code>JL. CONTOH NO. 1</code></td><td></td></tr>
+          <tr><td><code>rt_rw</code></td><td><code>001/002</code></td><td></td></tr>
+          <tr><td><code>kelurahan_desa</code></td><td><code>GAMBIR</code></td><td rowspan="4">Official Kemendagri names</td></tr>
+          <tr><td><code>kecamatan</code></td><td><code>GAMBIR</code></td></tr>
+          <tr><td><code>kabupaten_kota</code></td><td><code>KOTA ADMINISTRASI JAKARTA PUSAT</code></td></tr>
+          <tr><td><code>provinsi</code></td><td><code>DAERAH KHUSUS IBUKOTA JAKARTA</code></td></tr>
+          <tr><td><code>agama</code></td><td><code>ISLAM</code></td><td rowspan="3">From the official lists</td></tr>
+          <tr><td><code>status_perkawinan</code></td><td><code>KAWIN</code></td></tr>
+          <tr><td><code>pekerjaan</code></td><td><code>KARYAWAN SWASTA</code></td></tr>
+          <tr><td><code>kewarganegaraan</code></td><td><code>WNI</code></td><td><code>WNI</code> or <code>WNA</code></td></tr>
+          <tr><td><code>berlaku_hingga</code></td><td><code>SEUMUR HIDUP</code></td><td>Or a date, on older cards</td></tr>
+          <tr><td><code>kota_terbit</code></td><td><code>KOTA ADMINISTRASI JAKARTA PUSAT</code></td><td>Above the signature, official name</td></tr>
+          <tr><td><code>tanggal_terbit</code></td><td><code>12-08-2020</code></td><td></td></tr>
+          <tr><td><code>kode_wilayah</code></td><td><code>3171011001</code></td><td>The most detailed matching region code: 2 digits for the province, 4 regency/city, 6 district, 10 village</td></tr>
+          <tr><td><code>perlu_dicek</code></td><td><code>{"tanggal_lahir": ["from_nik"]}</code></td><td>See below</td></tr>
+          <tr><td><code>info</code></td><td><code>{"is_ktp": true, "ms": 2300, "versi": "0.1.0"}</code></td><td>Read time on the device and the ktp-kit version, useful for audit logs. <code>is_ktp</code> is experimental.</td></tr>
+          <tr><td><code>card</code></td><td>Blob JPEG</td><td>The straightened KTP photo, 856 x 540</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>perlu_dicek</h3>
+    <p>Fields the user should check again, each with a reason code. You decide the text your users see.</p>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>nik_mismatch</code></td><td>The card disagrees with what the NIK encodes (birth date, gender). One of them was misread.</td></tr>
+          <tr><td><code>from_nik</code></td><td>The text on the card was unreadable, so the value comes from the NIK. Usually right, but not read from the card.</td></tr>
+          <tr><td><code>low_confidence</code></td><td>Name or address: the model was unsure of at least one letter, usually from blur or glare. On test photos this flag caught about 3 in 4 misread names.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="form">Example form</h2>
+    <p>Add inputs only for the fields you need. As long as each input's <code>name</code> matches a result field, this snippet fills them. Other fields are ignored.</p>
+    <pre><code>&lt;ktp-capture base="/ktp-kit/"&gt;&lt;/ktp-capture&gt;
+&lt;form id="signup"&gt;
+  &lt;input name="nik"&gt; &lt;input name="nama"&gt; &lt;input name="tanggal_lahir"&gt;
+  &lt;button&gt;Sign up&lt;/button&gt;
+&lt;/form&gt;
+&lt;script&gt;
+  let ktp = null;
+  const form = document.getElementById("signup");
+  document.querySelector("ktp-capture").addEventListener("ktp-result", e =&gt; {
+    ktp = e.detail;
+    for (const [k, v] of Object.entries(ktp)) if (form.elements[k]) form.elements[k].value = v ?? "";
+  });
+&lt;/script&gt;</code></pre>
+    <p>If users must not change a field, add <code>readonly</code>. To mark the fields to check:</p>
+    <pre><code>for (const [field, reasons] of Object.entries(ktp.perlu_dicek))
+  form.elements[field]?.classList.add("check-me");</code></pre>
+    <h3>React</h3>
+    <pre><code>const [form, setForm] = useState({ nik: "", nama: "" });
+&lt;KtpCapture base="/ktp-kit/" onResult={r =&gt; setForm({ nik: r.nik ?? "", nama: r.nama ?? "" })} /&gt;
+&lt;input value={form.nik} onChange={e =&gt; setForm({ ...form, nik: e.target.value })} /&gt;</code></pre>
+
+    <h2 id="server">Send to a server</h2>
+    <p>Submit the form as usual. Send the KTP photo only if you really need to store it.</p>
+    <pre><code>form.addEventListener("submit", async e =&gt; {
+  e.preventDefault();
+  const data = new FormData(form);
+  data.append("ktp", ktp.card, "ktp.jpg");   // optional
+  await fetch("/signup", { method: "POST", body: data });
+});</code></pre>
+    <p>On the server, treat this as ordinary user input, because users can edit the form. Check the NIK again with the same functions:</p>
+    <pre><code>import { nikValid, nikConflicts } from "ktp-kit";
+
+app.post("/signup", upload.single("ktp"), (req, res) =&gt; {
+  const { nik, tanggal_lahir, jenis_kelamin } = req.body;
+  if (!nikValid(nik)) return res.status(400).json({ error: "Invalid NIK" });
+  const diff = nikConflicts({ nik, tanggal_lahir, jenis_kelamin });   // e.g. ["tanggal_lahir"]
+  if (diff.length) return res.status(400).json({ error: "Does not match the NIK", field: diff });
+  // save to the database
+});</code></pre>
+    <p>Need to know the NIK is really registered? That takes a Dukcapil check through an authorised provider. Call it from your server, and only for sign-ups that need it.</p>
+
+    <h2 id="offline">Offline</h2>
+    <p>On first use, ktp-kit stores the models on the device (Cache API). After that, reading works with no internet while the page is open. For the page itself to reload offline, your app needs a service worker that caches its own HTML, JS and CSS. A short example is in <code>apps/demo/sw.js</code>.</p>
+
+    <h2 id="privacy">Privacy</h2>
+    <p>The KTP photo and data stay on the device until your own app sends them. ktp-kit's only network requests download its models. Indonesia's data protection law (UU PDP) asks you to collect only what you need, so send only the fields you use, and skip storing the KTP photo unless it is required.</p>
+  </article>
+</main>
+<script type="module">
+  // Code colours, the same small tokenizer as the main page: comments, strings, tags, keywords, attributes, calls.
+  const TOKENS = /(#[^\n]*|\/\/[^\n]*)|("[^"\n]*"|'[^'\n]*')|(<\/?[A-Za-z][\w-]*|\/?>)|\b(import|from|export|function|return|const|let|new|async|await|if|for|of|npm|npx)\b|(@?[A-Za-z][\w-]*)(?==)|([A-Za-z_]\w*)(?=\()/g;
+  const esc = s => s.replace(/[&<>]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;"})[c]);
+  const highlight = src => {
+    let out = "", last = 0;
+    for (const m of src.matchAll(TOKENS)) {
+      const cls = ["c", "s", "t", "k", "a", "f"][m.slice(1).findIndex(Boolean)];
+      out += esc(src.slice(last, m.index)) + `<span class="tok-${cls}">${esc(m[0])}</span>`;
+      last = m.index + m[0].length;
+    }
+    return out + esc(src.slice(last));
+  };
+  document.querySelectorAll(".docs pre code").forEach(c => { c.innerHTML = highlight(c.textContent); });  // our own fixed text
+</script>
+</body>
+</html>

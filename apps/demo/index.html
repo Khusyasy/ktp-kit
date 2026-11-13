@@ -1,10 +1,25 @@
 <!doctype html>
-<html lang="id">
+<html lang="%LANG%">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ktp-kit</title>
-<meta name="description" content="Baca KTP di browser. Foto tidak dikirim ke server. Setelah diunduh sekali, tetap jalan tanpa internet.">
+<title data-t="seoTitle">ktp-kit</title>
+<meta name="description" data-t-content="seoDesc" content="">
+<link rel="canonical" href="%URL%">
+<link rel="alternate" hreflang="id" href="https://ktp-kit.khusyasy.my.id/">
+<link rel="alternate" hreflang="en" href="https://ktp-kit.khusyasy.my.id/en">
+<link rel="alternate" hreflang="x-default" href="https://ktp-kit.khusyasy.my.id/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ktp-kit">
+<meta property="og:url" content="%URL%">
+<meta property="og:locale" content="%LOCALE%">
+<meta property="og:title" data-t-content="seoTitle" content="">
+<meta property="og:description" data-t-content="seoDesc" content="">
+<meta property="og:image" content="https://ktp-kit.khusyasy.my.id/og-%LANG%.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" data-t-content="ogAlt" content="">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M1.5%208.75V5.25h3.5M19%205.25h3.5v3.5M22.5%2015.25v3.5H19M5%2018.75H1.5v-3.5%22%20fill%3D%22none%22%20stroke%3D%22%23579be8%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22square%22%2F%3E%3Cg%20fill%3D%22%23579be8%22%3E%3Crect%20x%3D%224.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2210.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2216.5%22%20y%3D%2210.75%22%20width%3D%223%22%20height%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preload" href="/fonts/ibm-plex-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -65,7 +80,7 @@
     <div class="relative w-full [grid-area:reader] md:w-auto motion-safe:animate-rise motion-safe:[animation-delay:160ms]">
       <div class="pointer-events-none absolute -inset-16 -z-10 rounded-full bg-accent/12 blur-3xl" aria-hidden="true"></div>
       <div class="rounded-[28px] border border-line bg-sunk p-2 shadow-[0_40px_80px_-40px_rgb(0_0_0/0.8)]">
-        <ktp-capture id="reader" base="/ktp-kit/" lang="id"
+        <ktp-capture id="reader" base="/ktp-kit/" lang="%LANG%"
           class="block min-h-0 w-full [&:not(:defined)]:aspect-[3/4] rounded-[20px] md:w-[min(max(420px,calc(330px*var(--ktp-aspect,0.75))),46vw,calc(72svh*var(--ktp-aspect,0.75)))]
                  data-[state=reading]:aspect-[3/4] data-[state=done]:aspect-[3/4]
                  [--ktp-accent:var(--color-accent)] [--ktp-ok:var(--color-ok)] [--ktp-warn:var(--color-warn)]
@@ -229,7 +244,10 @@
 
   // The agreed Indonesian and English copy.
   const T = {
-    id: {h1: "KTP dicek di HP.", sub: "Tanpa pihak ketiga, langsung ke server Anda. Tetap jalan tanpa internet.",
+    id: {seoTitle: "ktp-kit: OCR KTP di browser, foto tidak dikirim ke server",
+      seoDesc: "Baca KTP dari foto langsung di HP user: NIK, nama, alamat dan 16 kolom lain jadi JSON. Tanpa API berbayar, tanpa upload, tetap jalan offline. Gratis, Apache-2.0.",
+      ogAlt: "ktp-kit membaca KTP di browser dan memberi hasil JSON",
+      h1: "KTP dicek di HP.", sub: "Tanpa pihak ketiga, langsung ke server Anda. Tetap jalan tanpa internet.",
       nDemo: "Demo", nPasang: "Install", nAkurasi: "Akurasi", nLisensi: "Lisensi", navLabel: "Bagian",
       t1: mb => mb ? `Download model, ${mb} MB` : "Download model", t2: "Nyalakan mode pesawat", t3: "Foto KTP",
       saved: "Tersimpan di device", downloading: p => `Download ${p}%`, offline: "Offline", online: "Masih online",
@@ -242,7 +260,10 @@
       analitik: "Halaman ini tanpa analytics.", privasi: "Privasi", copy: "Copy", copied: "Copied",
       other: "EN", otherLabel: "Read in English", decimal: ",",
       nDocs: "Docs", hH: "Result", hIntro: "Result dikirim sekali sebagai JSON. Form di bawah contoh app: isi field yang dibutuhkan, tandai yang perlu dicek.", hForm: "Contoh form pendaftaran", hJson: "dari KTP Anda", hSample: "data contoh", hDocs: "Docs lengkap", tNik: "Baris NIK", tAll: "Semua baris teks", tBlank: "Strip kosong (tanpa teks)", tSize: "Ukuran model baca", vBench: "Data dan script benchmark di GitHub", hEmpty: "// Foto KTP di atas, result-nya muncul di sini.", fNik: "NIK", fNama: "Nama", fTempat: "Tempat lahir", fTanggal: "Tanggal lahir", fAlamat: "Alamat", fDaftar: "Daftar", fSent: "Ini contoh, tidak ada data yang dikirim.", why: {nik_mismatch: "Tidak cocok dengan NIK, cek lagi", from_nik: "Tidak terbaca, diambil dari NIK", low_confidence: "Kurang jelas, cek lagi"}, nikInvalid: "NIK tidak valid, cek lagi", nikMissing: "NIK tidak terbaca, isi manual"},
-    en: {h1: "KTP checked on the phone.", sub: "No third party, straight to your server. Works offline.",
+    en: {seoTitle: "ktp-kit: Indonesian ID card (KTP) OCR in the browser",
+      seoDesc: "Read Indonesian ID cards (KTP) on the user's phone: NIK, name, address and all 16 fields as JSON. No paid API, no upload, works offline. Free, Apache-2.0.",
+      ogAlt: "ktp-kit reads a KTP in the browser and returns JSON",
+      h1: "KTP checked on the phone.", sub: "No third party, straight to your server. Works offline.",
       nDemo: "Demo", nPasang: "Install", nAkurasi: "Accuracy", nLisensi: "License", navLabel: "Sections",
       t1: mb => mb ? `Download the model, ${mb} MB` : "Download the model", t2: "Turn on airplane mode", t3: "Photograph a KTP",
       saved: "Saved on this device", downloading: p => `Downloading ${p}%`, offline: "Offline", online: "Still online",
@@ -256,8 +277,8 @@
       other: "ID", otherLabel: "Baca dalam bahasa Indonesia", decimal: ".",
       nDocs: "Docs", hH: "The result", hIntro: "The result comes once, as JSON. The form below is an example app: fill the fields you need, mark the ones to check.", hForm: "Example sign-up form", hJson: "from your KTP", hSample: "sample data", hDocs: "Full docs", tNik: "NIK lines", tAll: "All text lines", tBlank: "Blank strips (no text)", tSize: "Reader model size", vBench: "Benchmark data and scripts on GitHub", hEmpty: "// Photograph a KTP above. The result shows up here.", fNik: "NIK", fNama: "Name", fTempat: "Place of birth", fTanggal: "Date of birth", fAlamat: "Address", fDaftar: "Sign up", fSent: "Example only. Nothing was sent.", why: {nik_mismatch: "Doesn't match the NIK, check again", from_nik: "Unreadable, filled from the NIK", low_confidence: "Unclear, check again"}, nikInvalid: "Invalid NIK, check again", nikMissing: "NIK unreadable, type it in"},
   };
-  let lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "id";
-  try { lang = localStorage.getItem("ktp-kit-lang") || lang; } catch {}
+  // Each language has its own URL (/ and /en), so search engines index both.
+  let lang = location.pathname === "/en" || new URLSearchParams(location.search).get("lang") === "en" ? "en" : "id";
   const t = () => T[lang];
 
   // The offline test
@@ -389,6 +410,8 @@ npx ktp-kit read foto/*.jpg --csv     # baca satu folder foto, hasil CSV`,
     document.querySelectorAll("[data-pct]").forEach(el => { el.textContent = el.dataset.pct.replace(".", t().decimal) + "%"; });
     document.querySelectorAll("[data-mb]").forEach(el => { el.textContent = el.dataset.mb.replace(".", t().decimal) + " MB"; });
     $("cli-note").innerHTML = t().cli.replace(/<code>/g, '<code class="font-mono text-ink">');  // fixed strings from T
+    document.querySelectorAll("a[href$='/docs']").forEach(a => a.setAttribute("href", lang === "en" ? "/en/docs" : "/docs"));
+    document.querySelectorAll("[data-t-content]").forEach(el => el.setAttribute("content", t()[el.dataset.tContent]));
     document.querySelectorAll("[data-t-aria]").forEach(el => el.setAttribute("aria-label", t()[el.dataset.tAria]));
     $("lang").textContent = t().other; $("lang").setAttribute("aria-label", t().otherLabel);
     reader.setAttribute("lang", lang);
@@ -405,7 +428,7 @@ npx ktp-kit read foto/*.jpg --csv     # baca satu folder foto, hasil CSV`,
   }).catch(() => {});
   $("lang").addEventListener("click", () => {
     lang = lang === "id" ? "en" : "id";
-    try { localStorage.setItem("ktp-kit-lang", lang); } catch {}
+    history.replaceState(null, "", (lang === "en" ? "/en" : "/") + location.search + location.hash);
     applyLang();
   });
   applyLang();
