@@ -23,7 +23,7 @@ const ICONS = {
 };
 
 const STYLE = `
-:host { --ktp-accent: #2563eb; --ktp-ok: #16a34a; --ktp-warn: #f59e0b; --ktp-bg: #000; --ktp-fg: #fff;
+:host { --ktp-accent: #2563eb; --ktp-ok: #2563eb; --ktp-warn: #fff; --ktp-bg: #000; --ktp-fg: #fff;
   --ktp-panel: rgba(0,0,0,.6); --ktp-surface: #111; --ktp-muted: #a3a3a3; --ktp-font: system-ui, sans-serif;
   display: block; position: relative; overflow: hidden; background: var(--ktp-bg); color: var(--ktp-fg);
   font: 16px/1.4 var(--ktp-font); min-height: 320px; aspect-ratio: var(--ktp-ratio, 3 / 4); }
@@ -150,7 +150,7 @@ export class KtpCapture extends (globalThis.HTMLElement ?? class {}) {
     x.clearRect(0, 0, c.width, c.height);
     if (!q) return;
     x.lineWidth = Math.max(4, c.width / 150);
-    x.strokeStyle = getComputedStyle(this).getPropertyValue(ok ? "--ktp-ok" : "--ktp-warn") || (ok ? "#16a34a" : "#f59e0b");
+    x.strokeStyle = getComputedStyle(this).getPropertyValue(ok ? "--ktp-ok" : "--ktp-warn") || (ok ? "#2563eb" : "#fff");
     x.beginPath();
     q.forEach(([px, py], i) => i ? x.lineTo(px, py) : x.moveTo(px, py));
     x.closePath();
