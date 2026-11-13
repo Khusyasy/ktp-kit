@@ -12,7 +12,7 @@ codes and NIK checks, in the browser or Node. The photo is never uploaded, and a
 > - **Offline:** setelah model diunduh sekali (4,9 MB), tetap jalan tanpa internet.
 > - **Gratis:** tanpa biaya per scan, Apache-2.0, boleh untuk komersial.
 >
-> Coba [demo](https://ktp-kit.khusyasy.my.id) atau baca [docs](https://ktp-kit.khusyasy.my.id/docs) dalam bahasa Indonesia.
+> Coba [demo](https://ktp-kit.khusyasy.my.id) atau baca [docs](https://ktp-kit.khusyasy.my.id/docs) dalam bahasa Indonesia. Cerita pembuatannya ada di [write-up dev.to](https://dev.to/khusyasy/how-i-built-a-fully-offline-id-card-ocr-trained-on-synthetic-data-1bb3).
 
 - **Private by design:** no API, no third party, nothing to send. Your users' KTP never leaves their device, which
   keeps you out of cross-border transfers and processor contracts under UU PDP.
@@ -183,6 +183,8 @@ Nothing about the card leaves the device. The only requests are downloads of ktp
 Card corners (DocAligner, Apache-2.0) → straighten → text lines (PP-OCRv6 small det, Apache-2.0) → each line read by a
 PP-OCRv6 tiny reader fine-tuned for KTP text → fields matched to the fixed KTP layout, snapped to official lists and
 region names, and checked against the NIK.
+
+The full story, from synthetic training data to the browser build, is in the [dev.to write-up](https://dev.to/khusyasy/how-i-built-a-fully-offline-id-card-ocr-trained-on-synthetic-data-1bb3).
 
 ### How the reader was trained
 
