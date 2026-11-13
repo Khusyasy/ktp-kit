@@ -2,13 +2,14 @@
 <!-- Link preview images (apps/demo/og-id.png, og-en.png), 1200x630. Render with any Chromium, from the repo root:
   msedge --headless=new --hide-scrollbars --allow-file-access-from-files --window-size=1200,630
     --screenshot=apps/demo/og-en.png "file:///<repo>/scripts/og.html?lang=en"
+  GitHub's repo social preview (.github/social-preview.png): add &w=1280&h=640 and --window-size=1280,640.
   Sample data only (the demo's NAMA CONTOH card), never a real KTP. -->
 <meta charset="utf-8">
 <style>
 @font-face { font-family: P; src: url(../node_modules/@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2); }
 @font-face { font-family: M; src: url(../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2); }
-html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: #161b24; color: #e8edf3; font-family: P; }
-.w { display: grid; grid-template-columns: 1fr 470px; gap: 56px; align-items: center; height: 100%; padding: 0 72px; box-sizing: border-box;
+html, body { margin: 0; width: var(--w, 1200px); height: var(--h, 630px); overflow: hidden; background: #161b24; color: #e8edf3; font-family: P; }
+.w { display: grid; grid-template-columns: 1fr 470px; gap: 56px; align-items: center; height: 100%; padding: 0 max(72px, calc((var(--w, 1200px) - 1056px) / 2)); box-sizing: border-box;
   background: radial-gradient(520px 420px at 82% 50%, rgba(87,155,232,.16), transparent 70%); }
 .b { display: flex; align-items: center; gap: 14px; font-family: M; font-size: 30px; }
 h1 { font-size: 76px; line-height: 1.04; letter-spacing: -.02em; font-weight: 600; margin: 40px 0 22px; }
@@ -36,5 +37,8 @@ pre { margin: 0; background: #10141b; border: 1px solid #2c3442; border-radius: 
     id: ["OCR KTP di browser.", "Foto tetap di HP user. Jalan offline. Gratis, Apache-2.0.", "// data contoh"],
     en: ["KTP OCR in the browser.", "The photo stays on the phone. Works offline. Free, Apache-2.0.", "// sample data"],
   }[new URLSearchParams(location.search).get("lang") === "en" ? "en" : "id"];
+  const q = new URLSearchParams(location.search);
+  if (q.get("w")) document.documentElement.style.setProperty("--w", q.get("w") + "px");
+  if (q.get("h")) document.documentElement.style.setProperty("--h", q.get("h") + "px");
   ["h", "s", "k"].forEach((id, i) => document.getElementById(id).textContent = T[i]);
 </script>
