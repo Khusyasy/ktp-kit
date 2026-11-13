@@ -20,5 +20,6 @@
   ],
   "scripts": {
     "prepack": "node check.mjs && cp ../../LICENSE ../../NOTICE ../../THIRD_PARTY_NOTICES.md . && rm -rf LICENSES && cp -r ../../LICENSES ."
-  }
+  },
+  "keywords": ["ktp", "e-ktp", "ocr", "indonesia", "nik", "on-device", "offline", "onnx"]
 }

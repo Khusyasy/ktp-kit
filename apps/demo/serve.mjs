@@ -13,7 +13,7 @@ const assets = path.join(root, "apps/demo/ktp-kit");  // filled by: npx ktp-kit 
 const FONT_DIRS = ["node_modules/@fontsource-variable/ibm-plex-sans/files", "node_modules/@fontsource/ibm-plex-mono/files"];
 const font = name => FONT_DIRS.map(d => path.join(root, d, name)).find(f => fs.existsSync(f));
 const types = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript",
-  ".wasm": "application/wasm", ".csv": "text/csv", ".json": "application/json", ".woff2": "font/woff2", ".css": "text/css"};
+  ".wasm": "application/wasm", ".csv": "text/csv", ".json": "application/json", ".woff2": "font/woff2", ".css": "text/css", ".png": "image/png", ".xml": "application/xml", ".txt": "text/plain", ".ico": "image/x-icon"};
 
 // Tailwind rebuilds apps/demo/app.build.css whenever the page or app.css changes.
 spawn(process.execPath, [path.join(root, "node_modules/@tailwindcss/cli/dist/index.mjs"), "-i", path.join(root, "apps/demo/app.css"),
@@ -38,13 +38,13 @@ http.createServer((req, res) => {
     });
     return;
   }
-  const file = url === "/" ? path.join(root, "apps/demo/index.html") : url === "/docs" ? path.join(root, "apps/demo/docs.html")
-    : url === "/sw.js" || url === "/favicon.ico" ? path.join(root, "apps/demo", url)
+  const file = url === "/" || url === "/en" ? path.join(root, "apps/demo/index.html") : url === "/docs" ? path.join(root, "apps/demo/docs.html") : url === "/en/docs" ? path.join(root, "apps/demo/docs-en.html")
+    : ["/sw.js", "/favicon.ico", "/og-id.png", "/og-en.png", "/sitemap.xml", "/robots.txt"].includes(url) ? path.join(root, "apps/demo", url)
     : url.startsWith("/fonts/") ? font(path.basename(url)) ?? ""
     : url.startsWith("/ktp-kit/") ? path.join(assets, url.slice(9)) : path.join(root, url);
   if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end(); }
   res.writeHead(200, {"Content-Type": types[path.extname(file)] || "application/octet-stream",
     "Cross-Origin-Opener-Policy": "same-origin", "Cross-Origin-Embedder-Policy": "require-corp", "Cache-Control": "no-cache"});
-  if (file.endsWith(path.join("apps", "demo", "index.html"))) return res.end(prefill(fs.readFileSync(file, "utf8")));  // copy in the HTML
+  if (file.endsWith(path.join("apps", "demo", "index.html"))) return res.end(prefill(fs.readFileSync(file, "utf8"), url === "/en" ? "en" : "id"));  // copy in the HTML
   fs.createReadStream(file).pipe(res);
 }).listen(5173, "127.0.0.1", () => console.log(`ktp-kit demo on http://localhost:5173 (?debug logs to ${logDir})`));

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ktp-kit.khusyasy.my.id/sitemap.xml

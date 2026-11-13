@@ -1,0 +1,40 @@
+<!doctype html>
+<!-- Link preview images (apps/demo/og-id.png, og-en.png), 1200x630. Render with any Chromium, from the repo root:
+  msedge --headless=new --hide-scrollbars --allow-file-access-from-files --window-size=1200,630
+    --screenshot=apps/demo/og-en.png "file:///<repo>/scripts/og.html?lang=en"
+  Sample data only (the demo's NAMA CONTOH card), never a real KTP. -->
+<meta charset="utf-8">
+<style>
+@font-face { font-family: P; src: url(../node_modules/@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2); }
+@font-face { font-family: M; src: url(../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2); }
+html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: #161b24; color: #e8edf3; font-family: P; }
+.w { display: grid; grid-template-columns: 1fr 470px; gap: 56px; align-items: center; height: 100%; padding: 0 72px; box-sizing: border-box;
+  background: radial-gradient(520px 420px at 82% 50%, rgba(87,155,232,.16), transparent 70%); }
+.b { display: flex; align-items: center; gap: 14px; font-family: M; font-size: 30px; }
+h1 { font-size: 76px; line-height: 1.04; letter-spacing: -.02em; font-weight: 600; margin: 40px 0 22px; }
+p { font-size: 28px; line-height: 1.4; color: #9aa5b4; margin: 0; max-width: 20em; }
+pre { margin: 0; background: #10141b; border: 1px solid #2c3442; border-radius: 20px; padding: 30px 32px; font: 22px/1.65 M; }
+.k { color: #9aa5b4; } .s { color: #5fcf8f; } .n { color: #579be8; } .c { color: #9aa5b4; font-size: 17px; }
+</style>
+<div class="w">
+  <div>
+    <div class="b"><svg width="44" height="44" viewBox="0 0 24 24"><path d="M1.5 8.75V5.25h3.5M19 5.25h3.5v3.5M22.5 15.25v3.5H19M5 18.75H1.5v-3.5" fill="none" stroke="#579be8" stroke-width="1.5" stroke-linecap="square"/><g fill="#579be8"><rect x="4.5" y="8.25" width="4.5" height="7.5"/><rect x="10.5" y="8.25" width="4.5" height="7.5"/><rect x="16.5" y="10.75" width="3" height="5"/></g></svg>ktp-kit</div>
+    <h1 id="h"></h1><p id="s"></p>
+  </div>
+<pre><span class="c" id="k"></span>
+{
+  <span class="k">"nik"</span>: <span class="s">"3171014501909001"</span>,
+  <span class="k">"nama"</span>: <span class="s">"NAMA CONTOH"</span>,
+  <span class="k">"tempat_lahir"</span>: <span class="s">"JAKARTA"</span>,
+  <span class="k">"tanggal_lahir"</span>: <span class="s">"05-01-1990"</span>,
+  <span class="k">"nik_valid"</span>: <span class="n">true</span>,
+  <span class="k">"perlu_dicek"</span>: []
+}</pre>
+</div>
+<script>
+  const T = {
+    id: ["OCR KTP di browser.", "Foto tetap di HP user. Jalan offline. Gratis, Apache-2.0.", "// data contoh"],
+    en: ["KTP OCR in the browser.", "The photo stays on the phone. Works offline. Free, Apache-2.0.", "// sample data"],
+  }[new URLSearchParams(location.search).get("lang") === "en" ? "en" : "id"];
+  ["h", "s", "k"].forEach((id, i) => document.getElementById(id).textContent = T[i]);
+</script>

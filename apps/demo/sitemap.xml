@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url><loc>https://ktp-kit.khusyasy.my.id/</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://ktp-kit.khusyasy.my.id/"/><xhtml:link rel="alternate" hreflang="en" href="https://ktp-kit.khusyasy.my.id/en"/></url>
+  <url><loc>https://ktp-kit.khusyasy.my.id/en</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://ktp-kit.khusyasy.my.id/"/><xhtml:link rel="alternate" hreflang="en" href="https://ktp-kit.khusyasy.my.id/en"/></url>
+  <url><loc>https://ktp-kit.khusyasy.my.id/docs</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://ktp-kit.khusyasy.my.id/docs"/><xhtml:link rel="alternate" hreflang="en" href="https://ktp-kit.khusyasy.my.id/en/docs"/></url>
+  <url><loc>https://ktp-kit.khusyasy.my.id/en/docs</loc>
+    <xhtml:link rel="alternate" hreflang="id" href="https://ktp-kit.khusyasy.my.id/docs"/><xhtml:link rel="alternate" hreflang="en" href="https://ktp-kit.khusyasy.my.id/en/docs"/></url>
+</urlset>
