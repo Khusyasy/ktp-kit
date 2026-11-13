@@ -108,7 +108,7 @@ on the card. Unreadable fields are `null`.
   "berlaku_hingga": "SEUMUR HIDUP", "kota_terbit": "KOTA ADMINISTRASI JAKARTA PUSAT", "tanggal_terbit": "12-08-2020",
   "kode_wilayah": "3171011001",
   "perlu_dicek": { "tanggal_lahir": ["from_nik"] },
-  "info": { "is_ktp": true, "ms": 2300, "versi": "0.1.0" },
+  "info": { "is_ktp": true, "ms": 2300, "versi": "0.1.0", "confidence": { "nama": 0.93, "alamat": 0.88 } },
   "card": "Blob (image/jpeg)"
 }
 ```

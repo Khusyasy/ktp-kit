@@ -369,12 +369,15 @@ export function fieldNotes(out) {
 // conf]; a line counts when its value part, after any label and ':', is inside the field's raw text). Other fields
 // are snapped to official names or lists, which repairs low-confidence reads, so their confidence says little.
 export function fieldConfidence(out, items) {
-  const raw = out.raw || {}, conf = {};
-  for (const f of ["nama", "alamat"]) {
-    const v = letters(raw[f]);
+  // Free-text fields with no other check (fixed lists, regions and NIK-linked fields are snapped or cross-checked).
+  // Each field's value is matched to the OCR lines it came from, the lowest line confidence wins.
+  const raw = out.raw || {}, conf = {}, alnum = s => (s || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  for (const [f, src, key] of [["nama", "nama", letters], ["alamat", "alamat", letters],
+    ["tempat_lahir", "tempat_tgl_lahir", letters], ["rt_rw", "rt_rw", alnum]]) {
+    const v = key(raw[src]);
     if (!v) continue;
-    const cs = items.filter(([t, , c]) => c !== undefined && letters(t.replace(/^.*[:;]/, "")).length >= 2 &&
-      v.includes(letters(t.replace(/^.*[:;]/, "")))).map(([, , c]) => c);
+    const cs = items.filter(([t, , c]) => c !== undefined && key(t.replace(/^.*[:;]/, "")).length >= 2 &&
+      v.includes(key(t.replace(/^.*[:;]/, "")))).map(([, , c]) => c);
     if (cs.length) conf[f] = Math.min(...cs);
   }
   return conf;

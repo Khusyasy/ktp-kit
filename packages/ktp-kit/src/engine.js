@@ -68,8 +68,10 @@ const CACHED = Object.values(FILES).filter(f => f !== FILES.mjs);
  * @property {Object<string, string[]>} perlu_dicek  fields worth a second look, with reasons:
  *   nik_mismatch (disagrees with the NIK), from_nik (unreadable, filled from the NIK), low_confidence (name or
  *   address: the reader was unsure of at least one character)
- * @property {{is_ktp: boolean, ms: number, versi: string}} info  is_ktp (experimental): false when the card shows
- *   few KTP labels and no valid NIK. ms: reading time on this device. versi: ktp-kit version.
+ * @property {{is_ktp: boolean, ms: number, versi: string, confidence: {nama?: number, alamat?: number, tempat_lahir?: number, rt_rw?: number}}} info
+ *   is_ktp (experimental): false when the card shows few KTP labels and no valid NIK. ms: reading time on this
+ *   device. versi: ktp-kit version. confidence: lowest character probability for name, address, birthplace and RT/RW (0-1),
+ *   name and address below 0.6 get "low_confidence". Use your own limit if that suits your app better.
  * @property {RgbaImage} card               the straightened 856x540 card (the element turns it into a JPEG Blob)
  */
 
@@ -203,12 +205,14 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     const isKtp = !!r && (r.fields.nik_valid || ktpLabels(r.lines) >= 3);  // a KTP shows most of its 10 printed labels
     if (!r || (!r.fields.nik && !isKtp)) return null;
     const f = Object.fromEntries(Object.entries(r.fields).map(([k, v]) => [outName(k), v]));
-    const notes = fieldNotes(r.fields);
-    for (const [k, c] of Object.entries(fieldConfidence(r.fields, r.lines)))
-      if (c < LOW_CONFIDENCE) (notes[k] ||= []).push("low_confidence");
+    const notes = fieldNotes(r.fields), conf = fieldConfidence(r.fields, r.lines);
+    for (const [k, c] of Object.entries(conf))  // birthplace and RT/RW: value only, the 0.6 flag misfires there
+      if ((k === "nama" || k === "alamat") && c < LOW_CONFIDENCE) (notes[k] ||= []).push("low_confidence");
     return {...Object.fromEntries(KEYS.map(k => [k, f[k] ?? null])),
       perlu_dicek: Object.fromEntries(Object.entries(notes).map(([k, v]) => [outName(k), v])),
-      info: {is_ktp: isKtp, ms: r.ms, versi: VERSION}, card: r.card};
+      info: {is_ktp: isKtp, ms: r.ms, versi: VERSION,
+        confidence: Object.fromEntries(Object.entries(conf).map(([k, v]) => [outName(k), Math.round(v * 1000) / 1000]))},
+      card: r.card};
   };
 
   return {

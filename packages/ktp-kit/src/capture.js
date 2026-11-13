@@ -12,10 +12,13 @@ export const DEFAULTS = {
   minArea: 0.20,        // the card must fill this much of the frame
   ratio: [1.45, 1.8],   // long/short side (a flat KTP is 1.585)
   parallel: 0.85,       // shorter/longer of opposite edges; lower = tilted
-  sharp: 0.015,         // worst-direction sharpness / contrast on the card interior
+  sharp: 0.1,           // worst-direction sharpness / contrast on the card interior (phone test 2026-11-13, sharp shots 0.17-0.43, blurry 0.05-0.07)
+  motion: 0.45,         // worst / best direction sharpness, lower = smeared one way (hand shake)
   glare: 0.05,          // max share of near-white pixels on the card
-  stableFrames: 4,      // frames in a row with corners barely moving before auto-capture
-  stableMove: 0.015,    // max corner movement per frame (fraction of the frame diagonal)
+  stableFrames: 3,      // at least this many frames in a row with corners barely moving
+  stableMs: 600,        // ... and for at least this long (detection runs at 4-30 fps depending on the phone)
+  stableMove: 0.025,    // max corner speed, fraction of the frame diagonal per second
+  burst: 5,             // frames taken at capture time, the sharpest one is read
 };
 
 export const MESSAGES = {
@@ -54,20 +57,23 @@ const canvas = (w, h) => Object.assign(document.createElement("canvas"), {width:
  * @param {ReturnType<import("./engine.js").createKtpReader>} o.engine
  * @param {Partial<typeof DEFAULTS>} [o.config]
  */
+const nextFrame = v => new Promise(r => v.requestVideoFrameCallback ? v.requestVideoFrameCallback(() => r())
+  : requestAnimationFrame(() => r()));
+
 export function createCapture({video, engine, config = {}}) {
   const cfg = {...DEFAULTS, ...config}, listeners = new Set();
-  let state = {status: "idle"}, session, prev = null, stable = 0, running = false, stream, gen = 0, paused = false;
+  let state = {status: "idle"}, session, prev = null, prevT = 0, stableT = 0, stable = 0, running = false, stream, gen = 0, paused = false;
   const set = patch => { state = {...state, ...patch}; listeners.forEach(f => f(state)); };
 
   const S = 256, inX = canvas(S, S).getContext("2d", {willReadFrequently: true}), input = new Float32Array(3 * S * S);
-  async function detect() { // DocAligner heatmaps: weighted centroid of strong pixels around each peak
-    inX.drawImage(video, 0, 0, S, S);
+  async function detect(src = video) { // DocAligner heatmaps: weighted centroid of strong pixels around each peak
+    inX.drawImage(src, 0, 0, S, S);
     const d = inX.getImageData(0, 0, S, S).data;
     for (let i = 0, p = 0; i < S * S; i++, p += 4) { // BGR planes
       input[i] = d[p + 2] / 255; input[S * S + i] = d[p + 1] / 255; input[2 * S * S + i] = d[p] / 255;
     }
     const out = (await session.run({img: new engine.ort.Tensor("float32", input, [1, 3, S, S])})).heatmap;
-    const [, , H, W] = out.dims, hm = out.data, vw = video.videoWidth, vh = video.videoHeight, pts = [];
+    const [, , H, W] = out.dims, hm = out.data, vw = src.videoWidth ?? src.width, vh = src.videoHeight ?? src.height, pts = [];
     for (let k = 0; k < 4; k++) {
       const off = k * H * W;
       let best = 0, bi = 0;
@@ -86,14 +92,14 @@ export function createCapture({video, engine, config = {}}) {
   }
 
   const px = canvas(1, 1).getContext("2d", {willReadFrequently: true});
-  function pixelStats(q) { // card interior only (15% inset)
+  function pixelStats(q, src = video) { // card interior only (15% inset)
     const xs = q.map(p => p[0]), ys = q.map(p => p[1]);
     let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
     const dx = (x1 - x0) * 0.15, dy = (y1 - y0) * 0.15;
     x0 += dx; x1 -= dx; y0 += dy; y1 -= dy;
     const w = 320, h = Math.max(3, Math.round(w * (y1 - y0) / (x1 - x0)));
     px.canvas.width = w; px.canvas.height = h;
-    px.drawImage(video, x0, y0, x1 - x0, y1 - y0, 0, 0, w, h);
+    px.drawImage(src, x0, y0, x1 - x0, y1 - y0, 0, 0, w, h);
     const d = px.getImageData(0, 0, w, h).data, g = new Float32Array(w * h);
     let bright = 0, m = 0, m2 = 0, ex = 0, ey = 0, e1 = 0, e2 = 0, n = 0;
     for (let i = 0, p = 0; i < w * h; i++, p += 4) {
@@ -109,7 +115,8 @@ export function createCapture({video, engine, config = {}}) {
       n++;
     }
     const variance = Math.max(m2 / (w * h) - (m / (w * h)) ** 2, 1e-6);
-    return {sharp: Math.min(ex, ey, e1, e2) / n / variance, glare: bright / (w * h)};
+    const lo = Math.min(ex, ey, e1, e2);
+    return {sharp: lo / n / variance, motion: lo / Math.max(ex, ey, e1, e2, 1e-6), glare: bright / (w * h)};
   }
 
   function assess(q) {
@@ -122,9 +129,9 @@ export function createCapture({video, engine, config = {}}) {
     const ratio = (top + bot) / (left + right);
     const par = Math.min(Math.min(top, bot) / Math.max(top, bot), Math.min(left, right) / Math.max(left, right));
     if (ratio < cfg.ratio[0] || ratio > cfg.ratio[1] || par < cfg.parallel) return {hint: "flat", area, ratio, par};
-    const {sharp, glare} = pixelStats(q), info = {area, ratio, par, sharp, glare};
+    const {sharp, motion, glare} = pixelStats(q), info = {area, ratio, par, sharp, motion, glare};
     if (glare > cfg.glare) return {hint: "glare", ...info};
-    if (sharp < cfg.sharp) return {hint: "blur", ...info};
+    if (sharp < cfg.sharp || motion < cfg.motion) return {hint: "blur", ...info};
     return {ok: true, hint: "hold", ...info};
   }
 
@@ -136,12 +143,14 @@ export function createCapture({video, engine, config = {}}) {
     let q;
     try { q = await detect(); } catch (e) { set({status: "error", error: "failed", detail: e}); return; }
     if (g !== gen) return;
-    const a = assess(q);
-    const move = q && prev ? Math.max(...q.map((p, i) => dist(p, prev[i]))) / Math.hypot(video.videoWidth, video.videoHeight) : 1;
-    prev = q;
-    stable = a.ok && move < cfg.stableMove ? stable + 1 : 0;
-    set({status: !q ? "searching" : a.ok ? "hold" : "adjust", hint: a.hint, corners: q, quality: a});
-    if (stable >= cfg.stableFrames) return shoot(q);
+    const a = assess(q), now = performance.now();
+    // corner speed per second, so slow phones (few detections a second) and fast ones use the same limit
+    const move = q && prev ? Math.max(...q.map((p, i) => dist(p, prev[i]))) / Math.hypot(video.videoWidth, video.videoHeight)
+      / Math.max((now - prevT) / 1000, 1e-3) : 1;
+    prev = q; prevT = now;
+    if (a.ok && move < cfg.stableMove) { if (!stable++) stableT = now; } else stable = 0;
+    set({status: !q ? "searching" : a.ok ? "hold" : "adjust", hint: a.hint, corners: q, quality: {...a, move, stable}});
+    if (stable >= cfg.stableFrames && now - stableT >= cfg.stableMs) return shoot(q);
     requestAnimationFrame(() => loop(g));
   }
 
@@ -171,11 +180,24 @@ export function createCapture({video, engine, config = {}}) {
 
   /** Take the current frame now (auto-capture calls this too). */
   const shoot = once(async q => {
+    gen++;  // stop the live loop, it shares the detector's input buffer
     q ??= state.corners ?? await detect();
     if (!q) { set({status: "error", error: "noCard"}); return null; }
-    const vw = video.videoWidth, vh = video.videoHeight, cx = canvas(vw, vh).getContext("2d");
-    cx.drawImage(video, 0, 0);
-    const frame = {w: vw, h: vh, data: cx.getImageData(0, 0, vw, vh).data};
+    // Burst: the next few camera frames, keep the sharpest. Hand shake comes and goes within a few frames.
+    const vw = video.videoWidth, vh = video.videoHeight, cx = canvas(vw, vh).getContext("2d", {willReadFrequently: true});
+    let best = -1, data;
+    for (let i = 0; i < Math.max(1, cfg.burst); i++) {
+      if (i) await nextFrame(video);
+      cx.drawImage(video, 0, 0);
+      const s = pixelStats(q, cx.canvas).sharp;
+      if (s > best) { best = s; data = cx.getImageData(0, 0, vw, vh).data; }
+    }
+    // Find the card again on the chosen frame. A shutter tap can come while the card moved or was never found,
+    // the last live corners would then crop the wrong place.
+    cx.putImageData(new ImageData(data, vw, vh), 0, 0);
+    q = await detect(cx.canvas);
+    if (!q) { set({status: "error", error: "noCard"}); return null; }
+    const frame = {w: vw, h: vh, data};
     return finish(step => engine.readFrame(frame, q, step), warpCard(frame, orderCorners(q)), "noCard");
   });
 

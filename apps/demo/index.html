@@ -83,7 +83,7 @@
         <ktp-capture id="reader" base="/ktp-kit/" lang="%LANG%"
           class="block min-h-0 w-full [&:not(:defined)]:aspect-[3/4] rounded-[20px] md:w-[min(max(420px,calc(330px*var(--ktp-aspect,0.75))),46vw,calc(72svh*var(--ktp-aspect,0.75)))]
                  data-[state=reading]:aspect-[3/4] data-[state=done]:aspect-[3/4]
-                 [--ktp-accent:var(--color-accent)] [--ktp-ok:var(--color-ok)] [--ktp-warn:var(--color-warn)]
+                 [--ktp-accent:var(--color-accent)] [--ktp-ok:var(--color-accent)] [--ktp-warn:#fff]
                  [--ktp-surface:var(--color-surface)] [--ktp-muted:var(--color-muted)] [--ktp-font:var(--font-sans)]
                  [&::part(badge)]:hidden"></ktp-capture>
       </div>
@@ -461,6 +461,8 @@ npx ktp-kit read foto/*.jpg --csv     # baca satu folder foto, hasil CSV`,
     addEventListener("unhandledrejection", e => send("error", {msg: String(e.reason?.stack || e.reason)}));
     el.addEventListener("ktp-error", e => send("ktp-error", {detail: String(e.detail?.detail?.stack || e.detail?.error)}));
     let last = "", track = null;
+    const frames = [];  // one request a second, a request per frame slowed the phone through the tunnel
+    setInterval(() => { if (frames.length) send("frames", {list: frames.splice(0)}); }, 1000);
     el.addEventListener("ktp-state", async e => {
       const s = e.detail, q = s.corners;
       const key = s.status + "|" + s.hint;
@@ -470,6 +472,7 @@ npx ktp-kit read foto/*.jpg --csv     # baca satu folder foto, hasil CSV`,
         const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === "videoinput").map(d => d.label);
         send("camera", {label: t.label, settings: t.getSettings(), caps: t.getCapabilities?.(), cams});
       }
+      if (s.quality?.sharp !== undefined) frames.push({t: Date.now(), q: s.quality});  // every assessed frame, sent once a second
       if (key !== last) {
         last = key;
         send("state", {status: s.status, hint: s.hint, step: s.step, quality: s.quality,
