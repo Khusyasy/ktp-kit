@@ -119,7 +119,7 @@ on the card. Unreadable fields are `null`.
 |---|---|
 | `nik_mismatch` | The card disagrees with what the NIK encodes (birth date, sex). One of them was misread. |
 | `from_nik` | The printed value was unreadable, so it was filled from the NIK. |
-| `low_confidence` | Name or address: the reader was unsure of at least one character, often from blur or glare. On held-out photos this flag catches about 3 in 4 wrong names. |
+| `low_confidence` | Name or address: the reader was unsure of at least one character, often from blur or glare. On hand-read cards in camera quality it catches 11 of 12 wrong names and all wrong addresses, and also flags about half of the right ones. |
 
 Treat the result as user input on your server: users can edit your form. `nikValid` and `nikConflicts` from
 `ktp-kit` run in Node for the same checks. The [docs page](https://ktp-kit.khusyasy.my.id/docs) has the full field table and
@@ -194,7 +194,7 @@ and random letters. Regions come from the public region code list. Lines are dra
 tilted, darkened and given glare, like phone photos. Training started from the stock PP-OCRv6 tiny weights. No real
 KTP photo, NIK or name was used to train it, so the model files hold no one's data.
 
-On 2,400 generated lines never used for training or for choosing the model, ktp-kit reads 91% of NIK lines and 81.5%
+On 2,400 generated lines never used for training or for choosing the model, ktp-kit reads 92% of NIK lines and 82.1%
 of all text lines exactly. The general PaddleOCR PP-OCRv6 small model reads 92% and 51% of the same lines. The data,
 labels and scripts are in [benchmark/](benchmark/), so you can rerun this or test another reader. The generator makes
 lines hard on purpose (blur, fading, worn print), and real photos vary in other ways, so try it on your own cards before

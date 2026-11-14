@@ -16,8 +16,8 @@ export const FILES = {
   brotli: "brotli-dec.wasm.gz",               // brotli decoder for browsers without DecompressionStream("brotli")
 };
 // Bump with every model change, or devices keep the old files.
-const CACHE = "ktp-kit-v5";
-export const VERSION = "0.1.2";  // = package.json (scripts/check.mjs), reported in each result for audit logs
+const CACHE = "ktp-kit-v6";
+export const VERSION = "0.2.0";  // = package.json (scripts/check.mjs), reported in each result for audit logs
 
 // Result keys in card order. Names follow Indonesian KTP OCR APIs (VIDA, GLAIR); the parser's own names differ for
 // two fields, kept so it stays line-for-line with ktp.py.
@@ -26,9 +26,9 @@ const KEYS = ["nik", "nik_valid", "nama", "tempat_lahir", "tanggal_lahir", "jeni
   "kewarganegaraan", "berlaku_hingga", "kota_terbit", "tanggal_terbit", "kode_wilayah"];
 const RENAME = {gol_darah: "golongan_darah", kel_desa: "kelurahan_desa"};
 const outName = f => RENAME[f] || f;
-// Below this, name and address get "low_confidence". Held-out photos: catches 73% of wrong names while flagging 13%
-// of right ones. Hand-read cards: 14 of 15 wrong addresses, 9 of 43 right ones.
-const LOW_CONFIDENCE = 0.6;
+// Below these, name and address get "low_confidence" (see fieldConfidence). 60 hand-read cards in camera quality
+// (2026-11-14): name catches 11 of 12 wrong, flags 20 of 46 right. Address catches 12 of 12 wrong, flags 30 of 47 right.
+const LOW_CONFIDENCE = {nama: 0.9, alamat: 0.7};
 
 // gzip starts with 1f 8b. Hosts that already unpacked a .gz (Content-Encoding) hand over plain bytes: keep them.
 async function gunzip(b) {
@@ -71,7 +71,7 @@ const CACHED = Object.values(FILES).filter(f => f !== FILES.mjs);
  * @property {{is_ktp: boolean, ms: number, versi: string, confidence: {nama?: number, alamat?: number, tempat_lahir?: number, rt_rw?: number}}} info
  *   is_ktp (experimental): false when the card shows few KTP labels and no valid NIK. ms: reading time on this
  *   device. versi: ktp-kit version. confidence: lowest character probability for name, address, birthplace and RT/RW (0-1),
- *   name and address below 0.6 get "low_confidence". Use your own limit if that suits your app better.
+ *   name below 0.9 and address below 0.7 get "low_confidence". Use your own limit if that suits your app better.
  * @property {RgbaImage} card               the straightened 856x540 card (the element turns it into a JPEG Blob)
  */
 
@@ -206,8 +206,8 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     if (!r || (!r.fields.nik && !isKtp)) return null;
     const f = Object.fromEntries(Object.entries(r.fields).map(([k, v]) => [outName(k), v]));
     const notes = fieldNotes(r.fields), conf = fieldConfidence(r.fields, r.lines);
-    for (const [k, c] of Object.entries(conf))  // birthplace and RT/RW: value only, the 0.6 flag misfires there
-      if ((k === "nama" || k === "alamat") && c < LOW_CONFIDENCE) (notes[k] ||= []).push("low_confidence");
+    for (const [k, c] of Object.entries(conf))  // birthplace and RT/RW: value only, no flag
+      if (c < (LOW_CONFIDENCE[k] ?? 0)) (notes[k] ||= []).push("low_confidence");
     return {...Object.fromEntries(KEYS.map(k => [k, f[k] ?? null])),
       perlu_dicek: Object.fromEntries(Object.entries(notes).map(([k, v]) => [outName(k), v])),
       info: {is_ktp: isKtp, ms: r.ms, versi: VERSION,

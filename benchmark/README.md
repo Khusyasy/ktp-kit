@@ -18,7 +18,8 @@ Exact match after upper-casing and collapsing spaces. A blank strip counts when 
 
 | Reader | NIK lines | All text lines | Blank strips | Model file |
 |---|---|---|---|---|
-| ktp-kit 0.1.0 (`rec.onnx`, int8) | 90.8% | **81.5%** | **97.0%** | **0.7 MB** |
+| ktp-kit 0.2.0 (`rec.onnx`, int8) | **91.6%** | **82.1%** | **98.8%** | **0.7 MB** |
+| ktp-kit 0.1.x | 90.8% | 81.5% | 97.0% | 0.7 MB |
 | PaddleOCR PP-OCRv6 small (RapidOCR 3.10.0) | **91.6%** | 51.4% | 70.5% | 21.2 MB |
 | PaddleOCR PP-OCRv6 tiny (RapidOCR 3.10.0) | 87.8% | 48.7% | 71.1% | 4.5 MB |
 

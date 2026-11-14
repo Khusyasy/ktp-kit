@@ -1,6 +1,6 @@
 {
   "name": "@ktp-kit/models",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Model files for ktp-kit: card corners (DocAligner, Apache-2.0), text lines (PP-OCRv6 small det, Apache-2.0), KTP line reader (PP-OCRv6 tiny fine-tuned on synthetic KTP lines), region codes (MIT).",
   "license": "Apache-2.0",
   "homepage": "https://ktp-kit.khusyasy.my.id",

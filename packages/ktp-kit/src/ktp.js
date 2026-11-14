@@ -370,15 +370,18 @@ export function fieldNotes(out) {
 // are snapped to official names or lists, which repairs low-confidence reads, so their confidence says little.
 export function fieldConfidence(out, items) {
   // Free-text fields with no other check (fixed lists, regions and NIK-linked fields are snapped or cross-checked).
-  // Each field's value is matched to the OCR lines it came from, the lowest line confidence wins.
+  // Each field's value is matched to the OCR lines it came from, only the characters after the label's colon count,
+  // the least certain character wins. Address uses each character's first-frame probability (spaces included), the
+  // others its peak probability (spaces skipped): the best split of wrong and right reads on hand-read cards (2026-11-14).
   const raw = out.raw || {}, conf = {}, alnum = s => (s || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   for (const [f, src, key] of [["nama", "nama", letters], ["alamat", "alamat", letters],
     ["tempat_lahir", "tempat_tgl_lahir", letters], ["rt_rw", "rt_rw", alnum]]) {
     const v = key(raw[src]);
     if (!v) continue;
-    const cs = items.filter(([t, , c]) => c !== undefined && key(t.replace(/^.*[:;]/, "")).length >= 2 &&
-      v.includes(key(t.replace(/^.*[:;]/, "")))).map(([, , c]) => c);
-    if (cs.length) conf[f] = Math.min(...cs);
+    const ps = items.filter(([t, , , p]) => p && key(t.replace(/^.*[:;]/, "")).length >= 2 && v.includes(key(t.replace(/^.*[:;]/, ""))))
+      .flatMap(([t, , , p]) => { const cut = t.search(/[:;]/); return p.map((q, i) => [t[i], ...q]).slice(cut + 1); })
+      .map(([ch, first, peak]) => f === "alamat" ? first : ch === " " ? 1 : peak);
+    if (ps.length) conf[f] = Math.min(...ps);
   }
   return conf;
 }
