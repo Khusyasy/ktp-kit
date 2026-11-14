@@ -219,21 +219,25 @@ function lineInput(g, cw, ch, b) { // train_rec.line_crop + to_input("tiny") on 
   return [x, W];
 }
 
-// Greedy CTC. conf: probability of the least certain character read (1 for an empty line).
+// Greedy CTC. conf: probability of the least certain character read (1 for an empty line). probs: per character
+// [first, peak], its probability on the first frame of its run and the highest over the run (fieldConfidence uses them).
 function decode(logp, T, C) {
   let out = "", prev = 0, conf = 1;
+  const probs = [];
   for (let t = 0; t < T; t++) {
     let k = 0;
     for (let c = 1; c < C; c++) if (logp[t * C + c] > logp[t * C + k]) k = c;
-    if (k !== prev && k !== 0) { out += CHARS[k - 1]; conf = Math.min(conf, Math.exp(logp[t * C + k])); }
+    const p = Math.exp(logp[t * C + k]);
+    if (k !== prev && k !== 0) { out += CHARS[k - 1]; conf = Math.min(conf, p); probs.push([p, p]); }
+    else if (k !== 0) probs[probs.length - 1][1] = Math.max(probs[probs.length - 1][1], p);
     prev = k;
   }
-  return [out, conf];
+  return [out, conf, probs];
 }
 
 const breathe = () => new Promise(r => setTimeout(r, 0)); // let the page repaint between steps
 
-// [text, conf], or null when the box is too small to read
+// [text, conf, probs], or null when the box is too small to read
 async function readLine(g, card, b, {rec, ort}) {
   const input = lineInput(g, card.w, card.h, b);
   if (!input) return null;
@@ -241,7 +245,7 @@ async function readLine(g, card, b, {rec, ort}) {
   return decode(y.data, y.dims[1], y.dims[2]);
 }
 
-// OCR items [text, box, conf]. The parser only uses text and box, like ktp.py.
+// OCR items [text, box, conf, probs]. The parser only uses text and box, like ktp.py.
 async function items(card, g, models, progress) {
   progress("Mencari teks...");
   await breathe();
@@ -249,7 +253,7 @@ async function items(card, g, models, progress) {
   for (const [i, b] of boxes.entries()) {
     if (i % 4 === 0) { progress(`Membaca baris ${i + 1}/${boxes.length}...`); await breathe(); }
     const read = await readLine(g, card, b, models);
-    if (read !== null) out.push([read[0], b, read[1]]);
+    if (read !== null) out.push([read[0], b, read[1], read[2]]);
   }
   return out;
 }
