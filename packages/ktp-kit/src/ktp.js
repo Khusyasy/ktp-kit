@@ -154,6 +154,15 @@ function date(s) {
   return d >= 1 && d <= 31 && mo >= 1 && mo <= 12 && y >= 1900 && y <= 2100 ? `${pad(d, 2)}-${pad(mo, 2)}-${y}` : null;
 }
 
+// Issue date with a lost or misread separator ("1308-2012", "05-022013", "3005 2012"): exactly 8 digits that make a
+// valid DDMMYYYY with an e-KTP issue year. Only for the issue date, where nothing else on that line has digits.
+function issueDate(s) {
+  const d = date(s);
+  if (d) return d;
+  const m = /^(\d\d)(\d\d)(\d{4})$/.exec(translate(s || "", TO_DIGIT).replace(/[^\d]/g, ""));
+  return m && +m[3] >= 2009 && +m[3] <= 2040 ? date(`${m[1]}-${m[2]}-${m[3]}`) : null;
+}
+
 function place(s) {
   const m = DATE.exec(translate(s || "", TO_DIGIT));
   return strip(m ? s.slice(0, m.index) : s || "", " ,.:;-");
@@ -297,7 +306,7 @@ export class Wilayah {
     return this._places;
   }
 
-  best(text, codes, minRatio, loose = false) {
+  best(text, codes, minRatio, loose = false, prefer = null) {
     text = strip((text || "").toUpperCase(), " :.,");
     const bare = s => letters(s.replace(Wilayah.PREFIX, ""));
     const key = /^(KABUPATEN|KAB\b|KOTA)/.test(text) ? letters : bare;
@@ -306,7 +315,8 @@ export class Wilayah {
     const score = loose
       ? c => Math.max(ratio(letters(text), letters(this.name.get(c))), ratio(bare(text), bare(this.name.get(c))))
       : c => ratio(t, key(this.name.get(c)));
-    const k = argmax(codes, score);
+    // ties ("KOTA BANDUNG" matches KOTA and KABUPATEN BANDUNG bare): the printed prefix wins, then the card's own city
+    const k = argmax(codes, c => score(c) + 0.01 * ratio(letters(text), letters(this.name.get(c))) + 0.005 * (c === prefer));
     return score(k) >= minRatio ? k : null;
   }
 }
@@ -399,7 +409,7 @@ export async function extractFields(items, nik = null, wilayah = null, respace =
   raw.provinsi = header.length ? header[0].replace(/^\W*PRO\w{0,2}NS\w?\s*/i, "") : "";
   raw.kabupaten_kota = header.length > 1 ? header[1] : "";
   const issue = issue0.slice().sort((p, q) => geo(p[1])[2] - geo(q[1])[2]);
-  const dateItem = issue.find(([t]) => date(t)) ?? null;
+  const dateItem = issue.find(([t]) => date(t)) ?? issue.find(([t]) => issueDate(t)) ?? null;
   const dateY = dateItem ? geo(dateItem[1])[2] : 0.9 * CARD_H;
   raw.tanggal_terbit = dateItem ? dateItem[0] : "";
   raw.kota_terbit = issue.filter(([t, b]) => geo(b)[2] < dateY - 0.01 * CARD_H && !/\d/.test(t)).map(([t]) => t)
@@ -434,7 +444,7 @@ export async function extractFields(items, nik = null, wilayah = null, respace =
   const bh = raw.berlaku_hingga || "";
   out.berlaku_hingga = ratio(letters(bh), "SEUMURHIDUP") >= 0.7 ? "SEUMUR HIDUP" : date(bh);
   out.kota_terbit = raw.kota_terbit || null;
-  out.tanggal_terbit = date(raw.tanggal_terbit);
+  out.tanggal_terbit = issueDate(raw.tanggal_terbit);
   for (const f of ["provinsi", "kabupaten_kota", "kecamatan", "kel_desa"]) out[f] = raw[f] || null;
   if (wilayah) {
     const w = wilayah, provs = w.kids("");
@@ -445,7 +455,7 @@ export async function extractFields(items, nik = null, wilayah = null, respace =
     if (!kab && out.nik_valid && w.name.has(out.nik.slice(0, 4))) kab = out.nik.slice(0, 4);
     const kec = w.best(raw.kecamatan, kab ? w.kids(kab) : [], 0.75);
     const desa = w.best(raw.kel_desa, kec ? w.kids(kec) : [], 0.75);
-    const terbit = w.best(raw.kota_terbit, prov ? w.kids(prov) : allKabs(), 0.7, true);
+    const terbit = w.best(raw.kota_terbit, prov ? w.kids(prov) : allKabs(), 0.7, true, kab);
     if (terbit) out.kota_terbit = w.name.get(terbit);
     out.kode_wilayah = desa || kec;
     for (const [f, code] of [["provinsi", prov], ["kabupaten_kota", kab], ["kecamatan", kec], ["kel_desa", desa]])
