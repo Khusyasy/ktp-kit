@@ -321,20 +321,6 @@ export class Wilayah {
   }
 }
 
-export function tidyAddress(s) {
-  if (!s) return s;
-  s = s.replace(/\b(JL|JLN|GG|KP|KOMP|PERUM|DSN|DUSUN)\b\.?\s*(?=[A-Z0-9])/g, m => m.trimEnd() + " ");
-  s = s.replace(/^(JL|JLN|GG|KP|KOMP|PERUM)(\.?)(?=[A-Z]{3})/, "$1$2 ");
-  s = s.replace(/(?<=[A-Z0-9])(NO)(\.?)\s*(?=\d)/g, " $1$2 ");
-  s = s.replace(/(?<=[A-Z])BLOK(?=[A-Z0-9])/g, " BLOK ");
-  s = s.replace(/\bBLOK(?=[A-Z0-9])/g, "BLOK ");
-  return s.replace(/\s+/g, " ").trim();
-}
-
-// split_muhammad in ktp.py: 'MUHAMMADLUTHFI' -> 'MUHAMMAD LUTHFI' (never glued in 132 labelled names).
-const MUHAMMAD = /\b(MUHAMMAD|MUHAMAD|MOHAMMAD|MOHAMAD|MOCHAMMAD|MOCHAMAD|MUCHAMMAD|MUCHAMAD|MOHAMMED|MUHAMMED)(?=[A-Z]{3})/g;
-export const splitMuhammad = name => name ? name.replace(MUHAMMAD, "$1 ") : name;
-
 export function nikConflicts(out) {
   const nik = out.nik;
   if (!(nik && nikValid(nik))) return [];
@@ -420,7 +406,7 @@ export async function extractFields(items, nik = null, wilayah = null, respace =
 
   const out = {nik: nik || extractNik(items.map(([t]) => t))};
   out.nik_valid = Boolean(out.nik && nikValid(out.nik));
-  out.nama = splitMuhammad(raw.nama) || null;
+  out.nama = raw.nama || null;
   const ttl = raw.tempat_tgl_lahir || "";
   out.tempat_lahir = place(ttl) || null;
   if (wilayah && out.tempat_lahir && (wilayah.places(), !wilayah._placeSet.has(out.tempat_lahir.toUpperCase())))
@@ -433,7 +419,7 @@ export async function extractFields(items, nik = null, wilayah = null, respace =
   let gd = translate((raw.gol_darah || "").replace(/G\w*\W*D\w*/gi, "").toUpperCase(), {0: "O", 8: "B"});
   gd = gd.replace(/[^ABO+\-]/g, "");
   out.gol_darah = /^((AB|A|B|O)[+-]?|-)$/.test(gd) ? gd : (where.jenis_kelamin ? "-" : null);
-  out.alamat = tidyAddress(raw.alamat) || null;
+  out.alamat = raw.alamat ? raw.alamat.replace(/\s+/g, " ").trim() : null;
   const d = translate(raw.rt_rw || "", TO_DIGIT).match(/\d+/g) || [];
   out.rt_rw = d.length >= 2 ? `${pad(parseInt(d[0], 10), 3)}/${pad(parseInt(d[1], 10), 3)}` : null;
   out.agama = snap(raw.agama, AGAMA, 0.7);
