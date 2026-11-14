@@ -258,28 +258,6 @@ async function items(card, g, models, progress) {
   return out;
 }
 
-// Reader.respace: re-read the boxes that make up a free-text value with 30% of the text height as margin; keep
-// the new reading only if its letters and digits are identical, so it can only add or move spaces. ponytail: no 2x
-// upscale like Python, because the reader scales every line to 48 px high anyway.
-function respacer(card, g, lines, models) {
-  const trim = s => s.replace(/^[: ']+|[: ']+$/g, ""), alnum = s => s.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  return async text => {
-    if (!text) return text;
-    for (const [raw, b] of lines) {
-      const t = trim(raw);
-      if (!t || !text.includes(t)) continue;
-      const xs = b.map(p => p[0]), ys = b.map(p => p[1]), pad = Math.trunc((Math.max(...ys) - Math.min(...ys)) * 0.3);
-      const x0 = Math.max(Math.trunc(Math.min(...xs)) - pad, 0), x1 = Math.min(Math.trunc(Math.max(...xs)) + pad, card.w - 1);
-      const y0 = Math.max(Math.trunc(Math.min(...ys)) - pad, 0), y1 = Math.min(Math.trunc(Math.max(...ys)) + pad, card.h - 1);
-      let got = (await readLine(g, card, [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], models))?.[0];
-      got = trim(got || "").replace(/\s+/g, " ");
-      const spaces = s => s.split(" ").length;
-      if (got && spaces(got) > spaces(t) && alnum(got) === alnum(t)) text = text.replace(t, () => got);
-    }
-    return text;
-  };
-}
-
 // All fields from a flattened card. Tries it upright, then turned 180 degrees if no NIK was read at all.
 // Unlike Reader.read_card, a 16-digit but invalid NIK (a misread, or a specimen card) doesn't trigger the
 // second read: on a phone each read takes seconds, and an upside-down card reads no NIK.
@@ -288,7 +266,7 @@ export async function readCard(card, models, progress = () => {}) {
   const t0 = performance.now(), tries = [];
   for (const c of [card, rotate180(card)]) {
     const g = grey(c), lines = await items(c, g, models, progress);
-    const fields = await extractFields(lines, null, models.wilayah, models.respace === false ? null : respacer(c, g, lines, models));
+    const fields = await extractFields(lines, null, models.wilayah);
     tries.push({fields, lines, card: c, score: (fields.nik_valid ? 2 : 0) + (fields.nik ? 1 : 0)});
     if (fields.nik) break;
     progress("Membalik KTP...");

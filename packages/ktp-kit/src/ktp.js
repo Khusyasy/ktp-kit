@@ -382,8 +382,8 @@ export function fieldConfidence(out, items) {
   return conf;
 }
 
-// All fields from a flattened upright card's OCR items. respace (optional, may be async) re-reads free text.
-export async function extractFields(items, nik = null, wilayah = null, respace = null) {
+// All fields from a flattened upright card's OCR items.
+export async function extractFields(items, nik = null, wilayah = null) {
   const [header, rows, issue0] = cardRows(items);
   const where = assignRows(rows);
   const raw = {};
@@ -400,9 +400,6 @@ export async function extractFields(items, nik = null, wilayah = null, respace =
   raw.tanggal_terbit = dateItem ? dateItem[0] : "";
   raw.kota_terbit = issue.filter(([t, b]) => geo(b)[2] < dateY - 0.01 * CARD_H && !/\d/.test(t)).map(([t]) => t)
     .join(" ").trim();
-  if (respace)
-    for (const f of ["nama", "alamat", "tempat_tgl_lahir", "kota_terbit"])
-      if (raw[f]) raw[f] = await respace(raw[f]);
 
   const out = {nik: nik || extractNik(items.map(([t]) => t))};
   out.nik_valid = Boolean(out.nik && nikValid(out.nik));
