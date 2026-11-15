@@ -419,14 +419,19 @@ export function parseFields(raw, nik = null) {
   out.tempat_lahir = place(ttl) || null;
   out.tanggal_lahir = date(ttl);
   out.jenis_kelamin = snap(raw.jenis_kelamin, JENIS_KELAMIN, 0.6);
-  let gd = translate((raw.gol_darah || "").replace(/G\w*\W*D\w*/gi, "").toUpperCase(), {0: "O", 8: "B"});
+  // the value is what follows the label's colon. The label itself is often misread ("COL.", "DARAH" alone)
+  const gv = raw.gol_darah || "", colon = gv.lastIndexOf(":");
+  let gd = translate((colon >= 0 ? gv.slice(colon + 1) : gv.replace(/G\w*\W*D\w*/gi, "")).toUpperCase(), {0: "O", 8: "B"});
   gd = gd.replace(/[^ABO+\-]/g, "");
   out.gol_darah = /^((AB|A|B|O)[+-]?|-)$/.test(gd) ? gd : ((raw._found || []).includes("jenis_kelamin") ? "-" : null);
   out.alamat = raw.alamat ? raw.alamat.replace(/\s+/g, " ").trim() : null;
   const d = translate(raw.rt_rw || "", TO_DIGIT).match(/\d+/g) || [];
   out.rt_rw = d.length >= 2 ? `${pad(parseInt(d[0], 10), 3)}/${pad(parseInt(d[1], 10), 3)}` : null;
   out.agama = snap(raw.agama, AGAMA, 0.7);
-  out.status_perkawinan = snap(raw.status_perkawinan, STATUS_PERKAWINAN, 0.7);
+  // the row can hold the next field's text too ("KAWIN KARYAWAN SWASTA"): then its first or last 1-2 words
+  const sw = (raw.status_perkawinan || "").split(/\s+/).filter(Boolean);
+  out.status_perkawinan = snap(raw.status_perkawinan, STATUS_PERKAWINAN, 0.7) ||
+    [sw.slice(0, 2), sw.slice(-2), sw.slice(0, 1), sw.slice(-1)].map(x => snap(x.join(" "), STATUS_PERKAWINAN, 0.85)).find(Boolean) || null;
   out.pekerjaan = snap(raw.pekerjaan, PEKERJAAN, 0.8) || raw.pekerjaan || null;
   const wn = letters(raw.kewarganegaraan);
   out.kewarganegaraan = wn.endsWith("A") && wn.length <= 4 ? "WNA" : (wn ? "WNI" : null);
