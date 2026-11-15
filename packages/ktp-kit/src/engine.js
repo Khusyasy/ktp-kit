@@ -201,7 +201,7 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
   const clearCache = () => globalThis.caches?.delete(CACHE);
 
   // null when nothing KTP-like was read: uploads always end with a best try, even on a photo of a cat
-  const result = r => {
+  const result = (r, {debug} = {}) => {
     const isKtp = !!r && (r.fields.nik_valid || ktpLabels(r.lines) >= 3);  // a KTP shows most of its 10 printed labels
     if (!r || (!r.fields.nik && !isKtp)) return null;
     const f = Object.fromEntries(Object.entries(r.fields).map(([k, v]) => [outName(k), v]));
@@ -212,7 +212,9 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
       perlu_dicek: Object.fromEntries(Object.entries(notes).map(([k, v]) => [outName(k), v])),
       info: {is_ktp: isKtp, ms: r.ms, versi: VERSION,
         confidence: Object.fromEntries(Object.entries(conf).map(([k, v]) => [outName(k), Math.round(v * 1000) / 1000]))},
-      card: r.card};
+      card: r.card,
+      // debug: every layer's output, to find where a field goes wrong (lines = pure model output per text line)
+      ...(debug && {debug: {lines: r.lines.map(([text, box, conf, , digits]) => ({text, box, conf, digits})), ...r.fields.layers}})};
   };
 
   return {
@@ -220,15 +222,18 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     /** What a NIK encodes (birth date, gender, region names), without reading a card. @param {string} nik */
     async parseNik(nik) { return parseNik(nik, await wilayah()); },
     /** A photo with a card somewhere in it: finds the card (with fallbacks), then reads it.
-     * @param {RgbaImage} img @param {(step: string) => void} [onStep] @returns {Promise<KtpResult|null>} */
-    async readImage(img, onStep) {
-      return result(await readUpload(img, await preload(), onStep));
+     * @param {RgbaImage} img @param {(step: string) => void} [onStep]
+     * @param {{debug?: boolean, skip?: ("nik"|"wilayah")[]}} [opts] debug adds each layer's output, skip bypasses layers
+     * @returns {Promise<KtpResult|null>} */
+    async readImage(img, onStep, opts = {}) {
+      return result(await readUpload(img, await preload(), onStep, opts), opts);
     },
     /** A camera frame plus the 4 card corners from live detection.
      * @param {RgbaImage} frame @param {number[][]} cornerPoints @param {(step: string) => void} [onStep]
+     * @param {{debug?: boolean, skip?: ("nik"|"wilayah")[]}} [opts] as in readImage
      * @returns {Promise<KtpResult|null>} */
-    async readFrame(frame, cornerPoints, onStep) {
-      return result(await readCard(warpCard(frame, orderCorners(cornerPoints)), await preload(), onStep));
+    async readFrame(frame, cornerPoints, onStep, opts = {}) {
+      return result(await readCard(warpCard(frame, orderCorners(cornerPoints)), await preload(), onStep, opts), opts);
     },
   };
 }

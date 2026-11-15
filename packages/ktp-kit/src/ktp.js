@@ -382,8 +382,12 @@ export function fieldConfidence(out, items) {
   return conf;
 }
 
-// All fields from a flattened upright card's OCR items.
-export async function extractFields(items, nik = null, wilayah = null) {
+// The parser runs in layers, each exported so it can be run alone, skipped, or fed known-good input:
+// readRows (OCR items -> raw text per field) -> parseFields (cleanup) -> checkNik (fills from the NIK) ->
+// snapWilayah (official region names). extractFields chains them.
+
+/** Layer "rows": OCR items -> raw printed text per field, nothing cleaned. raw._found lists the fields whose row was found. */
+export function readRows(items) {
   const [header, rows, issue0] = cardRows(items);
   const where = assignRows(rows);
   const raw = {};
@@ -395,27 +399,29 @@ export async function extractFields(items, nik = null, wilayah = null) {
   raw.provinsi = header.length ? header[0].replace(/^\W*PRO\w{0,2}NS\w?\s*/i, "") : "";
   raw.kabupaten_kota = header.length > 1 ? header[1] : "";
   const issue = issue0.slice().sort((p, q) => geo(p[1])[2] - geo(q[1])[2]);
-  const dateItem = issue.find(([t]) => date(t)) ?? issue.find(([t]) => issueDate(t)) ?? null;
+  // last resort: the same line decoded as digits only (letters in a date line are misreads, e.g. "2O1A")
+  const dateItem = issue.find(([t]) => date(t)) ?? issue.find(([t]) => issueDate(t)) ??
+    issue.filter(it => it[4] && issueDate(it[4])).map(it => [it[4], ...it.slice(1)])[0] ?? null;
   const dateY = dateItem ? geo(dateItem[1])[2] : 0.9 * CARD_H;
   raw.tanggal_terbit = dateItem ? dateItem[0] : "";
   raw.kota_terbit = issue.filter(([t, b]) => geo(b)[2] < dateY - 0.01 * CARD_H && !/\d/.test(t)).map(([t]) => t)
     .join(" ").trim();
+  raw._found = Object.keys(where);
+  return raw;
+}
 
-  const out = {nik: nik || extractNik(items.map(([t]) => t))};
-  out.nik_valid = Boolean(out.nik && nikValid(out.nik));
+/** Layer "parse": raw text -> clean values, from the text alone (no NIK, no region table). */
+export function parseFields(raw, nik = null) {
+  const out = {nik};
+  out.nik_valid = Boolean(nik && nikValid(nik));
   out.nama = raw.nama || null;
   const ttl = raw.tempat_tgl_lahir || "";
   out.tempat_lahir = place(ttl) || null;
-  if (wilayah && out.tempat_lahir && (wilayah.places(), !wilayah._placeSet.has(out.tempat_lahir.toUpperCase())))
-    // misread letters in a birthplace: snap to a close official place name (gold cards: 16 fixed, 0 broken)
-    out.tempat_lahir = snap(out.tempat_lahir, wilayah.places(), 0.9) || out.tempat_lahir;
-  out.tanggal_lahir = date(ttl) || (out.nik_valid ? nikBirthDate(out.nik, ttl) : null);
+  out.tanggal_lahir = date(ttl);
   out.jenis_kelamin = snap(raw.jenis_kelamin, JENIS_KELAMIN, 0.6);
-  if (!out.jenis_kelamin && out.nik_valid) // row not found (6% of held-out cards): the NIK encodes it
-    out.jenis_kelamin = +out.nik.slice(6, 8) > 40 ? "PEREMPUAN" : "LAKI-LAKI";
   let gd = translate((raw.gol_darah || "").replace(/G\w*\W*D\w*/gi, "").toUpperCase(), {0: "O", 8: "B"});
   gd = gd.replace(/[^ABO+\-]/g, "");
-  out.gol_darah = /^((AB|A|B|O)[+-]?|-)$/.test(gd) ? gd : (where.jenis_kelamin ? "-" : null);
+  out.gol_darah = /^((AB|A|B|O)[+-]?|-)$/.test(gd) ? gd : ((raw._found || []).includes("jenis_kelamin") ? "-" : null);
   out.alamat = raw.alamat ? raw.alamat.replace(/\s+/g, " ").trim() : null;
   const d = translate(raw.rt_rw || "", TO_DIGIT).match(/\d+/g) || [];
   out.rt_rw = d.length >= 2 ? `${pad(parseInt(d[0], 10), 3)}/${pad(parseInt(d[1], 10), 3)}` : null;
@@ -429,22 +435,50 @@ export async function extractFields(items, nik = null, wilayah = null) {
   out.kota_terbit = raw.kota_terbit || null;
   out.tanggal_terbit = issueDate(raw.tanggal_terbit);
   for (const f of ["provinsi", "kabupaten_kota", "kecamatan", "kel_desa"]) out[f] = raw[f] || null;
-  if (wilayah) {
-    const w = wilayah, provs = w.kids("");
-    const allKabs = () => [...w.name.keys()].filter(k => k.length === 4);
-    const prov = w.best(provinceAlias(raw.provinsi), provs, 0.7) ||
-      w.best(provinceAlias(raw.provinsi.toUpperCase().replace(/^\W*P?R?O?P?V?I?N?S?I?\s*/, "")), provs, 0.7);
-    let kab = w.best(raw.kabupaten_kota, prov ? w.kids(prov) : allKabs(), 0.7);
-    if (!kab && out.nik_valid && w.name.has(out.nik.slice(0, 4))) kab = out.nik.slice(0, 4);
-    const kec = w.best(raw.kecamatan, kab ? w.kids(kab) : [], 0.75);
-    const desa = w.best(raw.kel_desa, kec ? w.kids(kec) : [], 0.75);
-    const terbit = w.best(raw.kota_terbit, prov ? w.kids(prov) : allKabs(), 0.7, true, kab);
-    if (terbit) out.kota_terbit = w.name.get(terbit);
-    out.kode_wilayah = desa || kec;
-    for (const [f, code] of [["provinsi", prov], ["kabupaten_kota", kab], ["kecamatan", kec], ["kel_desa", desa]])
-      if (code && !(f === "kabupaten_kota" && code === (out.nik || "").slice(0, 4) && !raw.kabupaten_kota))
-        out[f] = w.name.get(code);
-  }
+  return out;
+}
+
+/** Layer "nik": fields the card prints but the read missed, filled from what a valid NIK encodes. */
+export function checkNik(out, raw) {
+  out = {...out};
+  if (!out.nik_valid) return out;
+  out.tanggal_lahir ||= nikBirthDate(out.nik, raw.tempat_tgl_lahir || "");
+  if (!out.jenis_kelamin) // row not found (6% of held-out cards): the NIK encodes it
+    out.jenis_kelamin = +out.nik.slice(6, 8) > 40 ? "PEREMPUAN" : "LAKI-LAKI";
+  return out;
+}
+
+/** Layer "wilayah": birthplace and region names snapped to the official table, kode_wilayah. */
+export function snapWilayah(out, raw, w) {
+  out = {...out};
+  if (out.tempat_lahir && (w.places(), !w._placeSet.has(out.tempat_lahir.toUpperCase())))
+    // misread letters in a birthplace: snap to a close official place name (gold cards: 16 fixed, 0 broken)
+    out.tempat_lahir = snap(out.tempat_lahir, w.places(), 0.9) || out.tempat_lahir;
+  const provs = w.kids("");
+  const allKabs = () => [...w.name.keys()].filter(k => k.length === 4);
+  const prov = w.best(provinceAlias(raw.provinsi), provs, 0.7) ||
+    w.best(provinceAlias(raw.provinsi.toUpperCase().replace(/^\W*P?R?O?P?V?I?N?S?I?\s*/, "")), provs, 0.7);
+  let kab = w.best(raw.kabupaten_kota, prov ? w.kids(prov) : allKabs(), 0.7);
+  if (!kab && out.nik_valid && w.name.has(out.nik.slice(0, 4))) kab = out.nik.slice(0, 4);
+  const kec = w.best(raw.kecamatan, kab ? w.kids(kab) : [], 0.75);
+  const desa = w.best(raw.kel_desa, kec ? w.kids(kec) : [], 0.75);
+  const terbit = w.best(raw.kota_terbit, prov ? w.kids(prov) : allKabs(), 0.7, true, kab);
+  if (terbit) out.kota_terbit = w.name.get(terbit);
+  out.kode_wilayah = desa || kec;
+  for (const [f, code] of [["provinsi", prov], ["kabupaten_kota", kab], ["kecamatan", kec], ["kel_desa", desa]])
+    if (code && !(f === "kabupaten_kota" && code === (out.nik || "").slice(0, 4) && !raw.kabupaten_kota))
+      out[f] = w.name.get(code);
+  return out;
+}
+
+/** All fields from a flattened upright card's OCR items: the layers above in order.
+ * skip: layer names to bypass ("nik", "wilayah"). out.raw is the rows layer, out.layers each layer's output. */
+export async function extractFields(items, nik = null, wilayah = null, {skip = []} = {}) {
+  const raw = readRows(items);
+  const parsed = parseFields(raw, nik || extractNik(items.map(([t]) => t)));
+  const nikd = skip.includes("nik") ? parsed : checkNik(parsed, raw);
+  const out = wilayah && !skip.includes("wilayah") ? snapWilayah(nikd, raw, wilayah) : {...nikd};
   out.raw = raw;
+  out.layers = {rows: raw, parse: parsed, nik: nikd};
   return out;
 }

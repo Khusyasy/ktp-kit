@@ -221,12 +221,13 @@ function lineInput(g, cw, ch, b) { // train_rec.line_crop + to_input("tiny") on 
 
 // Greedy CTC. conf: probability of the least certain character read (1 for an empty line). probs: per character
 // [first, peak], its probability on the first frame of its run and the highest over the run (fieldConfidence uses them).
-function decode(logp, T, C) {
+// allow: optional list of class indices that may be read (field-type constraint, e.g. digits only), blank always allowed
+function decode(logp, T, C, allow = null) {
   let out = "", prev = 0, conf = 1;
   const probs = [];
   for (let t = 0; t < T; t++) {
     let k = 0;
-    for (let c = 1; c < C; c++) if (logp[t * C + c] > logp[t * C + k]) k = c;
+    for (const c of allow || range(1, C)) if (logp[t * C + c] > logp[t * C + k]) k = c;
     const p = Math.exp(logp[t * C + k]);
     if (k !== prev && k !== 0) { out += CHARS[k - 1]; conf = Math.min(conf, p); probs.push([p, p]); }
     else if (k !== 0) probs[probs.length - 1][1] = Math.max(probs[probs.length - 1][1], p);
@@ -235,6 +236,9 @@ function decode(logp, T, C) {
   return [out, conf, probs];
 }
 
+const range = (a, b) => Array.from({length: b - a}, (_, i) => a + i);
+const DIGITS = [..."0123456789-"].map(c => CHARS.indexOf(c) + 1); // date lines print only these
+
 const breathe = () => new Promise(r => setTimeout(r, 0)); // let the page repaint between steps
 
 // [text, conf, probs], or null when the box is too small to read
@@ -242,7 +246,7 @@ async function readLine(g, card, b, {rec, ort}) {
   const input = lineInput(g, card.w, card.h, b);
   if (!input) return null;
   const [x, W] = input, y = (await rec.run({x: new ort.Tensor("float32", x, [1, 3, LINE_H, W])})).logp;
-  return decode(y.data, y.dims[1], y.dims[2]);
+  return [...decode(y.data, y.dims[1], y.dims[2]), decode(y.data, y.dims[1], y.dims[2], DIGITS)[0]];
 }
 
 // OCR items [text, box, conf, probs]. The parser only uses text and box, like ktp.py.
@@ -253,7 +257,7 @@ async function items(card, g, models, progress) {
   for (const [i, b] of boxes.entries()) {
     if (i % 4 === 0) { progress(`Membaca baris ${i + 1}/${boxes.length}...`); await breathe(); }
     const read = await readLine(g, card, b, models);
-    if (read !== null) out.push([read[0], b, read[1], read[2]]);
+    if (read !== null) out.push([read[0], b, read[1], read[2], read[3]]);  // read[3]: same line read as digits only
   }
   return out;
 }
@@ -262,11 +266,11 @@ async function items(card, g, models, progress) {
 // Unlike Reader.read_card, a 16-digit but invalid NIK (a misread, or a specimen card) doesn't trigger the
 // second read: on a phone each read takes seconds, and an upside-down card reads no NIK.
 // progress(text) is called between steps. Returns {fields, lines (OCR items), card, ms}.
-export async function readCard(card, models, progress = () => {}) {
+export async function readCard(card, models, progress = () => {}, opts = {}) {
   const t0 = performance.now(), tries = [];
   for (const c of [card, rotate180(card)]) {
     const g = grey(c), lines = await items(c, g, models, progress);
-    const fields = await extractFields(lines, null, models.wilayah);
+    const fields = await extractFields(lines, null, models.wilayah, opts);
     tries.push({fields, lines, card: c, score: (fields.nik_valid ? 2 : 0) + (fields.nik ? 1 : 0)});
     if (fields.nik) break;
     progress("Membalik KTP...");
@@ -399,7 +403,7 @@ function nikSpotOk(lines, nik) {
 // An uploaded photo (no live corners): corners as-is, letterboxed, with a 50% border, then the whole photo;
 // stops at a valid NIK in the card's NIK spot, else keeps the best try. models.detector is the DocAligner session.
 // Returns {fields, lines, card, ms, step} or null when nothing could be read.
-export async function readUpload(img, models, progress = () => {}) {
+export async function readUpload(img, models, progress = () => {}, opts = {}) {
   const t0 = performance.now(), tries = [];
   const steps = [["kartu", {}], ["kartu (persegi)", {square: true}], ["kartu (bingkai)", {pad: 0.5}], ["foto utuh", null]];
   for (const [step, opt] of steps) {
@@ -410,7 +414,7 @@ export async function readUpload(img, models, progress = () => {}) {
       if (!q) continue;
       card = warpCard(img, orderCorners(q));
     } else card = await wholePhoto(img, models);
-    const r = await readCard(card, models, progress);
+    const r = await readCard(card, models, progress, opts);
     const spot = nikSpotOk(r.lines, r.fields.nik);
     tries.push({...r, step, rank: (r.fields.nik_valid ? 2 : 0) + (spot ? 1 : 0)});
     if (r.fields.nik_valid && spot) break;
