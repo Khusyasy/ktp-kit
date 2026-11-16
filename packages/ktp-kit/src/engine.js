@@ -1,7 +1,7 @@
 // The engine: downloads the models once (stored on the device with the Cache API), then reads KTPs locally.
 // Works in the browser and in Node (pass `load` to read files from disk). Nothing is ever uploaded.
 import {readCard, readUpload, warpCard, orderCorners} from "./reader.js";
-import {Wilayah, fieldNotes, fieldConfidence, ktpLabels} from "./ktp.js";
+import {Wilayah, validate, accept} from "./ktp.js";
 import {parseNik} from "./nik.js";
 
 // Files expected under `base` (copy them with `npx ktp-kit assets <dir>`). The CLI compresses them (.br brotli,
@@ -26,9 +26,6 @@ const KEYS = ["nik", "nik_valid", "nama", "tempat_lahir", "tanggal_lahir", "jeni
   "kewarganegaraan", "berlaku_hingga", "kota_terbit", "tanggal_terbit", "kode_wilayah"];
 const RENAME = {gol_darah: "golongan_darah", kel_desa: "kelurahan_desa"};
 const outName = f => RENAME[f] || f;
-// Below these, name and address get "low_confidence" (see fieldConfidence). 60 test cards in camera quality
-// (2026-11-14): name catches 11 of 12 wrong, flags 20 of 46 right. Address catches 12 of 12 wrong, flags 30 of 47 right.
-const LOW_CONFIDENCE = {nama: 0.9, alamat: 0.7};
 
 // gzip starts with 1f 8b. Hosts that already unpacked a .gz (Content-Encoding) hand over plain bytes: keep them.
 async function gunzip(b) {
@@ -202,19 +199,18 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
 
   // null when nothing KTP-like was read: uploads always end with a best try, even on a photo of a cat
   const result = (r, {debug} = {}) => {
-    const isKtp = !!r && (r.fields.nik_valid || ktpLabels(r.lines) >= 3);  // a KTP shows most of its 10 printed labels
-    if (!r || (!r.fields.nik && !isKtp)) return null;
+    if (!r) return null;
+    const acc = accept(r.fields, r.lines), isKtp = acc.is_ktp;
+    if (!r.fields.nik && !isKtp) return null;
     const f = Object.fromEntries(Object.entries(r.fields).map(([k, v]) => [outName(k), v]));
-    const notes = fieldNotes(r.fields), conf = fieldConfidence(r.fields, r.lines);
-    for (const [k, c] of Object.entries(conf))  // birthplace and RT/RW: value only, no flag
-      if (c < (LOW_CONFIDENCE[k] ?? 0)) (notes[k] ||= []).push("low_confidence");
+    const {notes, confidence: conf} = validate(r.fields, r.lines);
     return {...Object.fromEntries(KEYS.map(k => [k, f[k] ?? null])),
       perlu_dicek: Object.fromEntries(Object.entries(notes).map(([k, v]) => [outName(k), v])),
       info: {is_ktp: isKtp, ms: r.ms, versi: VERSION,
         confidence: Object.fromEntries(Object.entries(conf).map(([k, v]) => [outName(k), Math.round(v * 1000) / 1000]))},
       card: r.card,
       // debug: every layer's output, to find where a field goes wrong (lines = pure model output per text line)
-      ...(debug && {debug: {lines: r.lines.map(([text, box, conf, , digits]) => ({text, box, conf, digits})), ...r.fields.layers}})};
+      ...(debug && {debug: {lines: r.lines.map(([text, box, conf, probs, digits]) => ({text, box, conf, probs, digits})), ...r.fields.layers, validate: {notes, confidence: conf}, accept: acc}})};
   };
 
   return {

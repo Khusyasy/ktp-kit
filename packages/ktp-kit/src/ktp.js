@@ -339,6 +339,34 @@ function provinceAlias(s) {
   return s.replace(/^KEP\.?\s*(?!ULAUAN)/, "KEPULAUAN ");
 }
 
+// Layer "accept": is this a KTP at all. A KTP shows most of its 10 printed labels.
+export function accept(out, items) {
+  const labels = ktpLabels(items);
+  return {is_ktp: Boolean(out.nik_valid || labels >= 3), labels};
+}
+
+// Below these, name and address get "low_confidence" (see fieldConfidence). 60 test cards in camera quality
+// (2026-11-14): name catches 11 of 12 wrong, flags 20 of 46 right. Address catches 12 of 12 wrong, flags 30 of 47 right.
+export const LOW_CONFIDENCE = {nama: 0.9, alamat: 0.7};
+
+// Layer "validate": flags only, values are never changed here. {notes: {field: [code]}, confidence: {field: p}}
+export function validate(out, items) {
+  const notes = fieldNotes(out), confidence = fieldConfidence(out, items);
+  const add = (f, code) => (notes[f] ||= []).includes(code) || notes[f].push(code);
+  for (const f of ["nik", "nama"]) if (!out[f]) add(f, "not_read");  // a missing value always needs a look
+  const g = out._region, nik = out.nik || "";
+  if (g && nik) {
+    // A NIK keeps its first region after a move, so a plain province mismatch is common on right NIKs (25 of 280
+    // on gold v2). A misread first digit keeps the second ("35" read "15"): only that pattern is flagged
+    // (gold v2 right NIKs flagged 2 of 280, field eval wrong first digits caught 3 of 4, 2026-11-16).
+    if (!g.nikProv) add("nik", "region_unknown");
+    else if (g.prov && nik[0] !== g.prov[0] && nik[1] === g.prov[1]) add("nik", "region_mismatch");
+  }
+  for (const [k, c] of Object.entries(confidence))  // birthplace and RT/RW: value only, no flag
+    if (c < (LOW_CONFIDENCE[k] ?? 0)) (notes[k] ||= []).push("low_confidence");
+  return {notes, confidence};
+}
+
 // How many of the KTP's printed labels the OCR lines show (0-10), fuzzy. Other cards (SIM, NPWP, bank cards)
 // show few; the cutoff is measured in web/devicetest.mjs. Browser-only, so there is no Python twin.
 const KTP_LABELS = ["PROVINSI", "NIK", "NAMA", "TEMPATTGLLAHIR", "JENISKELAMIN", "ALAMAT", "AGAMA", "PEKERJAAN",
@@ -464,6 +492,8 @@ export function snapWilayah(out, raw, w) {
   const prov = w.best(provinceAlias(raw.provinsi), provs, 0.7) ||
     w.best(provinceAlias(raw.provinsi.toUpperCase().replace(/^\W*P?R?O?P?V?I?N?S?I?\s*/, "")), provs, 0.7);
   let kab = w.best(raw.kabupaten_kota, prov ? w.kids(prov) : allKabs(), 0.7);
+  // what the card prints, before any fill from the NIK, for the validate layer's NIK vs region check
+  out._region = {prov, nikProv: w.name.has((out.nik || "").slice(0, 2))};
   if (!kab && out.nik_valid && w.name.has(out.nik.slice(0, 4))) kab = out.nik.slice(0, 4);
   const kec = w.best(raw.kecamatan, kab ? w.kids(kab) : [], 0.75);
   const desa = w.best(raw.kel_desa, kec ? w.kids(kec) : [], 0.75);
