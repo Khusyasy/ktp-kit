@@ -400,6 +400,15 @@ function nikSpotOk(lines, nik) {
   return false;
 }
 
+function halves({w, h, data}) { // two halves along the long side, as separate RGBA images
+  const crop = (x0, y0, cw, ch) => {
+    const out = new Uint8ClampedArray(cw * ch * 4);
+    for (let y = 0; y < ch; y++) out.set(data.subarray(((y0 + y) * w + x0) * 4, ((y0 + y) * w + x0 + cw) * 4), y * cw * 4);
+    return {w: cw, h: ch, data: out};
+  };
+  return w >= h ? [crop(0, 0, w >> 1, h), crop(w >> 1, 0, w - (w >> 1), h)] : [crop(0, 0, w, h >> 1), crop(0, h >> 1, w, h - (h >> 1))];
+}
+
 // An uploaded photo (no live corners): corners as-is, letterboxed, with a 50% border, then the whole photo;
 // stops at a valid NIK in the card's NIK spot, else keeps the best try. models.detector is the DocAligner session.
 // Returns {fields, lines, card, ms, step} or null when nothing could be read.
@@ -419,6 +428,18 @@ export async function readUpload(img, models, progress = () => {}, opts = {}) {
     tries.push({...r, step, rank: (r.fields.nik_valid ? 2 : 0) + (spot ? 1 : 0)});
     if (r.fields.nik_valid && spot) break;
   }
+  // Two cards in one photo (KTP next to a SIM, or front and back): the corner model finds one card, so its corners
+  // land between them. Last resort, each half along the long side as its own photo.
+  if (!tries.some(t => t.rank === 3))
+    for (const [i, half] of halves(img).entries()) {
+      progress(`Mencari KTP: setengah foto ${i + 1}...`);
+      const q = await detectCorners(half, models.detector, models.ort, {pad: 0.1});
+      if (!q) continue;
+      const r = await readCard(warpCard(half, orderCorners(q)), models, progress, opts);
+      const spot = nikSpotOk(r.lines, r.fields.nik);
+      tries.push({...r, step: `setengah ${i + 1}`, rank: (r.fields.nik_valid ? 2 : 0) + (spot ? 1 : 0)});
+      if (r.fields.nik_valid && spot) break;
+    }
   if (!tries.length) return null;
   const best = tries.reduce((a, b) => b.rank > a.rank ? b : a);
   return {...best, ms: Math.round(performance.now() - t0)};
