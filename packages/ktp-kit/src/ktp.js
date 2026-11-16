@@ -339,14 +339,27 @@ function provinceAlias(s) {
   return s.replace(/^KEP\.?\s*(?!ULAUAN)/, "KEPULAUAN ");
 }
 
-// Layer "accept": how KTP-like the read is, 0-1. Points out of 15: 1 per printed label found (10 labels), 3 for the
-// PROVINSI header, 2 for a valid NIK. Header and NIK weigh more because blurry KTPs keep them when the small
-// labels are lost, and receipts, SIM and NPWP have no header (their 16-digit codes can pass the NIK check).
-// Measured 2026-11-16 on 690 test photos and 5 non-KTPs: non-KTPs at most 0.27, KTPs at least 0.40 except
-// 2 crops with 2-5 lines (0.13, same as a receipt). Default cutoff 0.35 (capture.js minKtpScore).
+// Layer "accept": how much of the card's content checks out, 0-1 = share of the 10 checks below that pass.
+// A NIK encodes region, birth date and sex, so the printed fields can be checked against it, the way passports are
+// checked against their MRZ. Values filled from the NIK never count. A receipt or SIM passes at most the NIK check.
+export const KTP_CHECKS = ["nik_valid", "tanggal_lahir_nik", "jenis_kelamin_nik", "provinsi", "provinsi_nik", "kecamatan",
+  "agama", "status_perkawinan", "pekerjaan", "berlaku_hingga"];
 export function accept(out, items) {
-  const labels = ktpLabels(items), header = ktpLabels(items, ["PROVINSI"]) > 0, nik_valid = nikValid(out.nik || "");
-  return {score: Math.round((labels + 3 * header + 2 * nik_valid) / 15 * 100) / 100, check: {labels, header, nik_valid}, labels};
+  const raw = out.raw || {}, g = out._region || {}, nik = out.nik_valid ? out.nik : "", bad = nikConflicts(out);
+  const c = {
+    nik_valid: !!nik,
+    tanggal_lahir_nik: !!nik && !!date(raw.tempat_tgl_lahir) && !bad.includes("tanggal_lahir"),
+    jenis_kelamin_nik: !!nik && !!snap(raw.jenis_kelamin, JENIS_KELAMIN, 0.6) && !bad.includes("jenis_kelamin"),
+    provinsi: !!g.prov,
+    provinsi_nik: !!g.prov && nik.slice(0, 2) === g.prov,
+    kecamatan: !!g.kec,
+    agama: AGAMA.includes(out.agama),
+    status_perkawinan: STATUS_PERKAWINAN.includes(out.status_perkawinan),
+    pekerjaan: PEKERJAAN.includes(out.pekerjaan),
+    berlaku_hingga: !!out.berlaku_hingga,
+  };
+  const passed = KTP_CHECKS.filter(k => c[k]).length;
+  return {score: passed / KTP_CHECKS.length, check: c, labels: ktpLabels(items)};
 }
 
 // Below these, name and address get "low_confidence" (see fieldConfidence). Chosen on gold v2 (281 clean cards,
@@ -514,6 +527,7 @@ export function snapWilayah(out, raw, w) {
   if (!kab && out.nik_valid && w.name.has(out.nik.slice(0, 4))) kab = out.nik.slice(0, 4);
   const kec = w.best(raw.kecamatan, kab ? w.kids(kab) : [], 0.75);
   const desa = w.best(raw.kel_desa, kec ? w.kids(kec) : [], 0.75);
+  out._region.kec = kec;  // printed kecamatan found under the card's kabupaten, for the accept layer
   const terbit = w.best(raw.kota_terbit, prov ? w.kids(prov) : allKabs(), 0.7, true, kab);
   if (terbit) out.kota_terbit = w.name.get(terbit);
   out.kode_wilayah = desa || kec;

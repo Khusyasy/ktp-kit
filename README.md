@@ -110,7 +110,7 @@ on the card. Unreadable fields are `null`.
   "berlaku_hingga": "SEUMUR HIDUP", "kota_terbit": "KOTA ADMINISTRASI JAKARTA PUSAT", "tanggal_terbit": "12-08-2020",
   "kode_wilayah": "3171011001",
   "perlu_dicek": { "tanggal_lahir": ["from_nik"] },
-  "info": { "ktp_score": 1, "ktp_check": { "labels": 10, "header": true, "nik_valid": true }, "ms": 2300, "versi": "0.3.0", "confidence": { "nama": 0.93, "alamat": 0.88 } },
+  "info": { "ktp_score": 1, "ktp_check": { "nik_valid": true, "tanggal_lahir_nik": true, "...": true }, "ms": 2300, "versi": "0.3.0", "confidence": { "nama": 0.93, "alamat": 0.88 } },
   "card": "Blob (image/jpeg)"
 }
 ```
@@ -127,7 +127,7 @@ on the card. Unreadable fields are `null`.
 | `region_mismatch` | NIK. Its first digit looks misread, because the second digit matches the province on the card and the first does not. |
 | `region_unknown` | NIK. Its region code is not in the Kemendagri table. |
 
-`info.ktp_score` (0-1) says how much the photo looks like a KTP. It counts points out of 15. Each of the 10 printed labels found (PROVINSI, NIK, Nama, ...) gives 1, the PROVINSI header 3 more and a valid NIK 2. `info.ktp_check` shows the parts. On 690 test photos it was at least 0.40 (except 2 unreadable crops), on receipts, SIM and NPWP at most 0.27. The element and `createCapture` ask for a retake below `minKtpScore` (default 0.35, attribute `min-ktp-score`). `readImage` and `readFrame` always return what they read, so check the score yourself.
+`info.ktp_score` (0-1) is the share of 10 content checks that pass. A NIK encodes the region, birth date and sex, so the card's printed fields can be checked against it. The checks are a valid NIK, birth date matches the NIK, sex matches the NIK, province found in the Kemendagri table, province matches the NIK, kecamatan found, and agama, status perkawinan, pekerjaan and berlaku hingga are official values. Values filled from the NIK never count. `info.ktp_check` shows each check. On 690 test photos 94% scored 0.8 or more, receipts, SIM and NPWP at most 0.1. The element and `createCapture` ask for a retake below `minKtpScore` (default 0.5, attribute `min-ktp-score`). `readImage` and `readFrame` always return what they read, so check the score yourself.
 
 Treat the result as user input on your server: users can edit your form. `nikValid` and `nikConflicts` from
 `ktp-kit` run in Node for the same checks. The [docs page](https://ktp-kit.khusyasy.my.id/docs) has the full field table and

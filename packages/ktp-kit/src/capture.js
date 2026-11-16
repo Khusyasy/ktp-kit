@@ -19,7 +19,7 @@ export const DEFAULTS = {
   stableMs: 600,        // ... and for at least this long (detection runs at 4-30 fps depending on the phone)
   stableMove: 0.025,    // max corner speed, fraction of the frame diagonal per second
   burst: 5,             // frames taken at capture time, the sharpest one is read
-  minKtpScore: 0.35,    // result.info.ktp_score below this is not a KTP: retake (noCard). 0 keeps every read
+  minKtpScore: 0.5,     // result.info.ktp_score below this (under half the content checks pass): retake (noCard). 0 keeps every read
 };
 
 export const MESSAGES = {

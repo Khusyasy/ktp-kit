@@ -5,7 +5,7 @@
 //   el.addEventListener("ktp-result", e => save(e.detail))   // all fields, perlu_dicek, info, card image (Blob)
 //
 // Attributes: base (where `npx ktp-kit assets` put the files), lang ("id" | "en"), upload="false" (hide the upload button), min-ktp-score (0-1, reads below it are
-// not a KTP and ask for a retake, default 0.35), unstyled (keep only layout).
+// not a KTP and ask for a retake, default 0.5), unstyled (keep only layout).
 // Styling: CSS variables (--ktp-accent, --ktp-ok, --ktp-warn, --ktp-bg, --ktp-fg, --ktp-panel, --ktp-surface, --ktp-muted,
 // --ktp-font), ::part(video | hint | badge | actions | button | upload |
 // shutter | retake | result | notice | card), and the host's data-state

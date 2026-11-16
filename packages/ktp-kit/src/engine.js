@@ -67,9 +67,9 @@ const CACHED = Object.values(FILES).filter(f => f !== FILES.mjs);
  *   address: the reader was unsure of at least one character), unstable (name or address: a second, wider read gave
  *   other letters), not_read (NIK or name missing), region_mismatch (NIK first digit looks misread), region_unknown
  *   (NIK region not in the table)
- * @property {{ktp_score: number, ktp_check: {labels: number, header: boolean, nik_valid: boolean}, ms: number, versi: string, confidence: {nama?: number, alamat?: number, tempat_lahir?: number, rt_rw?: number}}} info
- *   ktp_score: how KTP-like the read is (0-1), points out of 15: 1 per printed label found, 3 for the PROVINSI
- *   header, 2 for a valid NIK. Below 0.35 it is most likely not a KTP (receipts, SIM, NPWP). ktp_check: the parts.
+ * @property {{ktp_score: number, ktp_check: Object<string, boolean>, ms: number, versi: string, confidence: {nama?: number, alamat?: number, tempat_lahir?: number, rt_rw?: number}}} info
+ *   ktp_score: share of the 10 content checks that pass (0-1, see KTP_CHECKS in ktp.js), ktp_check: each check.
+ *   Below 0.5 it is most likely not a KTP (receipts, SIM, NPWP) or too blurry to trust.
  *   ms: reading time on this device. versi: ktp-kit version. confidence: lowest character probability for name, address, birthplace and RT/RW (0-1),
  *   name below 0.8 and address below 0.52 get "low_confidence". Use your own limit if that suits your app better.
  * @property {RgbaImage} card               the straightened 856x540 card (the element turns it into a JPEG Blob)
