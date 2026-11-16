@@ -369,6 +369,10 @@ export function validate(out, items) {
   }
   for (const [k, c] of Object.entries(confidence))  // birthplace and RT/RW: value only, no flag
     if (c < (LOW_CONFIDENCE[k] ?? 0)) (notes[k] ||= []).push("low_confidence");
+  // the same line read 1.2x wider (items[5], from the reader) gives other letters: a confident misread
+  for (const [f, src] of [["nama", "nama"], ["alamat", "alamat"]])
+    if (sourceLines(out.raw?.[src], items).some(i => typeof items[i][5] === "string" && valuePart(items[i][5]) !== valuePart(items[i][0])))
+      add(f, "unstable");
   return {notes, confidence};
 }
 
@@ -392,6 +396,13 @@ export function fieldNotes(out) {
   if (out.tanggal_lahir && !date(raw.tempat_tgl_lahir)) add("tanggal_lahir", "from_nik");
   if (out.jenis_kelamin && !snap(raw.jenis_kelamin, JENIS_KELAMIN, 0.6)) add("jenis_kelamin", "from_nik");
   return notes;
+}
+
+// Indices of the OCR items whose value part (after any label and ':') is inside a field's raw text.
+const valuePart = t => letters(t.replace(/^.*[:;]/, ""));
+export function sourceLines(rawText, items) {
+  const v = letters(rawText);
+  return v ? items.flatMap(([t], i) => valuePart(t).length >= 2 && v.includes(valuePart(t)) ? [i] : []) : [];
 }
 
 // Reader confidence for name and address: the lowest of the OCR lines their raw text came from (items [text, box,

@@ -1,7 +1,7 @@
 // On-device KTP reading: straighten the card, find text lines (PP-OCRv6 small det), read them (our fine-tuned
 // reader), parse with ktp.js. No DOM: images are {w, h, data} with RGBA bytes, so Node can test this file
 // (web/devicetest.mjs) against the Python pipeline. Mirrors RapidOCR's det settings and train_rec.to_input.
-import {CARD_W, CARD_H, extractFields, extractNik, nikValid, ktpLabels} from "./ktp.js";
+import {CARD_W, CARD_H, extractFields, extractNik, nikValid, ktpLabels, sourceLines} from "./ktp.js";
 
 const CHARS = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ/-.,:'()+"; // train_rec.CHARS; index 0 of the output is blank
 const LINE_H = 48, MAX_W = 960;
@@ -202,7 +202,7 @@ async function findLines(card, det, ort) {
 }
 
 // --- reading lines -----------------------------------------------------------------------------------------
-function lineInput(g, cw, ch, b) { // train_rec.line_crop + to_input("tiny") on a grey card: straighten the box
+function lineInput(g, cw, ch, b, stretch = 1) { // train_rec.line_crop + to_input("tiny") on a grey card: straighten the box
   const d = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
   const w = Math.trunc(Math.max(d(b[0], b[1]), d(b[3], b[2]))), h = Math.trunc(Math.max(d(b[0], b[3]), d(b[1], b[2])));
   if (w < 4 || h < 4) return null;
@@ -213,7 +213,7 @@ function lineInput(g, cw, ch, b) { // train_rec.line_crop + to_input("tiny") on 
     const at = (xx, yy) => g[Math.min(Math.max(yy, 0), ch - 1) * cw + Math.min(Math.max(xx, 0), cw - 1)];
     crop[y * w + x] = (at(x0, y0) * (1 - fx) + at(x0 + 1, y0) * fx) * (1 - fy) + (at(x0, y0 + 1) * (1 - fx) + at(x0 + 1, y0 + 1) * fx) * fy;
   }
-  const W = Math.min(Math.max(Math.floor(w * LINE_H / h), 8), MAX_W);
+  const W = Math.min(Math.max(Math.floor(w * LINE_H / h * stretch), 8), MAX_W);
   const r = resize(crop, w, h, W, LINE_H), x = new Float32Array(3 * W * LINE_H);
   for (let i = 0; i < W * LINE_H; i++) x[i] = x[W * LINE_H + i] = x[2 * W * LINE_H + i] = Math.round(r[i]) / 127.5 - 1;
   return [x, W];
@@ -242,8 +242,8 @@ const DIGITS = [..."0123456789-"].map(c => CHARS.indexOf(c) + 1); // date lines 
 const breathe = () => new Promise(r => setTimeout(r, 0)); // let the page repaint between steps
 
 // [text, conf, probs], or null when the box is too small to read
-async function readLine(g, card, b, {rec, ort}) {
-  const input = lineInput(g, card.w, card.h, b);
+async function readLine(g, card, b, {rec, ort}, stretch = 1) {
+  const input = lineInput(g, card.w, card.h, b, stretch);
   if (!input) return null;
   const [x, W] = input, y = (await rec.run({x: new ort.Tensor("float32", x, [1, 3, LINE_H, W])})).logp;
   return [...decode(y.data, y.dims[1], y.dims[2]), decode(y.data, y.dims[1], y.dims[2], DIGITS)[0]];
@@ -276,6 +276,13 @@ export async function readCard(card, models, progress = () => {}, opts = {}) {
     progress("Membalik KTP...");
   }
   const best = tries.reduce((a, b) => b.score > a.score ? b : a);
+  // Second look at the name and address lines, 1.2x wider: a confident misread (thin I/L) often changes, a solid
+  // read does not. validate flags "unstable" when the letters differ (gold v2 + field cases, 2026-11-16).
+  const g = grey(best.card);
+  for (const i of new Set([...sourceLines(best.fields.raw?.nama, best.lines), ...sourceLines(best.fields.raw?.alamat, best.lines)])) {
+    const alt = await readLine(g, best.card, best.lines[i][1], models, 1.2);
+    best.lines[i] = [...best.lines[i].slice(0, 5), alt ? alt[0] : null];
+  }
   return {...best, ms: Math.round(performance.now() - t0)};
 }
 
