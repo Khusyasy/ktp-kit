@@ -16,8 +16,8 @@ export const FILES = {
   brotli: "brotli-dec.wasm.gz",               // brotli decoder for browsers without DecompressionStream("brotli")
 };
 // Bump with every model change, or devices keep the old files.
-const CACHE = "ktp-kit-v6";
-export const VERSION = "0.3.1";  // = package.json (scripts/check.mjs), reported in each result for audit logs
+const CACHE = "ktp-kit-v7";
+export const VERSION = "0.3.2";  // = package.json (scripts/check.mjs), reported in each result for audit logs
 
 // Result keys in card order. Names follow Indonesian KTP OCR APIs (VIDA, GLAIR); the parser's own names differ for
 // two fields, kept so it stays line-for-line with ktp.py.

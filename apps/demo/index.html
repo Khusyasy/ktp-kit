@@ -213,9 +213,9 @@
         <table class="w-full border-b border-line text-[15px]">
           <thead><tr class="text-sm text-muted"><th class="w-[34%] pb-3 text-left font-normal"></th><th class="pb-3 text-left font-mono font-medium text-accent">ktp-kit</th><th class="pb-3 text-left font-normal">PP-OCRv6 small</th><th class="pb-3 text-left font-normal">PP-OCRv6 tiny</th></tr></thead>
           <tbody class="tabular-nums">
-          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="tNik"></th><td class="py-3 pr-4 text-ink" data-pct="91.6"></td><td class="py-3 pr-4 text-ink" data-pct="91.6"></td><td class="py-3 text-muted" data-pct="87.8"></td></tr>
-          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="tAll"></th><td class="py-3 pr-4 text-ink" data-pct="82.1"></td><td class="py-3 pr-4 text-muted" data-pct="51.4"></td><td class="py-3 text-muted" data-pct="48.7"></td></tr>
-          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="tBlank"></th><td class="py-3 pr-4 text-ink" data-pct="98.8"></td><td class="py-3 pr-4 text-muted" data-pct="70.5"></td><td class="py-3 text-muted" data-pct="71.1"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="tNik"></th><td class="py-3 pr-4 text-ink" data-pct="92.4"></td><td class="py-3 pr-4 text-ink" data-pct="91.6"></td><td class="py-3 text-muted" data-pct="87.8"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="tAll"></th><td class="py-3 pr-4 text-ink" data-pct="83.3"></td><td class="py-3 pr-4 text-muted" data-pct="51.4"></td><td class="py-3 text-muted" data-pct="48.7"></td></tr>
+          <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="tBlank"></th><td class="py-3 pr-4 text-ink" data-pct="99.4"></td><td class="py-3 pr-4 text-muted" data-pct="70.5"></td><td class="py-3 text-muted" data-pct="71.1"></td></tr>
           <tr class="border-t border-line"><th scope="row" class="py-3 pr-4 text-left font-medium" data-t="tSize"></th><td class="py-3 pr-4 text-ink" data-mb="0.7"></td><td class="py-3 pr-4 text-muted" data-mb="21.2"></td><td class="py-3 text-muted" data-mb="4.5"></td></tr>
           </tbody>
         </table>
@@ -321,7 +321,7 @@
     kecamatan: "GAMBIR", kabupaten_kota: "KOTA ADMINISTRASI JAKARTA PUSAT", provinsi: "DAERAH KHUSUS IBUKOTA JAKARTA",
     agama: "ISLAM", status_perkawinan: "KAWIN", pekerjaan: "KARYAWAN SWASTA", kewarganegaraan: "WNI", berlaku_hingga: "SEUMUR HIDUP",
     kota_terbit: "KOTA ADMINISTRASI JAKARTA PUSAT", tanggal_terbit: "12-08-2020", kode_wilayah: "3171011001",
-    perlu_dicek: {alamat: ["low_confidence"]}, info: {ktp_score: 1, ms: 2300, versi: "0.3.1"}, card: null};
+    perlu_dicek: {alamat: ["low_confidence"]}, info: {ktp_score: 1, ms: 2300, versi: "0.3.2"}, card: null};
   let result = SAMPLE;
   const fill = r => { for (const [k, v] of Object.entries(r)) if (form.elements[k]) form.elements[k].value = v ?? ""; };
   function paintResult() {

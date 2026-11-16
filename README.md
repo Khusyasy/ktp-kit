@@ -110,7 +110,7 @@ on the card. Unreadable fields are `null`.
   "berlaku_hingga": "SEUMUR HIDUP", "kota_terbit": "KOTA ADMINISTRASI JAKARTA PUSAT", "tanggal_terbit": "12-08-2020",
   "kode_wilayah": "3171011001",
   "perlu_dicek": { "tanggal_lahir": ["from_nik"] },
-  "info": { "ktp_score": 1, "ktp_check": { "nik_valid": true, "tanggal_lahir_nik": true, "...": true }, "ms": 2300, "versi": "0.3.1", "confidence": { "nama": 0.93, "alamat": 0.88 } },
+  "info": { "ktp_score": 1, "ktp_check": { "nik_valid": true, "tanggal_lahir_nik": true, "...": true }, "ms": 2300, "versi": "0.3.2", "confidence": { "nama": 0.93, "alamat": 0.88 } },
   "card": "Blob (image/jpeg)"
 }
 ```
@@ -219,7 +219,7 @@ and random letters. Regions come from the public region code list. Lines are dra
 tilted, darkened and given glare, like phone photos. Training started from the stock PP-OCRv6 tiny weights. No real
 KTP photo, NIK or name was used to train it, so the model files hold no one's data.
 
-On 2,400 generated lines never used for training or for choosing the model, ktp-kit reads 92% of NIK lines and 82.1%
+On 2,400 generated lines never used for training or for choosing the model, ktp-kit reads 92% of NIK lines and 83.3%
 of all text lines exactly. The general PaddleOCR PP-OCRv6 small model reads 92% and 51% of the same lines. The data,
 labels and scripts are in [benchmark/](benchmark/), so you can rerun this or test another reader. The generator makes
 lines hard on purpose (blur, fading, worn print), and real photos vary in other ways, so try it on your own cards before
