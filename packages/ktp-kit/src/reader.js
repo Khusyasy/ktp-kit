@@ -277,7 +277,7 @@ export async function readCard(card, models, progress = () => {}, opts = {}) {
   }
   const best = tries.reduce((a, b) => b.score > a.score ? b : a);
   // Second look at the name and address lines, 1.2x wider: a confident misread (thin I/L) often changes, a solid
-  // read does not. validate flags "unstable" when the letters differ (gold v2 + field cases, 2026-11-16).
+  // read does not. validate flags "unstable" when the letters differ.
   const g = grey(best.card);
   for (const i of new Set([...sourceLines(best.fields.raw?.nama, best.lines), ...sourceLines(best.fields.raw?.alamat, best.lines)])) {
     const alt = await readLine(g, best.card, best.lines[i][1], models, 1.2);

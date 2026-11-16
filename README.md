@@ -110,7 +110,7 @@ on the card. Unreadable fields are `null`.
   "berlaku_hingga": "SEUMUR HIDUP", "kota_terbit": "KOTA ADMINISTRASI JAKARTA PUSAT", "tanggal_terbit": "12-08-2020",
   "kode_wilayah": "3171011001",
   "perlu_dicek": { "tanggal_lahir": ["from_nik"] },
-  "info": { "ktp_score": 1, "ktp_check": { "nik_valid": true, "tanggal_lahir_nik": true, "...": true }, "ms": 2300, "versi": "0.3.0", "confidence": { "nama": 0.93, "alamat": 0.88 } },
+  "info": { "ktp_score": 1, "ktp_check": { "nik_valid": true, "tanggal_lahir_nik": true, "...": true }, "ms": 2300, "versi": "0.3.1", "confidence": { "nama": 0.93, "alamat": 0.88 } },
   "card": "Blob (image/jpeg)"
 }
 ```
@@ -119,15 +119,32 @@ on the card. Unreadable fields are `null`.
 
 | Code | Meaning |
 |---|---|
-| `nik_mismatch` | The card disagrees with what the NIK encodes (birth date, sex). One of them was misread. |
-| `from_nik` | The printed value was unreadable, so it was filled from the NIK. |
-| `low_confidence` | Name or address. The reader was unsure of at least one character, often from blur or glare. On 281 test cards it caught 28 of 40 wrong names and flagged 19% of cards. |
-| `unstable` | Name or address. The same line read a second time, slightly wider, gave other letters. Catches confident misreads that `low_confidence` misses. |
-| `not_read` | NIK or name. No value was found. |
-| `region_mismatch` | NIK. Its first digit looks misread, because the second digit matches the province on the card and the first does not. |
-| `region_unknown` | NIK. Its region code is not in the Kemendagri table. |
+| `nik_mismatch` | The card doesn't match the NIK (birth date or sex). |
+| `from_nik` | Unreadable on the card, so filled from the NIK. |
+| `low_confidence` | Some letters in the name or address are unclear. |
+| `unstable` | The name or address read differently on a second try. |
+| `not_read` | The NIK or name wasn't read. |
+| `region_mismatch` | The NIK's first digit may be misread. |
+| `region_unknown` | The NIK's region code isn't in the Kemendagri table. |
 
-`info.ktp_score` (0-1) is the share of 10 content checks that pass. A NIK encodes the region, birth date and sex, so the card's printed fields can be checked against it. The checks are a valid NIK, birth date matches the NIK, sex matches the NIK, province found in the Kemendagri table, province matches the NIK, kecamatan found, and agama, status perkawinan, pekerjaan and berlaku hingga are official values. Values filled from the NIK never count. `info.ktp_check` shows each check. On 690 test photos 94% scored 0.8 or more, receipts, SIM and NPWP at most 0.1. The element and `createCapture` ask for a retake below `minKtpScore` (default 0.5, attribute `min-ktp-score`). `readImage` and `readFrame` always return what they read, so check the score yourself.
+`info.ktp_score` (0-1) is the share of 10 checks that pass. A NIK encodes the region, birth date and sex, so the card
+can be checked against it. Values filled from the NIK don't count. Each result is in `info.ktp_check`.
+
+| Check | Passes when |
+|---|---|
+| `nik_valid` | 16-digit NIK with a valid date |
+| `tanggal_lahir_nik` | Birth date matches the NIK |
+| `jenis_kelamin_nik` | Sex matches the NIK |
+| `provinsi` | Province is in the Kemendagri table |
+| `provinsi_nik` | Province matches the NIK's region code |
+| `kecamatan` | Kecamatan is under its kabupaten |
+| `agama` | Agama is on the official list |
+| `status_perkawinan` | Status perkawinan is on the official list |
+| `pekerjaan` | Pekerjaan is on the official list |
+| `berlaku_hingga` | SEUMUR HIDUP or a date |
+
+Below 0.5 the element and `createCapture` ask for a retake (`minKtpScore`, attribute `min-ktp-score`). `readImage` and
+`readFrame` always return what they read.
 
 Treat the result as user input on your server: users can edit your form. `nikValid` and `nikConflicts` from
 `ktp-kit` run in Node for the same checks. The [docs page](https://ktp-kit.khusyasy.my.id/docs) has the full field table and

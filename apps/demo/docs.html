@@ -125,7 +125,7 @@ npx ktp-kit read foto/*.jpg --csv    # atau CSV</code></pre>
           <tr><td><code>tanggal_terbit</code></td><td><code>12-08-2020</code></td><td></td></tr>
           <tr><td><code>kode_wilayah</code></td><td><code>3171011001</code></td><td>Kode wilayah paling detail yang cocok: 2 digit provinsi, 4 kabupaten/kota, 6 kecamatan, 10 kelurahan/desa</td></tr>
           <tr><td><code>perlu_dicek</code></td><td><code>{"tanggal_lahir": ["from_nik"]}</code></td><td>Lihat di bawah</td></tr>
-          <tr><td><code>info</code></td><td><code>{"ktp_score": 1, "ms": 2300, "versi": "0.3.0"}</code></td><td><code>ktp_score</code> (0-1) adalah porsi dari 10 cek isi yang lolos. NIK menyimpan kode wilayah, tanggal lahir dan jenis kelamin, jadi isi kartu bisa dicocokkan dengan NIK. Ceknya NIK valid, tanggal lahir cocok dengan NIK, jenis kelamin cocok dengan NIK, provinsi ada di tabel Kemendagri, provinsi cocok dengan NIK, kecamatan ditemukan, serta agama, status perkawinan, pekerjaan dan berlaku hingga berisi nilai resmi. Nilai yang diisi dari NIK tidak dihitung. Rinciannya di <code>ktp_check</code>. Di bawah 0,5 kemungkinan besar bukan KTP (struk, SIM, NPWP) atau terlalu blur, element meminta foto ulang. Batasnya bisa diatur lewat attribute <code>min-ktp-score</code>. Ada juga waktu baca dan versi ktp-kit untuk audit log.</td></tr>
+          <tr><td><code>info</code></td><td><code>{"ktp_score": 1, "ms": 2300, "versi": "0.3.1"}</code></td><td>Seberapa yakin ini KTP (0-1), lihat <code>ktp_score</code> di bawah. Juga waktu baca dan versi.</td></tr>
           <tr><td><code>card</code></td><td>Blob JPEG</td><td>Foto KTP yang sudah diluruskan, 856 x 540</td></tr>
         </tbody>
       </table>
@@ -137,13 +137,33 @@ npx ktp-kit read foto/*.jpg --csv    # atau CSV</code></pre>
       <table>
         <thead><tr><th>Kode</th><th>Artinya</th></tr></thead>
         <tbody>
-          <tr><td><code>nik_mismatch</code></td><td>Isi kartu beda dengan yang ada di NIK (tanggal lahir, jenis kelamin). Salah satunya salah baca.</td></tr>
-          <tr><td><code>from_nik</code></td><td>Tulisan di kartu tidak terbaca, jadi nilainya diambil dari NIK. Biasanya benar, tapi bukan hasil baca kartu.</td></tr>
-          <tr><td><code>low_confidence</code></td><td>Nama atau alamat. Model ragu di minimal satu huruf, biasanya karena foto blur atau ada pantulan cahaya. Di 281 kartu uji, flag ini menangkap 28 dari 40 nama yang salah baca.</td></tr>
-          <tr><td><code>unstable</code></td><td>Nama atau alamat. Baris yang sama dibaca ulang sedikit lebih lebar dan hurufnya berbeda. Menangkap salah baca yang yakin, yang lolos dari <code>low_confidence</code>.</td></tr>
-          <tr><td><code>not_read</code></td><td>NIK atau nama tidak ditemukan.</td></tr>
-          <tr><td><code>region_mismatch</code></td><td>NIK. Digit pertama kemungkinan salah baca, karena digit kedua cocok dengan provinsi di kartu tapi digit pertama tidak.</td></tr>
-          <tr><td><code>region_unknown</code></td><td>NIK. Kode wilayahnya tidak ada di tabel Kemendagri.</td></tr>
+          <tr><td><code>nik_mismatch</code></td><td>Isi kartu tidak cocok dengan NIK (tanggal lahir atau jenis kelamin).</td></tr>
+          <tr><td><code>from_nik</code></td><td>Tidak terbaca di kartu, jadi diisi dari NIK.</td></tr>
+          <tr><td><code>low_confidence</code></td><td>Ada huruf yang kurang jelas di nama atau alamat.</td></tr>
+          <tr><td><code>unstable</code></td><td>Nama atau alamat dibaca dua kali dan hasilnya beda.</td></tr>
+          <tr><td><code>not_read</code></td><td>NIK atau nama tidak terbaca.</td></tr>
+          <tr><td><code>region_mismatch</code></td><td>Digit pertama NIK mungkin salah baca.</td></tr>
+          <tr><td><code>region_unknown</code></td><td>Kode wilayah NIK tidak ada di tabel Kemendagri.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>ktp_score</h3>
+    <p>Porsi dari 10 cek yang lolos (0-1). NIK menyimpan wilayah, tanggal lahir dan jenis kelamin, jadi isi kartu bisa dicocokkan dengannya. Nilai yang diisi dari NIK tidak dihitung. Hasil tiap cek ada di <code>ktp_check</code>. Di bawah 0,5 element minta foto ulang, atur lewat <code>min-ktp-score</code>.</p>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>Cek</th><th>Lolos kalau</th></tr></thead>
+        <tbody>
+          <tr><td><code>nik_valid</code></td><td>NIK 16 digit dan tanggalnya valid</td></tr>
+          <tr><td><code>tanggal_lahir_nik</code></td><td>Tanggal lahir sama dengan di NIK</td></tr>
+          <tr><td><code>jenis_kelamin_nik</code></td><td>Jenis kelamin sama dengan di NIK</td></tr>
+          <tr><td><code>provinsi</code></td><td>Provinsi ada di tabel Kemendagri</td></tr>
+          <tr><td><code>provinsi_nik</code></td><td>Provinsi sama dengan kode wilayah NIK</td></tr>
+          <tr><td><code>kecamatan</code></td><td>Kecamatan ada di bawah kabupatennya</td></tr>
+          <tr><td><code>agama</code></td><td>Agama sesuai daftar resmi</td></tr>
+          <tr><td><code>status_perkawinan</code></td><td>Status perkawinan sesuai daftar resmi</td></tr>
+          <tr><td><code>pekerjaan</code></td><td>Pekerjaan sesuai daftar resmi</td></tr>
+          <tr><td><code>berlaku_hingga</code></td><td>SEUMUR HIDUP atau tanggal</td></tr>
         </tbody>
       </table>
     </div>

@@ -362,10 +362,8 @@ export function accept(out, items) {
   return {score: passed / KTP_CHECKS.length, check: c, labels: ktpLabels(items)};
 }
 
-// Below these, name and address get "low_confidence" (see fieldConfidence). Chosen on gold v2 (281 clean cards,
-// 2026-11-16) as the most wrong reads caught while at least half of the flags are real errors. Name catches 28 of 40
-// wrong, flags 19% of cards (54% of flags wrong). Address catches 17 of 77 wrong, flags 11% (53%). The old 0.7 for
-// address flagged 51% of field uploads. Confident misreads (thin I/L) stay above any useful cutoff.
+// Below these, name and address get "low_confidence" (see fieldConfidence): the most wrong reads caught while at
+// least half of the flags are real errors. Confident misreads (thin I/L) stay above any useful cutoff.
 export const LOW_CONFIDENCE = {nama: 0.8, alamat: 0.52};
 
 // Layer "validate": flags only, values are never changed here. {notes: {field: [code]}, confidence: {field: p}}
@@ -375,9 +373,8 @@ export function validate(out, items) {
   for (const f of ["nik", "nama"]) if (!out[f]) add(f, "not_read");  // a missing value always needs a look
   const g = out._region, nik = out.nik || "";
   if (g && nik) {
-    // A NIK keeps its first region after a move, so a plain province mismatch is common on right NIKs (25 of 280
-    // on gold v2). A misread first digit keeps the second ("35" read "15"): only that pattern is flagged
-    // (gold v2 right NIKs flagged 2 of 280, field eval wrong first digits caught 3 of 4, 2026-11-16).
+    // A NIK keeps its first region after a move, so a plain province mismatch is common on right NIKs. A misread
+    // first digit keeps the second ("35" read "15"): only that pattern is flagged.
     if (!g.nikProv) add("nik", "region_unknown");
     else if (g.prov && nik[0] !== g.prov[0] && nik[1] === g.prov[1]) add("nik", "region_mismatch");
   }
@@ -402,7 +399,7 @@ export function ktpLabels(items, which = KTP_LABELS) {
 
 // Why a field needs a second look, from extractFields' output: {field: [code, ...]}, internal field names.
 //   nik_mismatch: disagrees with what the NIK encodes   from_nik: unreadable, filled from the NIK
-// Snapping to official names and lists is not flagged: on 60 test cards it was never wrong (0 of 44).
+// Snapping to official names and lists is not flagged: it is rarely wrong.
 // Browser API only, so there is no Python twin.
 export function fieldNotes(out) {
   const raw = out.raw || {}, notes = {}, add = (f, code) => (notes[f] ||= []).push(code);
@@ -426,7 +423,7 @@ export function fieldConfidence(out, items) {
   // Free-text fields with no other check (fixed lists, regions and NIK-linked fields are snapped or cross-checked).
   // Each field's value is matched to the OCR lines it came from, only the characters after the label's colon count,
   // the least certain character wins. Address uses each character's first-frame probability (spaces included), the
-  // others its peak probability (spaces skipped): the best split of wrong and right reads on test cards (2026-11-14).
+  // others its peak probability (spaces skipped): the best split of wrong and right reads.
   const raw = out.raw || {}, conf = {}, alnum = s => (s || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   for (const [f, src, key] of [["nama", "nama", letters], ["alamat", "alamat", letters],
     ["tempat_lahir", "tempat_tgl_lahir", letters], ["rt_rw", "rt_rw", alnum]]) {
@@ -506,7 +503,7 @@ export function checkNik(out, raw) {
   out = {...out};
   if (!out.nik_valid) return out;
   out.tanggal_lahir ||= nikBirthDate(out.nik, raw.tempat_tgl_lahir || "");
-  if (!out.jenis_kelamin) // row not found (6% of held-out cards): the NIK encodes it
+  if (!out.jenis_kelamin) // row not found: the NIK encodes it
     out.jenis_kelamin = +out.nik.slice(6, 8) > 40 ? "PEREMPUAN" : "LAKI-LAKI";
   return out;
 }
@@ -515,7 +512,7 @@ export function checkNik(out, raw) {
 export function snapWilayah(out, raw, w) {
   out = {...out};
   if (out.tempat_lahir && (w.places(), !w._placeSet.has(out.tempat_lahir.toUpperCase())))
-    // misread letters in a birthplace: snap to a close official place name (gold cards: 16 fixed, 0 broken)
+    // misread letters in a birthplace: snap to a close official place name
     out.tempat_lahir = snap(out.tempat_lahir, w.places(), 0.9) || out.tempat_lahir;
   const provs = w.kids("");
   const allKabs = () => [...w.name.keys()].filter(k => k.length === 4);

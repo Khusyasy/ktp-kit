@@ -5,7 +5,7 @@
 // state.hint:   message key (see MESSAGES) for searching / adjust / hold / reading
 import {orderCorners, warpCard} from "./reader.js";
 
-// Thresholds measured on KTP photos and a synthetic blur/glare test (see the project notes).
+// Thresholds set with a synthetic blur/glare test and phone tests.
 export const DEFAULTS = {
   minConf: 0.3,         // heatmap peak needed for each corner
   margin: 0.02,         // corners must be this far inside the frame (fraction of width/height)
