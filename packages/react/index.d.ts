@@ -8,6 +8,8 @@ export interface KtpCaptureState {
 }
 export interface KtpCaptureProps {
   base?: string; lang?: "id" | "en"; upload?: boolean; unstyled?: boolean;
+  /** 0-1, reads with a lower info.ktp_score ask for a retake. Default 0.5. */
+  minKtpScore?: number;
   className?: string; style?: CSSProperties;
   /** Fields plus the straightened card as a JPEG Blob. */
   onResult?: (result: Omit<KtpResult, "card"> & {card: Blob}) => void;

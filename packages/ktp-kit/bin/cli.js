@@ -53,7 +53,7 @@ if (cmd === "assets") {
   if (!files.length) { console.error("ktp-kit read: no JPEG photos found in " + args.filter(a => !a.startsWith("--")).join(" ")); process.exit(1); }
   const cols = ["file", "nik", "nik_valid", "nama", "tempat_lahir", "tanggal_lahir", "jenis_kelamin", "golongan_darah", "alamat",
     "rt_rw", "kelurahan_desa", "kecamatan", "kabupaten_kota", "provinsi", "agama", "status_perkawinan", "pekerjaan",
-    "kewarganegaraan", "berlaku_hingga", "kota_terbit", "tanggal_terbit", "kode_wilayah", "perlu_dicek"];
+    "kewarganegaraan", "berlaku_hingga", "kota_terbit", "tanggal_terbit", "kode_wilayah", "perlu_dicek", "ktp_score"];
   const cell = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
   if (csv) console.log(cols.join(","));
   for (const file of files) {
@@ -61,7 +61,7 @@ if (cmd === "assets") {
     try {
       const {width: w, height: h, data} = jpeg.decode(fs.readFileSync(file), {useTArray: true, formatAsRGBA: true, maxMemoryUsageInMB: 1024});
       const r = await engine.readImage({w, h, data});
-      out = r ? {file, ...r, card: undefined} : {file, error: "no KTP found"};
+      out = r ? {file, ...r, ktp_score: r.info.ktp_score, card: undefined} : {file, error: "no KTP found"};
     } catch (e) {
       out = {file, error: e.message.includes("SOI") ? "only JPEG photos are supported" : e.message};
     }
@@ -71,6 +71,6 @@ if (cmd === "assets") {
   console.log(`ktp-kit: read Indonesian KTPs on your own machine (nothing is uploaded)
 
   ktp-kit assets [dir]           copy models + runtime for the browser (default public/ktp-kit)
-  ktp-kit read <photos...>       read KTP photos (JPEG files, folders or "foto/*.jpg"), one JSON line each.
+  ktp-kit read <photos...>       read KTP photos (JPEG files, folders or "foto/*.jpg"), one JSON line each, ktp_score below 0.5 is likely not a KTP.
                                  Add --csv for CSV.`);
 }

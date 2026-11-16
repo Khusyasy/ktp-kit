@@ -139,7 +139,7 @@ npx ktp-kit read foto/*.jpg --csv    # atau CSV</code></pre>
         <tbody>
           <tr><td><code>nik_mismatch</code></td><td>Isi kartu beda dengan yang ada di NIK (tanggal lahir, jenis kelamin). Salah satunya salah baca.</td></tr>
           <tr><td><code>from_nik</code></td><td>Tulisan di kartu tidak terbaca, jadi nilainya diambil dari NIK. Biasanya benar, tapi bukan hasil baca kartu.</td></tr>
-          <tr><td><code>low_confidence</code></td><td>Nama atau alamat: model ragu di minimal satu huruf, biasanya karena foto blur atau ada pantulan cahaya. Di 281 kartu uji, flag ini menangkap 28 dari 40 nama yang salah baca.</td></tr>
+          <tr><td><code>low_confidence</code></td><td>Nama atau alamat. Model ragu di minimal satu huruf, biasanya karena foto blur atau ada pantulan cahaya. Di 281 kartu uji, flag ini menangkap 28 dari 40 nama yang salah baca.</td></tr>
           <tr><td><code>unstable</code></td><td>Nama atau alamat. Baris yang sama dibaca ulang sedikit lebih lebar dan hurufnya berbeda. Menangkap salah baca yang yakin, yang lolos dari <code>low_confidence</code>.</td></tr>
           <tr><td><code>not_read</code></td><td>NIK atau nama tidak ditemukan.</td></tr>
           <tr><td><code>region_mismatch</code></td><td>NIK. Digit pertama kemungkinan salah baca, karena digit kedua cocok dengan provinsi di kartu tapi digit pertama tidak.</td></tr>

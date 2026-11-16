@@ -159,7 +159,7 @@ With Tailwind v4, all three work from classes:
 
 The frame takes the camera's shape. It also sets `--ktp-aspect` (width ÷ height, a number) for sizing with `calc()`.
 
-Add `min-ktp-score="0"` to accept every read (see `ktp_score`), `unstyled` to keep only the layout, `upload="false"` to hide uploads.
+Add `min-ktp-score="0"` to accept every read (see `ktp_score`, React and Vue prop `minKtpScore`), `unstyled` to keep only the layout, `upload="false"` to hide uploads.
 
 ## Speed: allow several cores
 

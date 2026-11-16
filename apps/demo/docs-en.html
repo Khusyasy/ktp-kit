@@ -139,7 +139,7 @@ npx ktp-kit read foto/*.jpg --csv    # or CSV</code></pre>
         <tbody>
           <tr><td><code>nik_mismatch</code></td><td>The card disagrees with what the NIK encodes (birth date, gender). One of them was misread.</td></tr>
           <tr><td><code>from_nik</code></td><td>The text on the card was unreadable, so the value comes from the NIK. Usually right, but not read from the card.</td></tr>
-          <tr><td><code>low_confidence</code></td><td>Name or address: the model was unsure of at least one letter, usually from blur or glare. On 281 test cards this flag caught 28 of 40 misread names.</td></tr>
+          <tr><td><code>low_confidence</code></td><td>Name or address. The model was unsure of at least one letter, usually from blur or glare. On 281 test cards this flag caught 28 of 40 misread names.</td></tr>
           <tr><td><code>unstable</code></td><td>Name or address. The same line read again slightly wider gave other letters. Catches confident misreads that <code>low_confidence</code> misses.</td></tr>
           <tr><td><code>not_read</code></td><td>NIK or name was not found.</td></tr>
           <tr><td><code>region_mismatch</code></td><td>NIK. The first digit looks misread, because the second digit matches the province on the card and the first does not.</td></tr>
