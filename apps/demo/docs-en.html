@@ -77,7 +77,7 @@ Cross-Origin-Embedder-Policy: require-corp</code></pre>
     console.log(e.detail);   // see Result below
   });
 &lt;/script&gt;</code></pre>
-    <p>Attributes: <code>base</code> (the path from step 2), <code>lang</code> (<code>id</code> or <code>en</code>), <code>upload="false"</code> to hide the upload button. Events: <code>ktp-result</code>, <code>ktp-state</code>, <code>ktp-error</code>. Style it with CSS variables and <code>::part()</code>, see the README.</p>
+    <p>Attributes: <code>base</code> (the path from step 2), <code>lang</code> (<code>id</code> or <code>en</code>), <code>upload="false"</code> to hide the upload button, <code>min-ktp-score</code> (0-1, default 0.5) for the <code>ktp_score</code> cutoff before a retake. For debugging, <code>readImage</code> and <code>readFrame</code> take <code>{debug: true}</code> (each layer's output under <code>debug</code>) and <code>{skip: ["wilayah"]}</code> or <code>["nik"]</code> to bypass that layer. Events: <code>ktp-result</code>, <code>ktp-state</code>, <code>ktp-error</code>. Style it with CSS variables and <code>::part()</code>, see the README.</p>
     <h3>React</h3>
     <pre><code>npm install @ktp-kit/react
 
