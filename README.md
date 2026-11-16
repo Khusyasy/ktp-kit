@@ -89,6 +89,8 @@ await engine.parseNik("3171014501909001");
 // { valid: true, jenis_kelamin: "PEREMPUAN", tanggal_lahir: "05-01-1990", provinsi: "DAERAH KHUSUS IBUKOTA JAKARTA", ... }
 ```
 
+`readImage` and `readFrame` take a last argument `{ debug: true }` to add each layer's output (lines, rows, fields) under `debug`, and `{ skip: ["wilayah"] }` or `["nik"]` to bypass the region or NIK layer.
+
 TypeScript types are included (`KtpResult`, `KtpCaptureState`, ...).
 
 Server rendering (Next.js, Nuxt) works: the component renders as an empty `<ktp-capture>` and the camera and models start in the browser.
@@ -108,7 +110,7 @@ on the card. Unreadable fields are `null`.
   "berlaku_hingga": "SEUMUR HIDUP", "kota_terbit": "KOTA ADMINISTRASI JAKARTA PUSAT", "tanggal_terbit": "12-08-2020",
   "kode_wilayah": "3171011001",
   "perlu_dicek": { "tanggal_lahir": ["from_nik"] },
-  "info": { "is_ktp": true, "ms": 2300, "versi": "0.1.0", "confidence": { "nama": 0.93, "alamat": 0.88 } },
+  "info": { "ktp_score": 1, "ktp_check": { "labels": 10, "header": true, "nik_valid": true }, "ms": 2300, "versi": "0.3.0", "confidence": { "nama": 0.93, "alamat": 0.88 } },
   "card": "Blob (image/jpeg)"
 }
 ```
@@ -119,7 +121,13 @@ on the card. Unreadable fields are `null`.
 |---|---|
 | `nik_mismatch` | The card disagrees with what the NIK encodes (birth date, sex). One of them was misread. |
 | `from_nik` | The printed value was unreadable, so it was filled from the NIK. |
-| `low_confidence` | Name or address: the reader was unsure of at least one character, often from blur or glare. On test cards in camera quality it catches 11 of 12 wrong names and all wrong addresses, and also flags about half of the right ones. |
+| `low_confidence` | Name or address. The reader was unsure of at least one character, often from blur or glare. On 281 test cards it caught 28 of 40 wrong names and flagged 19% of cards. |
+| `unstable` | Name or address. The same line read a second time, slightly wider, gave other letters. Catches confident misreads that `low_confidence` misses. |
+| `not_read` | NIK or name. No value was found. |
+| `region_mismatch` | NIK. Its first digit looks misread, because the second digit matches the province on the card and the first does not. |
+| `region_unknown` | NIK. Its region code is not in the Kemendagri table. |
+
+`info.ktp_score` (0-1) says how much the photo looks like a KTP. It counts points out of 15. Each of the 10 printed labels found (PROVINSI, NIK, Nama, ...) gives 1, the PROVINSI header 3 more and a valid NIK 2. `info.ktp_check` shows the parts. On 690 test photos it was at least 0.40 (except 2 unreadable crops), on receipts, SIM and NPWP at most 0.27. The element and `createCapture` ask for a retake below `minKtpScore` (default 0.35, attribute `min-ktp-score`). `readImage` and `readFrame` always return what they read, so check the score yourself.
 
 Treat the result as user input on your server: users can edit your form. `nikValid` and `nikConflicts` from
 `ktp-kit` run in Node for the same checks. The [docs page](https://ktp-kit.khusyasy.my.id/docs) has the full field table and
@@ -151,7 +159,7 @@ With Tailwind v4, all three work from classes:
 
 The frame takes the camera's shape. It also sets `--ktp-aspect` (width ÷ height, a number) for sizing with `calc()`.
 
-Add `check-ktp` to also warn when a photo doesn't look like a KTP (experimental), `unstyled` to keep only the layout, `upload="false"` to hide uploads.
+Add `min-ktp-score="0"` to accept every read (see `ktp_score`), `unstyled` to keep only the layout, `upload="false"` to hide uploads.
 
 ## Speed: allow several cores
 

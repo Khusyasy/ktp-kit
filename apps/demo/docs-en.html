@@ -125,7 +125,7 @@ npx ktp-kit read foto/*.jpg --csv    # or CSV</code></pre>
           <tr><td><code>tanggal_terbit</code></td><td><code>12-08-2020</code></td><td></td></tr>
           <tr><td><code>kode_wilayah</code></td><td><code>3171011001</code></td><td>The most detailed matching region code: 2 digits for the province, 4 regency/city, 6 district, 10 village</td></tr>
           <tr><td><code>perlu_dicek</code></td><td><code>{"tanggal_lahir": ["from_nik"]}</code></td><td>See below</td></tr>
-          <tr><td><code>info</code></td><td><code>{"is_ktp": true, "ms": 2300, "versi": "0.1.0"}</code></td><td>Read time on the device and the ktp-kit version, useful for audit logs. <code>is_ktp</code> is experimental.</td></tr>
+          <tr><td><code>info</code></td><td><code>{"ktp_score": 1, "ms": 2300, "versi": "0.3.0"}</code></td><td><code>ktp_score</code> (0-1) says how much the photo looks like a KTP. It counts points out of 15. Each printed label found (PROVINSI, NIK, Nama, ...) gives 1, the PROVINSI header 3 more and a valid NIK 2. <code>ktp_check</code> shows the parts. Below 0.35 it is most likely not a KTP (receipt, SIM, NPWP) and the element asks for a retake. Set your own cutoff with the <code>min-ktp-score</code> attribute. Also the read time and ktp-kit version, for audit logs.</td></tr>
           <tr><td><code>card</code></td><td>Blob JPEG</td><td>The straightened KTP photo, 856 x 540</td></tr>
         </tbody>
       </table>
@@ -139,7 +139,11 @@ npx ktp-kit read foto/*.jpg --csv    # or CSV</code></pre>
         <tbody>
           <tr><td><code>nik_mismatch</code></td><td>The card disagrees with what the NIK encodes (birth date, gender). One of them was misread.</td></tr>
           <tr><td><code>from_nik</code></td><td>The text on the card was unreadable, so the value comes from the NIK. Usually right, but not read from the card.</td></tr>
-          <tr><td><code>low_confidence</code></td><td>Name or address: the model was unsure of at least one letter, usually from blur or glare. On test photos this flag caught about 3 in 4 misread names.</td></tr>
+          <tr><td><code>low_confidence</code></td><td>Name or address: the model was unsure of at least one letter, usually from blur or glare. On 281 test cards this flag caught 28 of 40 misread names.</td></tr>
+          <tr><td><code>unstable</code></td><td>Name or address. The same line read again slightly wider gave other letters. Catches confident misreads that <code>low_confidence</code> misses.</td></tr>
+          <tr><td><code>not_read</code></td><td>NIK or name was not found.</td></tr>
+          <tr><td><code>region_mismatch</code></td><td>NIK. The first digit looks misread, because the second digit matches the province on the card and the first does not.</td></tr>
+          <tr><td><code>region_unknown</code></td><td>NIK. Its region code is not in the Kemendagri table.</td></tr>
         </tbody>
       </table>
     </div>

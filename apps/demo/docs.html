@@ -125,7 +125,7 @@ npx ktp-kit read foto/*.jpg --csv    # atau CSV</code></pre>
           <tr><td><code>tanggal_terbit</code></td><td><code>12-08-2020</code></td><td></td></tr>
           <tr><td><code>kode_wilayah</code></td><td><code>3171011001</code></td><td>Kode wilayah paling detail yang cocok: 2 digit provinsi, 4 kabupaten/kota, 6 kecamatan, 10 kelurahan/desa</td></tr>
           <tr><td><code>perlu_dicek</code></td><td><code>{"tanggal_lahir": ["from_nik"]}</code></td><td>Lihat di bawah</td></tr>
-          <tr><td><code>info</code></td><td><code>{"is_ktp": true, "ms": 2300, "versi": "0.1.0"}</code></td><td>Waktu baca di device dan versi ktp-kit, berguna untuk audit log. <code>is_ktp</code> masih eksperimental.</td></tr>
+          <tr><td><code>info</code></td><td><code>{"ktp_score": 1, "ms": 2300, "versi": "0.3.0"}</code></td><td><code>ktp_score</code> (0-1) menunjukkan seberapa mirip foto dengan KTP. Nilainya poin dari 15. Tiap label yang terbaca (PROVINSI, NIK, Nama, ...) dapat 1, header PROVINSI tambah 3, NIK valid tambah 2. Rinciannya di <code>ktp_check</code>. Di bawah 0,35 kemungkinan besar bukan KTP (struk, SIM, NPWP), element meminta foto ulang. Batasnya bisa diatur lewat attribute <code>min-ktp-score</code>. Ada juga waktu baca dan versi ktp-kit untuk audit log.</td></tr>
           <tr><td><code>card</code></td><td>Blob JPEG</td><td>Foto KTP yang sudah diluruskan, 856 x 540</td></tr>
         </tbody>
       </table>
@@ -139,7 +139,11 @@ npx ktp-kit read foto/*.jpg --csv    # atau CSV</code></pre>
         <tbody>
           <tr><td><code>nik_mismatch</code></td><td>Isi kartu beda dengan yang ada di NIK (tanggal lahir, jenis kelamin). Salah satunya salah baca.</td></tr>
           <tr><td><code>from_nik</code></td><td>Tulisan di kartu tidak terbaca, jadi nilainya diambil dari NIK. Biasanya benar, tapi bukan hasil baca kartu.</td></tr>
-          <tr><td><code>low_confidence</code></td><td>Nama atau alamat: model ragu di minimal satu huruf, biasanya karena foto blur atau ada pantulan cahaya. Di foto uji, flag ini menangkap sekitar 3 dari 4 nama yang salah baca.</td></tr>
+          <tr><td><code>low_confidence</code></td><td>Nama atau alamat: model ragu di minimal satu huruf, biasanya karena foto blur atau ada pantulan cahaya. Di 281 kartu uji, flag ini menangkap 28 dari 40 nama yang salah baca.</td></tr>
+          <tr><td><code>unstable</code></td><td>Nama atau alamat. Baris yang sama dibaca ulang sedikit lebih lebar dan hurufnya berbeda. Menangkap salah baca yang yakin, yang lolos dari <code>low_confidence</code>.</td></tr>
+          <tr><td><code>not_read</code></td><td>NIK atau nama tidak ditemukan.</td></tr>
+          <tr><td><code>region_mismatch</code></td><td>NIK. Digit pertama kemungkinan salah baca, karena digit kedua cocok dengan provinsi di kartu tapi digit pertama tidak.</td></tr>
+          <tr><td><code>region_unknown</code></td><td>NIK. Kode wilayahnya tidak ada di tabel Kemendagri.</td></tr>
         </tbody>
       </table>
     </div>

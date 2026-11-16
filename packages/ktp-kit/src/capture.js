@@ -19,6 +19,7 @@ export const DEFAULTS = {
   stableMs: 600,        // ... and for at least this long (detection runs at 4-30 fps depending on the phone)
   stableMove: 0.025,    // max corner speed, fraction of the frame diagonal per second
   burst: 5,             // frames taken at capture time, the sharpest one is read
+  minKtpScore: 0.35,    // result.info.ktp_score below this is not a KTP: retake (noCard). 0 keeps every read
 };
 
 export const MESSAGES = {
@@ -29,7 +30,7 @@ export const MESSAGES = {
     blur: "Gambar buram, tahan kamera", hold: "Tahan sebentar...", reading: "Membaca KTP di perangkat ini...",
     noCard: "KTP tidak terdeteksi, coba lagi", noCardPhoto: "KTP tidak ditemukan di foto ini. Coba foto lain.",
     failed: "Gagal membaca, coba lagi", badNik: "NIK tidak terbaca. Silakan ambil ulang.",
-    invalidNik: "NIK terbaca tapi tidak valid. Periksa KTP lalu ambil ulang.", notKtp: "Sepertinya ini bukan KTP.", notImage: "Berkas ini bukan foto. Pilih foto JPEG atau PNG.",
+    invalidNik: "NIK terbaca tapi tidak valid. Periksa KTP lalu ambil ulang.", notImage: "Berkas ini bukan foto. Pilih foto JPEG atau PNG.",
     local: s => `Dibaca di perangkat ini dalam ${s} detik. Foto tidak dikirim ke mana pun.`,
     offline: mb => `Siap offline · ${mb} MB tersimpan di perangkat`, download: (p, mb) => `Mengunduh pembaca KTP ${p}% (${mb} MB)`,
     shutter: "Ambil foto", upload: "Unggah foto", retake: "Ambil ulang",
@@ -41,7 +42,7 @@ export const MESSAGES = {
     blur: "Image is blurry, hold still", hold: "Hold still...", reading: "Reading the KTP on this device...",
     noCard: "No KTP found, try again", noCardPhoto: "No KTP found in this photo. Try another one.",
     failed: "Couldn't read it, try again", badNik: "NIK not readable. Please retake.",
-    invalidNik: "NIK read but not valid. Check the card and retake.", notKtp: "This doesn't look like a KTP.", notImage: "This file isn't a photo. Pick a JPEG or PNG.",
+    invalidNik: "NIK read but not valid. Check the card and retake.", notImage: "This file isn't a photo. Pick a JPEG or PNG.",
     local: s => `Read on this device in ${s} s. The photo was not sent anywhere.`,
     offline: mb => `Ready offline · ${mb} MB stored on this device`, download: (p, mb) => `Downloading KTP reader ${p}% (${mb} MB)`,
     shutter: "Take photo", upload: "Upload photo", retake: "Retake",
@@ -162,8 +163,9 @@ export function createCapture({video, engine, config = {}}) {
     await new Promise(r => { requestAnimationFrame(() => setTimeout(r, 0)); setTimeout(r, 100); });  // 100 ms: hidden tabs get no frames
     try {
       const r = await read(text => set({step: text}));
-      set(r ? {status: "done", result: r} : {status: "error", error: miss});
-      return r;
+      const ok = r && r.info.ktp_score >= cfg.minKtpScore;
+      set(ok ? {status: "done", result: r} : {status: "error", error: miss});
+      return ok ? r : null;
     } catch (e) {
       set({status: "error", error: "failed", detail: e});
     }

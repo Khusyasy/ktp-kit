@@ -17,7 +17,7 @@ export const FILES = {
 };
 // Bump with every model change, or devices keep the old files.
 const CACHE = "ktp-kit-v6";
-export const VERSION = "0.2.0";  // = package.json (scripts/check.mjs), reported in each result for audit logs
+export const VERSION = "0.3.0";  // = package.json (scripts/check.mjs), reported in each result for audit logs
 
 // Result keys in card order. Names follow Indonesian KTP OCR APIs (VIDA, GLAIR); the parser's own names differ for
 // two fields, kept so it stays line-for-line with ktp.py.
@@ -64,11 +64,14 @@ const CACHED = Object.values(FILES).filter(f => f !== FILES.mjs);
  * @property {string|null} kode_wilayah    official region code of the most specific region matched
  * @property {Object<string, string[]>} perlu_dicek  fields worth a second look, with reasons:
  *   nik_mismatch (disagrees with the NIK), from_nik (unreadable, filled from the NIK), low_confidence (name or
- *   address: the reader was unsure of at least one character)
- * @property {{is_ktp: boolean, ms: number, versi: string, confidence: {nama?: number, alamat?: number, tempat_lahir?: number, rt_rw?: number}}} info
- *   is_ktp (experimental): false when the card shows few KTP labels and no valid NIK. ms: reading time on this
- *   device. versi: ktp-kit version. confidence: lowest character probability for name, address, birthplace and RT/RW (0-1),
- *   name below 0.9 and address below 0.7 get "low_confidence". Use your own limit if that suits your app better.
+ *   address: the reader was unsure of at least one character), unstable (name or address: a second, wider read gave
+ *   other letters), not_read (NIK or name missing), region_mismatch (NIK first digit looks misread), region_unknown
+ *   (NIK region not in the table)
+ * @property {{ktp_score: number, ktp_check: {labels: number, header: boolean, nik_valid: boolean}, ms: number, versi: string, confidence: {nama?: number, alamat?: number, tempat_lahir?: number, rt_rw?: number}}} info
+ *   ktp_score: how KTP-like the read is (0-1), points out of 15: 1 per printed label found, 3 for the PROVINSI
+ *   header, 2 for a valid NIK. Below 0.35 it is most likely not a KTP (receipts, SIM, NPWP). ktp_check: the parts.
+ *   ms: reading time on this device. versi: ktp-kit version. confidence: lowest character probability for name, address, birthplace and RT/RW (0-1),
+ *   name below 0.8 and address below 0.52 get "low_confidence". Use your own limit if that suits your app better.
  * @property {RgbaImage} card               the straightened 856x540 card (the element turns it into a JPEG Blob)
  */
 
@@ -197,16 +200,17 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
 
   const clearCache = () => globalThis.caches?.delete(CACHE);
 
-  // null when nothing KTP-like was read: uploads always end with a best try, even on a photo of a cat
+  // null only when nothing KTP-like was read (no NIK, no KTP label). Whether it is a KTP is info.ktp_score, the
+  // caller decides (the element retakes below minKtpScore).
   const result = (r, {debug} = {}) => {
     if (!r) return null;
-    const acc = accept(r.fields, r.lines), isKtp = acc.is_ktp;
-    if (!r.fields.nik && !isKtp) return null;
+    const acc = accept(r.fields, r.lines);
+    if (!r.fields.nik && !acc.labels) return null;
     const f = Object.fromEntries(Object.entries(r.fields).map(([k, v]) => [outName(k), v]));
     const {notes, confidence: conf} = validate(r.fields, r.lines);
     return {...Object.fromEntries(KEYS.map(k => [k, f[k] ?? null])),
       perlu_dicek: Object.fromEntries(Object.entries(notes).map(([k, v]) => [outName(k), v])),
-      info: {is_ktp: isKtp, ms: r.ms, versi: VERSION,
+      info: {ktp_score: acc.score, ktp_check: acc.check, ms: r.ms, versi: VERSION,
         confidence: Object.fromEntries(Object.entries(conf).map(([k, v]) => [outName(k), Math.round(v * 1000) / 1000]))},
       card: r.card,
       // debug: every layer's output, to find where a field goes wrong (lines = pure model output per text line)

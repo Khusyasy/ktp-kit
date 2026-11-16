@@ -4,8 +4,8 @@
 //   <ktp-capture base="/ktp-kit/" lang="id"></ktp-capture>
 //   el.addEventListener("ktp-result", e => save(e.detail))   // all fields, perlu_dicek, info, card image (Blob)
 //
-// Attributes: base (where `npx ktp-kit assets` put the files), lang ("id" | "en"), upload="false" (hide the upload button), check-ktp (also say when the photo doesn't look like a KTP;
-// experimental), unstyled (keep only layout).
+// Attributes: base (where `npx ktp-kit assets` put the files), lang ("id" | "en"), upload="false" (hide the upload button), min-ktp-score (0-1, reads below it are
+// not a KTP and ask for a retake, default 0.35), unstyled (keep only layout).
 // Styling: CSS variables (--ktp-accent, --ktp-ok, --ktp-warn, --ktp-bg, --ktp-fg, --ktp-panel, --ktp-surface, --ktp-muted,
 // --ktp-font), ::part(video | hint | badge | actions | button | upload |
 // shutter | retake | result | notice | card), and the host's data-state
@@ -94,7 +94,8 @@ export class KtpCapture extends (globalThis.HTMLElement ?? class {}) {
       upload: $("[data-k=upload]"), shutter: $("[data-k=shutter]"), retake: $("[data-k=retake]"), card: $(".card"),
       notice: $(".notice")};
     this.engine = createKtpReader({base: this.getAttribute("base") || "/ktp-kit/", ort});
-    this.capture = createCapture({video: this.ui.video, engine: this.engine});
+    const min = this.getAttribute("min-ktp-score");
+    this.capture = createCapture({video: this.ui.video, engine: this.engine, config: min === null ? {} : {minKtpScore: +min}});
     // the frame takes the camera's own shape, so there are no black bars
     this.ui.video.addEventListener("loadedmetadata", () => {
       const {videoWidth: w, videoHeight: h} = this.ui.video;
@@ -140,7 +141,7 @@ export class KtpCapture extends (globalThis.HTMLElement ?? class {}) {
 
   notice(r) {
     const t = this.messages, en = this.getAttribute("lang") === "en";
-    return [this.hasAttribute("check-ktp") && !r.info.is_ktp && t.notKtp, !r.nik_valid && (r.nik ? t.invalidNik : t.badNik),
+    return [!r.nik_valid && (r.nik ? t.invalidNik : t.badNik),
       t.local((r.info.ms / 1000).toFixed(1).replace(".", en ? "." : ","))].filter(Boolean).join("\n");
   }
 
