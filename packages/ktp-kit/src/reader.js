@@ -1,7 +1,7 @@
 // On-device KTP reading: straighten the card, find text lines (PP-OCRv6 small det), read them (our fine-tuned
 // reader), parse with ktp.js. No DOM: images are {w, h, data} with RGBA bytes, so Node can test this file
 // (web/devicetest.mjs) against the Python pipeline. Mirrors RapidOCR's det settings and train_rec.to_input.
-import {CARD_W, CARD_H, extractFields, extractNik, nikValid} from "./ktp.js";
+import {CARD_W, CARD_H, extractFields, extractNik, nikValid, ktpLabels} from "./ktp.js";
 
 const CHARS = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ/-.,:'()+"; // train_rec.CHARS; index 0 of the output is blank
 const LINE_H = 48, MAX_W = 960;
@@ -262,17 +262,17 @@ async function items(card, g, models, progress) {
   return out;
 }
 
-// All fields from a flattened card. Tries it upright, then turned 180 degrees if no NIK was read at all.
-// Unlike Reader.read_card, a 16-digit but invalid NIK (a misread, or a specimen card) doesn't trigger the
-// second read: on a phone each read takes seconds, and an upside-down card reads no NIK.
-// progress(text) is called between steps. Returns {fields, lines (OCR items), card, ms}.
+// Layer "orient" + reading: all fields from a flattened card. It is read as it is, and turned 180 degrees as well when
+// that read shows a NIK-less card or fewer than 4 of the 10 printed labels (an upside-down card can still yield a
+// valid-looking NIK from its digits, so the NIK alone does not tell). The read with more labels wins, then a valid NIK.
+// progress(text) is called between steps. Returns {fields, lines (OCR items), card, ms, turned}.
 export async function readCard(card, models, progress = () => {}, opts = {}) {
   const t0 = performance.now(), tries = [];
-  for (const c of [card, rotate180(card)]) {
-    const g = grey(c), lines = await items(c, g, models, progress);
-    const fields = await extractFields(lines, null, models.wilayah, opts);
-    tries.push({fields, lines, card: c, score: (fields.nik_valid ? 2 : 0) + (fields.nik ? 1 : 0)});
-    if (fields.nik) break;
+  for (const [turned, c] of [[false, card], [true, null]]) {
+    const cc = c || rotate180(card), g = grey(cc), lines = await items(cc, g, models, progress);
+    const fields = await extractFields(lines, null, models.wilayah, opts), labels = ktpLabels(lines);
+    tries.push({fields, lines, card: cc, turned, score: labels * 4 + (fields.nik_valid ? 2 : 0) + (fields.nik ? 1 : 0)});
+    if (fields.nik && labels >= 4) break;
     progress("Membalik KTP...");
   }
   const best = tries.reduce((a, b) => b.score > a.score ? b : a);

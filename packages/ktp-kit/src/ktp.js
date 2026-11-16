@@ -339,10 +339,13 @@ function provinceAlias(s) {
   return s.replace(/^KEP\.?\s*(?!ULAUAN)/, "KEPULAUAN ");
 }
 
-// Layer "accept": is this a KTP at all. A KTP shows most of its 10 printed labels.
+// Layer "accept": is this a KTP at all. A KTP shows most of its 10 printed labels, a short read at least 2 plus
+// the PROVINSI header. A valid-looking NIK alone is not enough: receipts print 16-digit codes that pass nikValid.
+// Field eval + gold v2 (2026-11-16): false positives all had 0-3 labels and no header, KTPs 4+, or 2+ with it.
 export function accept(out, items) {
-  const labels = ktpLabels(items);
-  return {is_ktp: Boolean(out.nik_valid || labels >= 3), labels};
+  const labels = ktpLabels(items), header = ktpLabels(items, ["PROVINSI"]) > 0;
+  // Cost: one gold card so blurry that only 5 lines were found (no header) now reads is_ktp false, NIK still returned.
+  return {is_ktp: labels >= 4 || (labels >= 2 && header), labels, header};
 }
 
 // Below these, name and address get "low_confidence" (see fieldConfidence). 60 test cards in camera quality
@@ -371,9 +374,9 @@ export function validate(out, items) {
 // show few; the cutoff is measured in web/devicetest.mjs. Browser-only, so there is no Python twin.
 const KTP_LABELS = ["PROVINSI", "NIK", "NAMA", "TEMPATTGLLAHIR", "JENISKELAMIN", "ALAMAT", "AGAMA", "PEKERJAAN",
   "KEWARGANEGARAAN", "BERLAKUHINGGA"];
-export function ktpLabels(items) {
+export function ktpLabels(items, which = KTP_LABELS) {
   const texts = items.map(([t]) => letters(t));
-  return KTP_LABELS.filter(l => texts.some(t => t.length >= 3 && ratio(t.slice(0, l.length + 2), l) >= 0.75 ||
+  return which.filter(l => texts.some(t => t.length >= 3 && ratio(t.slice(0, l.length + 2), l) >= 0.75 ||
     t.length > l.length && ratio(t.slice(0, l.length), l) >= 0.8)).length;
 }
 

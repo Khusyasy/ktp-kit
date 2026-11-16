@@ -210,7 +210,7 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
         confidence: Object.fromEntries(Object.entries(conf).map(([k, v]) => [outName(k), Math.round(v * 1000) / 1000]))},
       card: r.card,
       // debug: every layer's output, to find where a field goes wrong (lines = pure model output per text line)
-      ...(debug && {debug: {lines: r.lines.map(([text, box, conf, probs, digits]) => ({text, box, conf, probs, digits})), ...r.fields.layers, validate: {notes, confidence: conf}, accept: acc}})};
+      ...(debug && {debug: {lines: r.lines.map(([text, box, conf, probs, digits]) => ({text, box, conf, probs, digits})), orient: {turned: !!r.turned}, ...r.fields.layers, validate: {notes, confidence: conf}, accept: acc}})};
   };
 
   return {
