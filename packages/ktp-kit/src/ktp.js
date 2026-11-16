@@ -342,10 +342,11 @@ function provinceAlias(s) {
 // Layer "accept": is this a KTP at all. A KTP shows most of its 10 printed labels, a short read at least 2 plus
 // the PROVINSI header. A valid-looking NIK alone is not enough: receipts print 16-digit codes that pass nikValid.
 // Field eval + gold v2 (2026-11-16): false positives all had 0-3 labels and no header, KTPs 4+, or 2+ with it.
+// Held-out (2026-11-16): two cards with the header and only 1 label came back with header + valid NIK.
 export function accept(out, items) {
   const labels = ktpLabels(items), header = ktpLabels(items, ["PROVINSI"]) > 0;
   // Cost: one gold card so blurry that only 5 lines were found (no header) now reads is_ktp false, NIK still returned.
-  return {is_ktp: labels >= 4 || (labels >= 2 && header), labels, header};
+  return {is_ktp: labels >= 4 || (labels >= 2 && header) || (header && nikValid(out.nik)), labels, header};
 }
 
 // Below these, name and address get "low_confidence" (see fieldConfidence). Chosen on gold v2 (281 clean cards,
