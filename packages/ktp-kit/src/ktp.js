@@ -348,9 +348,11 @@ export function accept(out, items) {
   return {is_ktp: labels >= 4 || (labels >= 2 && header), labels, header};
 }
 
-// Below these, name and address get "low_confidence" (see fieldConfidence). 60 test cards in camera quality
-// (2026-11-14): name catches 11 of 12 wrong, flags 20 of 46 right. Address catches 12 of 12 wrong, flags 30 of 47 right.
-export const LOW_CONFIDENCE = {nama: 0.9, alamat: 0.7};
+// Below these, name and address get "low_confidence" (see fieldConfidence). Chosen on gold v2 (281 clean cards,
+// 2026-11-16) as the most wrong reads caught while at least half of the flags are real errors. Name catches 28 of 40
+// wrong, flags 19% of cards (54% of flags wrong). Address catches 17 of 77 wrong, flags 11% (53%). The old 0.7 for
+// address flagged 51% of field uploads. Confident misreads (thin I/L) stay above any useful cutoff.
+export const LOW_CONFIDENCE = {nama: 0.8, alamat: 0.52};
 
 // Layer "validate": flags only, values are never changed here. {notes: {field: [code]}, confidence: {field: p}}
 export function validate(out, items) {
