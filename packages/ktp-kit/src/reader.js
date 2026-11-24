@@ -277,10 +277,42 @@ export async function readCard(card, models, progress = () => {}, opts = {}) {
     progress("Membalik KTP...");
   }
   const best = tries.reduce((a, b) => b.score > a.score ? b : a);
+  const g = (!skip.includes("second") || best.fields.gol_darah === "-") ? grey(best.card) : null;
+  // Anchored ROI crop for blood type: DBNet often stops at "Gol. Darah :" and drops the lone 1-2 letter value to its
+  // right. When parsed as "-", extend the detected label box right and re-read with a confidence gate.
+  if (g && best.fields.gol_darah === "-" && !skip.includes("rows") && !skip.includes("parse")) {
+    const gd = best.lines.find(([t, b]) => {
+      const xs = b.map(p => p[0]), ys = b.map(p => p[1]), x0 = Math.min(...xs), cy = ys.reduce((a, v) => a + v) / 4;
+      return x0 >= 0.40 * CARD_W && x0 < 0.66 * CARD_W && cy >= 0.25 * CARD_H && cy <= 0.58 * CARD_H
+        && /G\w*\.?\s*D\w*|DARAH/i.test(t);
+    });
+    if (gd) {
+      const xs = gd[1].map(p => p[0]), ys = gd[1].map(p => p[1]);
+      const x0 = Math.min(...xs), x1 = Math.min(Math.max(...xs) + 65, 625);
+      const cy = ys.reduce((a, v) => a + v) / 4, bh = Math.max(...ys) - Math.min(...ys);
+      const y0 = Math.max(0, cy - bh * 0.65), y1 = Math.min(CARD_H, cy + bh * 0.65);
+      const r = await readLine(g, best.card, [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], models, 1);
+      if (r) {
+        const [txt, , probs] = r, colon = txt.lastIndexOf(":");
+        const m = colon < 0 ? /G\w*\W*D\w*/i.exec(txt) : null;
+        const start = colon >= 0 ? colon + 1 : (m ? m.index + m[0].length : 0);
+        const chars = [], ps = [];
+        for (let i = start; i < txt.length; i++) {
+          const ch = ({0: "O", 8: "B"}[txt[i]] ?? txt[i]).toUpperCase();
+          if (/[ABO+\-]/.test(ch)) { chars.push(ch); ps.push(probs[i]?.[1] ?? 0); }
+        }
+        const val = chars.join("");
+        if (/^(AB|A|B|O)[+-]?$/.test(val) && Math.min(...ps) >= 0.7) {
+          best.fields.gol_darah = val;
+          for (const layer of ["parse", "nik", "wilayah"])
+            if (best.fields.layers?.[layer]) best.fields.layers[layer] = {...best.fields.layers[layer], gol_darah: val};
+        }
+      }
+    }
+  }
   // Second look at the name and address lines, 1.2x wider: a confident misread (thin I/L) often changes, a solid
   // read does not. validate flags "unstable" when the letters differ.
-  if (!skip.includes("second")) {
-    const g = grey(best.card);
+  if (g && !skip.includes("second")) {
     for (const i of new Set([...sourceLines(best.fields.raw?.nama, best.lines), ...sourceLines(best.fields.raw?.alamat, best.lines)])) {
       const alt = await readLine(g, best.card, best.lines[i][1], models, 1.2);
       best.lines[i] = [...best.lines[i].slice(0, 5), alt ? alt[0] : null];
