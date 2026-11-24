@@ -27,7 +27,7 @@ export function nikValid(nik) {
   let day = +nik.slice(6, 8);
   const month = +nik.slice(8, 10);
   if (day > 40) day -= 40;
-  return +nik.slice(0, 2) >= 11 && +nik.slice(0, 2) <= 94 && day >= 1 && day <= 31 && month >= 1 && month <= 12
+  return +nik.slice(0, 2) >= 11 && +nik.slice(0, 2) <= 96 && day >= 1 && day <= 31 && month >= 1 && month <= 12
     && nik.slice(12) !== "0000";
 }
 
@@ -437,9 +437,10 @@ export function fieldConfidence(out, items) {
   return conf;
 }
 
-// The parser runs in layers, each exported so it can be run alone, skipped, or fed known-good input:
+// The parser runs in layers, each exported so it can be run alone, skipped, or fed known good input:
 // readRows (OCR items -> raw text per field) -> parseFields (cleanup) -> checkNik (fills from the NIK) ->
-// snapWilayah (official region names). extractFields chains them.
+// snapWilayah (official region names). extractFields chains them. Oracle inputs are `rows` and `parsed`
+// in the options, so a benchmark can score a later layer without blaming the earlier one.
 
 /** Layer "rows": OCR items -> raw printed text per field, nothing cleaned. raw._found lists the fields whose row was found. */
 export function readRows(items) {
@@ -480,7 +481,11 @@ export function parseFields(raw, nik = null) {
   gd = gd.replace(/[^ABO+\-]/g, "");
   out.gol_darah = /^((AB|A|B|O)[+-]?|-)$/.test(gd) ? gd : ((raw._found || []).includes("jenis_kelamin") ? "-" : null);
   out.alamat = raw.alamat ? raw.alamat.replace(/\s+/g, " ").trim() : null;
-  const d = translate(raw.rt_rw || "", TO_DIGIT).match(/\d+/g) || [];
+  const rtClean = (raw.rt_rw || "").replace(/^\W+|\W+$/g, "");
+  const rtSep = /[/\\]/.test(rtClean) ? rtClean
+    : rtClean.replace(/^([\dOoDQIl|!SsBZzbG]{3})[Il|]([\dOoDQIl|!SsBZzbG]{3})$/, "$1/$2")
+             .replace(/^([\dOoDQSsBZzbG]{2,3})[Il|]([\dOoDQSsBZzbG]{2,3})$/, "$1/$2");
+  const d = translate(rtSep, TO_DIGIT).match(/\d+/g) || [];
   out.rt_rw = d.length >= 2 ? `${pad(parseInt(d[0], 10), 3)}/${pad(parseInt(d[1], 10), 3)}` : null;
   out.agama = snap(raw.agama, AGAMA, 0.7);
   // the row can hold the next field's text too ("KAWIN KARYAWAN SWASTA"): then its first or last 1-2 words
@@ -529,19 +534,28 @@ export function snapWilayah(out, raw, w) {
   if (terbit) out.kota_terbit = w.name.get(terbit);
   out.kode_wilayah = desa || kec;
   for (const [f, code] of [["provinsi", prov], ["kabupaten_kota", kab], ["kecamatan", kec], ["kel_desa", desa]])
-    if (code && !(f === "kabupaten_kota" && code === (out.nik || "").slice(0, 4) && !raw.kabupaten_kota))
-      out[f] = w.name.get(code);
+    if (code && !(f === "kabupaten_kota" && code === (out.nik || "").slice(0, 4) && !raw.kabupaten_kota)) {
+      const official = w.name.get(code);
+      // On district and village rows the card's own spacing is right when the letters match the official name
+      // and every token is a real word, not an OCR fragment such as "WA TANG" or "L IMA".
+      const keepRaw = ["kecamatan", "kel_desa"].includes(f) && raw[f] &&
+        letters(raw[f]) === letters(official) && raw[f].trim().split(/\s+/).every(t => letters(t).length >= 3);
+      out[f] = keepRaw ? raw[f] : official;
+    }
   return out;
 }
 
 /** All fields from a flattened upright card's OCR items: the layers above in order.
- * skip: layer names to bypass ("nik", "wilayah"). out.raw is the rows layer, out.layers each layer's output. */
-export async function extractFields(items, nik = null, wilayah = null, {skip = []} = {}) {
-  const raw = readRows(items);
-  const parsed = parseFields(raw, nik || extractNik(items.map(([t]) => t)));
-  const nikd = skip.includes("nik") ? parsed : checkNik(parsed, raw);
+ * skip: layer names to bypass ("rows", "parse", "nik", "wilayah"). `rows` and `parsed` are oracle inputs for
+ * skipped layers. out.raw is the rows layer, out.layers each layer's output. */
+export async function extractFields(items, nik = null, wilayah = null, {skip = [], rows = null, parsed = null} = {}) {
+  const foundNik = nik || extractNik(items.map(([t]) => t));
+  const raw = rows ?? (skip.includes("rows") ? {} : readRows(items));
+  const clean = parsed ?? (skip.includes("parse") ? {nik: foundNik} : parseFields(raw, foundNik));
+  const nikd = skip.includes("nik") ? clean : checkNik(clean, raw);
   const out = wilayah && !skip.includes("wilayah") ? snapWilayah(nikd, raw, wilayah) : {...nikd};
   out.raw = raw;
-  out.layers = {rows: raw, parse: parsed, nik: nikd};
+  const wilayahLayer = {...out};
+  out.layers = {rows: raw, parse: clean, nik: nikd, wilayah: wilayahLayer};
   return out;
 }

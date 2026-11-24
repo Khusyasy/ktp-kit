@@ -267,8 +267,9 @@ async function items(card, g, models, progress) {
 // valid-looking NIK from its digits, so the NIK alone does not tell). The read with more labels wins, then a valid NIK.
 // progress(text) is called between steps. Returns {fields, lines (OCR items), card, ms, turned}.
 export async function readCard(card, models, progress = () => {}, opts = {}) {
-  const t0 = performance.now(), tries = [];
-  for (const [turned, c] of [[false, card], [true, null]]) {
+  const t0 = performance.now(), tries = [], skip = opts.skip || [];
+  const turns = skip.includes("orient") ? [[false, card]] : [[false, card], [true, null]];
+  for (const [turned, c] of turns) {
     const cc = c || rotate180(card), g = grey(cc), lines = await items(cc, g, models, progress);
     const fields = await extractFields(lines, null, models.wilayah, opts), labels = ktpLabels(lines);
     tries.push({fields, lines, card: cc, turned, score: labels * 4 + (fields.nik_valid ? 2 : 0) + (fields.nik ? 1 : 0)});
@@ -278,12 +279,15 @@ export async function readCard(card, models, progress = () => {}, opts = {}) {
   const best = tries.reduce((a, b) => b.score > a.score ? b : a);
   // Second look at the name and address lines, 1.2x wider: a confident misread (thin I/L) often changes, a solid
   // read does not. validate flags "unstable" when the letters differ.
-  const g = grey(best.card);
-  for (const i of new Set([...sourceLines(best.fields.raw?.nama, best.lines), ...sourceLines(best.fields.raw?.alamat, best.lines)])) {
-    const alt = await readLine(g, best.card, best.lines[i][1], models, 1.2);
-    best.lines[i] = [...best.lines[i].slice(0, 5), alt ? alt[0] : null];
+  if (!skip.includes("second")) {
+    const g = grey(best.card);
+    for (const i of new Set([...sourceLines(best.fields.raw?.nama, best.lines), ...sourceLines(best.fields.raw?.alamat, best.lines)])) {
+      const alt = await readLine(g, best.card, best.lines[i][1], models, 1.2);
+      best.lines[i] = [...best.lines[i].slice(0, 5), alt ? alt[0] : null];
+    }
   }
-  return {...best, ms: Math.round(performance.now() - t0)};
+  return {...best, ms: Math.round(performance.now() - t0),
+    steps: tries.map(({turned: t, score}) => ({turned: t, score}))};
 }
 
 // --- uploads: ktp.read_upload ---------------------------------------------------------------------------------
@@ -416,40 +420,58 @@ function halves({w, h, data}) { // two halves along the long side, as separate R
   return w >= h ? [crop(0, 0, w >> 1, h), crop(w >> 1, 0, w - (w >> 1), h)] : [crop(0, 0, w, h >> 1), crop(0, h >> 1, w, h - (h >> 1))];
 }
 
+// A valid card quad should not have one corner pulled onto another object or span two cards side by side (KTP aspect ~1.585).
+function quadOk(q) {
+  if (!q) return true;
+  const [tl, tr, br, bl] = orderCorners(q), d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  const top = d(tl, tr), bot = d(bl, br), left = d(tl, bl), right = d(tr, br);
+  const w = (top + bot) / 2, h = (left + right) / 2, ar = Math.max(w, h) / Math.max(Math.min(w, h), 1);
+  return Math.min(top, bot) / Math.max(top, bot, 1) >= 0.75 && Math.min(left, right) / Math.max(left, right, 1) >= 0.75
+    && ar >= 1.2 && ar <= 2.2;
+}
+
 // An uploaded photo (no live corners): corners as-is, letterboxed, with a 50% border, then the whole photo;
 // stops at a valid NIK in the card's NIK spot, else keeps the best try. models.detector is the DocAligner session.
 // Returns {fields, lines, card, ms, step} or null when nothing could be read.
 export async function readUpload(img, models, progress = () => {}, opts = {}) {
-  const t0 = performance.now(), tries = [];
-  const steps = [["kartu", {}], ["kartu (persegi)", {square: true}], ["kartu (bingkai)", {pad: 0.5}], ["foto utuh", null]];
-  for (const [step, opt] of steps) {
+  const t0 = performance.now(), tries = [], skip = opts.skip || [], steps0 = skip.includes("corners")
+    ? [["foto utuh", null]] : [["kartu", {}], ["kartu (persegi)", {square: true}], ["kartu (bingkai)", {pad: 0.5}], ["foto utuh", null]];
+  let foundCorners = null;
+  for (const [step, opt] of steps0) {
     progress(`Mencari KTP: ${step}...`);
-    let card;
+    let card, corners = null;
     if (opt) {
       const q = await detectCorners(img, models.detector, models.ort, opt);
       if (!q) continue;
+      corners = q;
+      foundCorners ??= q;
       card = warpCard(img, orderCorners(q));
     } else card = await wholePhoto(img, models);
     const r = await readCard(card, models, progress, opts);
     const spot = nikSpotOk(r.lines, r.fields.nik);
-    tries.push({...r, step, rank: (r.fields.nik_valid ? 2 : 0) + (spot ? 1 : 0)});
-    if (r.fields.nik_valid && spot) break;
+    const qOk = corners ? quadOk(corners) : Math.max(img.w, img.h) / Math.max(Math.min(img.w, img.h), 1) <= 2.2;
+    tries.push({...r, step, corners, qOk, rank: (r.fields.nik_valid ? 2 : 0) + (spot ? 1 : 0)});
+    if (r.fields.nik_valid && spot && r.score >= 16 && qOk) break;
   }
   // Two cards in one photo (KTP next to a SIM, or front and back): the corner model finds one card, so its corners
   // land between them. Last resort, each half along the long side as its own photo.
-  if (!tries.some(t => t.rank === 3))
+  if (!tries.some(t => t.rank === 3 && t.score >= 16 && t.qOk) && !skip.includes("halves"))
     for (const [i, half] of halves(img).entries()) {
       progress(`Mencari KTP: setengah foto ${i + 1}...`);
       const q = await detectCorners(half, models.detector, models.ort, {pad: 0.1});
       if (!q) continue;
+      const ox = img.w >= img.h ? (i ? img.w >> 1 : 0) : 0, oy = img.w >= img.h ? 0 : (i ? img.h >> 1 : 0);
       const r = await readCard(warpCard(half, orderCorners(q)), models, progress, opts);
-      const spot = nikSpotOk(r.lines, r.fields.nik);
-      tries.push({...r, step: `setengah ${i + 1}`, rank: (r.fields.nik_valid ? 2 : 0) + (spot ? 1 : 0)});
-      if (r.fields.nik_valid && spot) break;
+      const spot = nikSpotOk(r.lines, r.fields.nik), qOk = quadOk(q);
+      tries.push({...r, step: `setengah ${i + 1}`, corners: q.map(([x, y]) => [x + ox, y + oy]), qOk,
+        rank: (r.fields.nik_valid ? 2 : 0) + (spot ? 1 : 0)});
+      if (r.fields.nik_valid && spot && r.score >= 16 && qOk) break;
     }
   if (!tries.length) return null;
-  const best = tries.reduce((a, b) => b.rank > a.rank ? b : a);
-  return {...best, ms: Math.round(performance.now() - t0)};
+  // Rank says how trustworthy the NIK is. When tries tie on rank, prefer a non-distorted quad, then higher label score.
+  const best = tries.reduce((a, b) => (b.rank > a.rank || (b.rank === a.rank && (b.qOk > a.qOk || (b.qOk === a.qOk && b.score > a.score)))) ? b : a);
+  return {...best, ms: Math.round(performance.now() - t0), corners: best.corners ?? foundCorners,
+    steps: tries.map(({step, rank, turned, score}) => ({step, rank, turned, score}))};
 }
 
 export {nikValid};

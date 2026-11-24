@@ -214,7 +214,7 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
         confidence: Object.fromEntries(Object.entries(conf).map(([k, v]) => [outName(k), Math.round(v * 1000) / 1000]))},
       card: r.card,
       // debug: every layer's output, to find where a field goes wrong (lines = pure model output per text line)
-      ...(debug && {debug: {lines: r.lines.map(([text, box, conf, probs, digits, wide]) => ({text, box, conf, probs, digits, wide})), orient: {turned: !!r.turned}, ...r.fields.layers, validate: {notes, confidence: conf}, accept: acc}})};
+      ...(debug && {debug: {step: r.step, steps: r.steps, corners: r.corners, lines: r.lines.map(([text, box, conf, probs, digits, wide]) => ({text, box, conf, probs, digits, wide})), orient: {turned: !!r.turned}, ...r.fields.layers, validate: {notes, confidence: conf}, accept: acc}})};
   };
 
   return {
@@ -223,14 +223,14 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     async parseNik(nik) { return parseNik(nik, await wilayah()); },
     /** A photo with a card somewhere in it: finds the card (with fallbacks), then reads it.
      * @param {RgbaImage} img @param {(step: string) => void} [onStep]
-     * @param {{debug?: boolean, skip?: ("nik"|"wilayah")[]}} [opts] debug adds each layer's output, skip bypasses layers
+     * @param {{debug?: boolean, skip?: ("corners"|"halves"|"orient"|"second"|"rows"|"parse"|"nik"|"wilayah")[]}} [opts] debug adds each layer's output, skip bypasses layers
      * @returns {Promise<KtpResult|null>} */
     async readImage(img, onStep, opts = {}) {
       return result(await readUpload(img, await preload(), onStep, opts), opts);
     },
     /** A camera frame plus the 4 card corners from live detection.
      * @param {RgbaImage} frame @param {number[][]} cornerPoints @param {(step: string) => void} [onStep]
-     * @param {{debug?: boolean, skip?: ("nik"|"wilayah")[]}} [opts] as in readImage
+     * @param {{debug?: boolean, skip?: ("corners"|"halves"|"orient"|"second"|"rows"|"parse"|"nik"|"wilayah")[]}} [opts] as in readImage
      * @returns {Promise<KtpResult|null>} */
     async readFrame(frame, cornerPoints, onStep, opts = {}) {
       return result(await readCard(warpCard(frame, orderCorners(cornerPoints)), await preload(), onStep, opts), opts);
