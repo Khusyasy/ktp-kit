@@ -15,7 +15,7 @@ calls. You can verify this in the browser's Network panel, or by reading a card 
 
 ## What is stored on the device
 
-- The model files, runtime and region table (about 11 MB unpacked) in the Cache API, under the cache name `ktp-kit-v5`.
+- The model files, runtime and region table (about 13 MB unpacked) in the Cache API, under the cache name `ktp-kit-v8`.
   ktp-kit asks the browser for persistent storage so they are not evicted. `engine.clearCache()` removes them.
 - **No card images and no field values are stored** by ktp-kit. They live in memory until your page drops them.
 

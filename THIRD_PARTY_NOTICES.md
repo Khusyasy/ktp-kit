@@ -2,7 +2,7 @@
 
 | Part | Source | License | Use here |
 |---|---|---|---|
-| PP-OCRv6 tiny text recognizer | PaddlePaddle/PaddleOCR, weights via RapidOCR | Apache-2.0 | **Modified**: the 6,906-class output was cut to 47 classes (46 KTP characters + blank) and the model was fine-tuned on synthetic KTP text lines. Shipped as `rec.onnx`. |
+| PP-OCRv6 small text recognizer | PaddlePaddle/PaddleOCR, weights via RapidOCR | Apache-2.0 | **Modified**: the 18,710-class output was cut to 47 classes (46 KTP characters + blank) and the model was fine-tuned on synthetic KTP text lines. Shipped as `rec.onnx`. |
 | PP-OCRv6 small text detector | PaddlePaddle/PaddleOCR via RapidOCR | Apache-2.0 | **Modified**: weights compressed to int8 (weight-only), shipped as `det.onnx`. `reader.js` re-implements RapidOCR's pre- and post-processing. |
 | DocAligner lcnet100 card-corner model | DocsaidLab/DocAligner | Apache-2.0 | **Modified**: weights compressed to int8 (weight-only), shipped as `corners.onnx`. |
 | Indonesian region codes | cahyadsn/wilayah | MIT, see [LICENSES/MIT-wilayah.txt](LICENSES/MIT-wilayah.txt) | `wilayah.csv`, converted. |

@@ -9,7 +9,7 @@ codes and NIK checks, in the browser or Node. The photo is never uploaded, and a
 >
 > - **Privasi:** foto KTP tidak di-upload ke server mana pun, tanpa API dan tanpa pihak ketiga. Lebih mudah sesuai
 >   UU PDP karena data tidak berpindah tangan.
-> - **Offline:** setelah model diunduh sekali (4,9 MB), tetap jalan tanpa internet.
+> - **Offline:** setelah model diunduh sekali (7,1 MB), tetap jalan tanpa internet.
 > - **Gratis:** tanpa biaya per scan, Apache-2.0, boleh untuk komersial.
 >
 > Coba [demo](https://ktp-kit.khusyasy.my.id) atau baca [docs](https://ktp-kit.khusyasy.my.id/docs) dalam bahasa Indonesia. Cerita pembuatannya ada di [write-up dev.to](https://dev.to/khusyasy/how-i-built-a-fully-offline-id-card-ocr-trained-on-synthetic-data-1bb3).
@@ -33,7 +33,7 @@ Status: **0.1, preview.** Accuracy numbers will be published from a consented te
 ```bash
 npm install ktp-kit                 # web component, engine, CLI
 npm install @ktp-kit/react          # or @ktp-kit/vue
-npx ktp-kit assets public/ktp-kit   # copy the models + runtime (4.9 MB, pre-compressed) to where your app serves static files
+npx ktp-kit assets public/ktp-kit   # copy the models + runtime (7.1 MB, pre-compressed) to where your app serves static files
 ```
 
 ## Use
@@ -110,7 +110,7 @@ on the card. Unreadable fields are `null`.
   "berlaku_hingga": "SEUMUR HIDUP", "kota_terbit": "KOTA ADMINISTRASI JAKARTA PUSAT", "tanggal_terbit": "12-08-2020",
   "kode_wilayah": "3171011001",
   "perlu_dicek": { "tanggal_lahir": ["from_nik"] },
-  "info": { "ktp_score": 1, "ktp_check": { "nik_valid": true, "tanggal_lahir_nik": true, "...": true }, "ms": 2300, "versi": "0.3.2", "confidence": { "nama": 0.93, "alamat": 0.88 } },
+  "info": { "ktp_score": 1, "ktp_check": { "nik_valid": true, "tanggal_lahir_nik": true, "...": true }, "ms": 2300, "versi": "0.4.0", "confidence": { "nama": 0.93, "alamat": 0.88 } },
   "card": "Blob (image/jpeg)"
 }
 ```
@@ -191,7 +191,7 @@ Cross-Origin-Embedder-Policy: require-corp
 ## Offline
 
 `ktp-kit` stores the models and runtime on the device (Cache API, persistent storage requested) the first time. The
-download is 4.9 MB: the CLI compresses the files (brotli) and the browser unpacks them, so the size is the same on any host. The
+download is 7.1 MB: the CLI compresses the files (brotli) and the browser unpacks them, so the size is the same on any host. The
 element shows the download progress and then "Siap offline". To test: read a card, turn on airplane mode, read again.
 
 Reading keeps working offline while the page is open. For the page to also **reload** offline, your app needs a
@@ -206,7 +206,7 @@ Nothing about the card leaves the device. The only requests are downloads of ktp
 ## How it works
 
 Card corners (DocAligner, Apache-2.0) → straighten → text lines (PP-OCRv6 small det, Apache-2.0) → each line read by a
-PP-OCRv6 tiny reader fine-tuned for KTP text → fields matched to the fixed KTP layout, snapped to official lists and
+PP-OCRv6 small reader fine-tuned for KTP text → fields matched to the fixed KTP layout, snapped to official lists and
 region names, and checked against the NIK.
 
 The full story, from synthetic training data to the browser build, is in the [dev.to write-up](https://dev.to/khusyasy/how-i-built-a-fully-offline-id-card-ocr-trained-on-synthetic-data-1bb3).
@@ -216,11 +216,11 @@ The full story, from synthetic training data to the browser build, is in the [de
 The text reader learned from generated KTP text lines only. A script draws lines in the KTP layout: labels,
 values, NIKs and headers. Names come from a hand-written list of common Indonesian name parts plus made-up syllables
 and random letters. Regions come from the public region code list. Lines are drawn in many fonts, then blurred,
-tilted, darkened and given glare, like phone photos. Training started from the stock PP-OCRv6 tiny weights. No real
+tilted, darkened and given glare, like phone photos. Training started from the stock PP-OCRv6 small weights. No real
 KTP photo, NIK or name was used to train it, so the model files hold no one's data.
 
-On 2,400 generated lines never used for training or for choosing the model, ktp-kit reads 92% of NIK lines and 83.3%
-of all text lines exactly. The general PaddleOCR PP-OCRv6 small model reads 92% and 51% of the same lines. The data,
+On 2,400 generated lines never used for training or for choosing the model, ktp-kit reads 96.2% of NIK lines and 85.0%
+of all text lines exactly. The general PaddleOCR PP-OCRv6 small model reads 91.6% and 51.4% of the same lines. The data,
 labels and scripts are in [benchmark/](benchmark/), so you can rerun this or test another reader. The generator makes
 lines hard on purpose (blur, fading, worn print), and real photos vary in other ways, so try it on your own cards before
 you rely on it. Names are the weakest field: check `perlu_dicek` and

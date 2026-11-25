@@ -18,13 +18,14 @@ Exact match after upper-casing and collapsing spaces. A blank strip counts when 
 
 | Reader | NIK lines | All text lines | Blank strips | Model file |
 |---|---|---|---|---|
-| ktp-kit 0.3.2 (models 0.3.0, `rec.onnx`, int8) | **92.4%** | **83.3%** | **99.4%** | **0.7 MB** |
+| ktp-kit 0.4.0 (models 0.4.0, `rec.onnx`, int8) | **96.2%** | **85.0%** | **98.8%** | **3.2 MB** |
+| ktp-kit 0.3.2 (models 0.3.0, `rec.onnx`, int8) | 92.4% | 83.3% | 99.4% | 0.7 MB |
 | ktp-kit 0.2.0 - 0.3.1 (models 0.2.0) | 91.6% | 82.1% | 98.8% | 0.7 MB |
 | ktp-kit 0.1.x | 90.8% | 81.5% | 97.0% | 0.7 MB |
 | PaddleOCR PP-OCRv6 small (RapidOCR 3.10.0) | 91.6% | 51.4% | 70.5% | 21.2 MB |
 | PaddleOCR PP-OCRv6 tiny (RapidOCR 3.10.0) | 87.8% | 48.7% | 71.1% | 4.5 MB |
 
-PP-OCRv6 tiny is the model ktp-kit's reader was fine-tuned from. All readers get the same cut-out line images and no
+PP-OCRv6 small is the model ktp-kit 0.4.0's reader was fine-tuned from. All readers get the same cut-out line images and no
 hints. On the NIK the general models are about as good. The gain is on names, addresses and other words, and on not
 reading text into the card's background pattern.
 

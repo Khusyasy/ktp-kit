@@ -9,15 +9,15 @@ import {parseNik} from "./nik.js";
 export const FILES = {
   corners: "corners.onnx.br",                 // card corner detector (DocAligner lcnet100, Apache-2.0)
   det: "det.onnx.br",                         // text-line finder (PP-OCRv6 small det, Apache-2.0)
-  rec: "rec.onnx.br",                         // line reader (PP-OCRv6 tiny, fine-tuned on synthetic KTP lines)
+  rec: "rec.onnx.br",                         // line reader (PP-OCRv6 small, fine-tuned on synthetic KTP lines)
   wilayah: "wilayah.csv.br",                  // official region codes (cahyadsn/wilayah, MIT)
   wasm: "ort/ort-wasm-simd-threaded.wasm.br", // onnxruntime-web runtime (engine)
   mjs: "ort/ort-wasm-simd-threaded.mjs",      // onnxruntime-web runtime (loader)
   brotli: "brotli-dec.wasm.gz",               // brotli decoder for browsers without DecompressionStream("brotli")
 };
 // Bump with every model change, or devices keep the old files.
-const CACHE = "ktp-kit-v7";
-export const VERSION = "0.3.2";  // = package.json (scripts/check.mjs), reported in each result for audit logs
+const CACHE = "ktp-kit-v8";
+export const VERSION = "0.4.0";  // = package.json (scripts/check.mjs), reported in each result for audit logs
 
 // Result keys in card order. Names follow Indonesian KTP OCR APIs (VIDA, GLAIR); the parser's own names differ for
 // two fields, kept so it stays line-for-line with ktp.py.
@@ -171,7 +171,7 @@ export function createKtpReader({base = "/ktp-kit/", ort, load, threads} = {}) {
     return corners;
   }
 
-  /** Everything (4.9 MB the first time, then from the device).
+  /** Everything (7.1 MB the first time, then from the device).
    * @param {(p: Progress) => void} [onProgress] */
   function preload(onProgress = () => {}) {
     all ??= (async () => {
