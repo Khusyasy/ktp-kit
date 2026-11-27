@@ -1,10 +1,9 @@
 # ktp-kit
 
-Read Indonesian ID cards (KTP) **on the user's device**. Camera guidance, all 16 printed fields, official region
-codes and NIK checks, in the browser or Node. The photo is never uploaded, and after the first load it works offline.
+Read Indonesian ID cards (KTP) **offline in the browser or Node** with JavaScript and WebAssembly. Camera guidance, all 16 printed fields, official region codes and NIK checks, all on the user's device. The photo is never uploaded, and after the first load it works without internet.
 
-> **Bahasa Indonesia:** ktp-kit adalah OCR KTP yang jalan di browser. Ambil NIK, nama, alamat dan 16 kolom KTP
-> dari foto langsung di HP/laptop user, lengkap dengan panduan kamera, kode wilayah resmi dan pengecekan NIK.
+> **Bahasa Indonesia:** ktp-kit adalah library JavaScript OCR KTP offline yang jalan langsung di browser. Ambil NIK, nama, alamat dan 16 kolom KTP
+> dari foto langsung di HP atau laptop user, lengkap dengan panduan kamera, kode wilayah resmi dan pengecekan NIK.
 > Hasilnya JSON.
 >
 > - **Privasi:** foto KTP tidak di-upload ke server mana pun, tanpa API dan tanpa pihak ketiga. Lebih mudah sesuai
@@ -26,7 +25,7 @@ codes and NIK checks, in the browser or Node. The photo is never uploaded, and a
   controller for your own UI. You get the result once, as JSON. Your form decides which fields to use and edit.
 - **Free and open source:** Apache-2.0, commercial use included (see [License](#license)).
 
-Status: **0.1, preview.** Accuracy numbers will be published from a consented test set.
+Status: **0.4.0.** Public synthetic benchmark numbers are below and in [benchmark/](benchmark/README.md).
 
 ## Install
 

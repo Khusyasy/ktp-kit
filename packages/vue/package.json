@@ -30,5 +30,5 @@
     "prepack": "cp ../../LICENSE ../../NOTICE ."
   },
   "types": "./index.d.ts",
-  "keywords": ["ktp", "e-ktp", "ocr", "indonesia", "nik", "on-device", "offline", "vue", "vue3"]
+  "keywords": ["ktp", "e-ktp", "ocr", "ktp-ocr", "indonesia", "nik", "on-device", "client-side", "offline", "browser", "javascript", "wasm", "scanner", "vue", "vue3"]
 }

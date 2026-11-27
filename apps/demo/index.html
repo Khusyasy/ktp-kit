@@ -20,6 +20,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" data-t-content="ogAlt" content="">
 <meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">%JSONLD%</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M1.5%208.75V5.25h3.5M19%205.25h3.5v3.5M22.5%2015.25v3.5H19M5%2018.75H1.5v-3.5%22%20fill%3D%22none%22%20stroke%3D%22%23579be8%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22square%22%2F%3E%3Cg%20fill%3D%22%23579be8%22%3E%3Crect%20x%3D%224.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2210.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2216.5%22%20y%3D%2210.75%22%20width%3D%223%22%20height%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preload" href="/fonts/ibm-plex-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -245,10 +246,10 @@
 
   // The agreed Indonesian and English copy.
   const T = {
-    id: {seoTitle: "ktp-kit: OCR KTP di browser, foto tidak dikirim ke server",
-      seoDesc: "Baca KTP dari foto langsung di HP user: NIK, nama, alamat dan 16 kolom lain jadi JSON. Tanpa API berbayar, tanpa upload, tetap jalan offline. Gratis, Apache-2.0.",
-      ogAlt: "ktp-kit membaca KTP di browser dan memberi hasil JSON",
-      h1: "KTP dicek di HP.", sub: "Tanpa pihak ketiga, langsung ke server Anda. Tetap jalan tanpa internet.",
+    id: {seoTitle: "ktp-kit - OCR KTP offline di browser untuk JavaScript",
+      seoDesc: "Library JavaScript OCR KTP offline di browser. Baca NIK, nama, alamat dan 16 kolom KTP jadi JSON di perangkat user. Tanpa API, tanpa upload, Apache-2.0.",
+      ogAlt: "ktp-kit membaca KTP offline di browser dan memberi hasil JSON",
+      h1: "OCR KTP offline di browser.", sub: "Baca KTP langsung di HP user dengan JavaScript dan WebAssembly. Tanpa upload, tanpa API berbayar, tetap jalan tanpa internet.",
       nDemo: "Demo", nPasang: "Install", nAkurasi: "Akurasi", nLisensi: "Lisensi", navLabel: "Bagian",
       t1: mb => mb ? `Download model, ${mb} MB` : "Download model", t2: "Nyalakan mode pesawat", t3: "Foto KTP",
       saved: "Tersimpan di device", downloading: p => `Download ${p}%`, offline: "Offline", online: "Masih online",
@@ -261,10 +262,10 @@
       analitik: "Halaman ini tanpa analytics.", privasi: "Privasi", writeup: "Cerita di balik ktp-kit", copy: "Copy", copied: "Copied",
       other: "EN", otherLabel: "Read in English", decimal: ",",
       nDocs: "Docs", hH: "Result", hIntro: "Result dikirim sekali sebagai JSON. Form di bawah contoh app: isi field yang dibutuhkan, tandai yang perlu dicek.", hForm: "Contoh form pendaftaran", hJson: "dari KTP Anda", hSample: "data contoh", hDocs: "Docs lengkap", tNik: "Baris NIK", tAll: "Semua baris teks", tBlank: "Strip kosong (tanpa teks)", tSize: "Ukuran model baca", vBench: "Data dan script benchmark di GitHub", hEmpty: "// Foto KTP di atas, result-nya muncul di sini.", fNik: "NIK", fNama: "Nama", fTempat: "Tempat lahir", fTanggal: "Tanggal lahir", fAlamat: "Alamat", fDaftar: "Daftar", fSent: "Ini contoh, tidak ada data yang dikirim.", why: {nik_mismatch: "Tidak cocok dengan NIK, cek lagi", from_nik: "Tidak terbaca, diambil dari NIK", low_confidence: "Kurang jelas, cek lagi", unstable: "Hasil baca berubah-ubah, cek lagi", not_read: "Tidak terbaca, isi manual", region_mismatch: "Digit pertama NIK mungkin salah, cek lagi", region_unknown: "Kode wilayah NIK tidak dikenal, cek lagi"}, nikInvalid: "NIK tidak valid, cek lagi", nikMissing: "NIK tidak terbaca, isi manual"},
-    en: {seoTitle: "ktp-kit: Indonesian ID card (KTP) OCR in the browser",
-      seoDesc: "Read Indonesian ID cards (KTP) on the user's phone: NIK, name, address and all 16 fields as JSON. No paid API, no upload, works offline. Free, Apache-2.0.",
-      ogAlt: "ktp-kit reads a KTP in the browser and returns JSON",
-      h1: "KTP checked on the phone.", sub: "No third party, straight to your server. Works offline.",
+    en: {seoTitle: "ktp-kit - Offline Indonesian KTP OCR in the browser (JavaScript)",
+      seoDesc: "Open-source JavaScript library for offline Indonesian ID card (KTP) OCR in the browser. Extract NIK, name, address and 16 fields as JSON with no API or upload.",
+      ogAlt: "ktp-kit reads Indonesian KTP cards offline in the browser and returns JSON",
+      h1: "Offline KTP OCR in the browser.", sub: "Read Indonesian ID cards on the user's phone with JavaScript and WebAssembly. No upload, no paid API, works offline.",
       nDemo: "Demo", nPasang: "Install", nAkurasi: "Accuracy", nLisensi: "License", navLabel: "Sections",
       t1: mb => mb ? `Download the model, ${mb} MB` : "Download the model", t2: "Turn on airplane mode", t3: "Photograph a KTP",
       saved: "Saved on this device", downloading: p => `Downloading ${p}%`, offline: "Offline", online: "Still online",

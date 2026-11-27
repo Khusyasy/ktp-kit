@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ktp-kit docs: install OCR KTP di browser, result JSON, contoh kode</title>
-<meta name="description" content="Cara install ktp-kit, isi result-nya, dan contoh kode untuk form dan server. OCR KTP jalan di HP user, foto tidak di-upload, bisa offline.">
+<title>Dokumentasi ktp-kit - Install OCR KTP offline di browser, React dan Vue</title>
+<meta name="description" content="Panduan install ktp-kit, library JavaScript OCR KTP offline di browser. Format result JSON, contoh form HTML, React dan Vue, serta pengiriman ke server tanpa upload pihak ketiga.">
 <link rel="canonical" href="https://ktp-kit.khusyasy.my.id/docs">
 <link rel="alternate" hreflang="id" href="https://ktp-kit.khusyasy.my.id/docs">
 <link rel="alternate" hreflang="en" href="https://ktp-kit.khusyasy.my.id/en/docs">
@@ -13,13 +13,14 @@
 <meta property="og:site_name" content="ktp-kit">
 <meta property="og:url" content="https://ktp-kit.khusyasy.my.id/docs">
 <meta property="og:locale" content="id_ID">
-<meta property="og:title" content="ktp-kit docs: install OCR KTP di browser, result JSON, contoh kode">
-<meta property="og:description" content="Cara install ktp-kit, isi result-nya, dan contoh kode untuk form dan server. OCR KTP jalan di HP user, foto tidak di-upload, bisa offline.">
+<meta property="og:title" content="Dokumentasi ktp-kit - Install OCR KTP offline di browser, React dan Vue">
+<meta property="og:description" content="Panduan install ktp-kit, library JavaScript OCR KTP offline di browser. Format result JSON, contoh form HTML, React dan Vue, serta pengiriman ke server tanpa upload pihak ketiga.">
 <meta property="og:image" content="https://ktp-kit.khusyasy.my.id/og-id.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="ktp-kit membaca KTP di browser dan memberi hasil JSON">
+<meta property="og:image:alt" content="ktp-kit membaca KTP offline di browser dan memberi hasil JSON">
 <meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Apa bedanya ktp-kit dengan Tesseract.js untuk OCR KTP?","acceptedAnswer":{"@type":"Answer","text":"Tesseract.js adalah mesin OCR teks umum sehingga Anda perlu menulis sendiri cropping sudut kartu, preprocessing foto blur atau miring, serta parser regex KTP. ktp-kit sudah mencakup deteksi sudut kartu, pelurusan perspektif, deteksi baris, model baca khusus KTP di WebAssembly, dan parser 16 kolom plus validasi NIK serta kode wilayah Kemendagri."}},{"@type":"Question","name":"Apakah OCR KTP di browser aman untuk kepatuhan UU PDP?","acceptedAnswer":{"@type":"Answer","text":"Pemrosesan foto KTP berjalan lokal di perangkat user memakai ONNX Runtime Web tanpa mengirim gambar ke API pihak ketiga. Aplikasi Anda bisa mengirim field yang dibutuhkan saja ke server sendiri sesuai prinsip pembatasan data."}},{"@type":"Question","name":"Apakah ktp-kit bisa dipakai di React, Vue, Next.js, atau Nuxt?","acceptedAnswer":{"@type":"Answer","text":"Bisa. Tersedia wrapper @ktp-kit/react dan @ktp-kit/vue, atau web component ktp-capture untuk HTML biasa, Laravel Blade, Svelte, dan Angular. Server-side rendering aman karena kamera dan model baru berjalan di browser."}},{"@type":"Question","name":"Berapa ukuran unduhan agar bisa jalan offline?","acceptedAnswer":{"@type":"Answer","text":"Total aset model dan runtime sekitar 7,1 MB terkompresi brotli, diunduh sekali lalu disimpan di Cache API browser. Setelah tersimpan, pembacaan KTP tetap berjalan tanpa koneksi internet."}}]}</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M1.5%208.75V5.25h3.5M19%205.25h3.5v3.5M22.5%2015.25v3.5H19M5%2018.75H1.5v-3.5%22%20fill%3D%22none%22%20stroke%3D%22%23579be8%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22square%22%2F%3E%3Cg%20fill%3D%22%23579be8%22%3E%3Crect%20x%3D%224.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2210.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2216.5%22%20y%3D%2210.75%22%20width%3D%223%22%20height%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preload" href="/fonts/ibm-plex-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -47,12 +48,13 @@
       <li><a class="hover:text-ink" href="#server">Kirim ke server</a></li>
       <li><a class="hover:text-ink" href="#offline">Offline</a></li>
       <li><a class="hover:text-ink" href="#privasi">Privasi</a></li>
+      <li><a class="hover:text-ink" href="#faq">FAQ</a></li>
     </ol>
   </nav>
 
   <article class="docs max-w-4xl min-w-0">
-    <h1 class="text-4xl font-semibold tracking-tight">Docs</h1>
-    <p class="mt-4 text-lg text-muted">ktp-kit membaca KTP langsung di device user, lalu memberi result dalam bentuk JSON. Form, validasi, dan penyimpanan tetap di app Anda. Docs ini membahas dari install sampai data masuk ke server.</p>
+    <h1 class="text-4xl font-semibold tracking-tight">Dokumentasi ktp-kit</h1>
+    <p class="mt-4 text-lg text-muted">ktp-kit adalah library JavaScript OCR KTP offline yang membaca kartu langsung di perangkat user dan mengembalikan hasil JSON. Form, validasi, dan penyimpanan tetap di app Anda. Dokumentasi ini membahas dari install sampai data masuk ke server.</p>
 
     <h2 id="install">Install</h2>
     <ol>
@@ -221,6 +223,16 @@ app.post("/daftar", upload.single("ktp"), (req, res) =&gt; {
 
     <h2 id="privasi">Privasi</h2>
     <p>Foto dan data KTP tidak keluar dari device sampai app Anda sendiri yang mengirimnya. Request network dari ktp-kit hanya untuk download modelnya. UU PDP meminta data dikumpulkan seperlunya, jadi kirim field yang dibutuhkan saja, dan tidak usah simpan foto KTP kalau tidak wajib.</p>
+
+    <h2 id="faq">FAQ</h2>
+    <h3>Apa bedanya dengan Tesseract.js?</h3>
+    <p>Tesseract.js adalah mesin OCR teks umum, jadi untuk KTP Anda masih perlu menulis sendiri deteksi sudut kartu, pelurusan foto miring atau blur, serta parser regex. ktp-kit sudah menyatukan panduan kamera, deteksi sudut, model baca khusus KTP di WebAssembly, dan parser 16 kolom beserta validasi NIK dan kode wilayah Kemendagri.</p>
+    <h3>Apakah aman untuk kepatuhan UU PDP?</h3>
+    <p>Pemrosesan berjalan lokal di browser lewat ONNX Runtime Web tanpa mengirim foto ke API pihak ketiga. Aplikasi Anda memegang kendali penuh atas field apa saja yang dikirim ke server sendiri.</p>
+    <h3>Apakah bisa dipakai di React, Vue, Next.js, atau Nuxt?</h3>
+    <p>Bisa. Tersedia wrapper <code>@ktp-kit/react</code> dan <code>@ktp-kit/vue</code>, atau web component <code>&lt;ktp-capture&gt;</code> untuk HTML biasa, Laravel Blade, Svelte, dan Angular. Server-side rendering aman karena kamera dan model baru aktif di browser.</p>
+    <h3>Berapa ukuran unduhan agar jalan offline?</h3>
+    <p>Total aset model dan runtime sekitar 7,1 MB terkompresi brotli, diunduh sekali lalu disimpan di Cache API browser. Setelah itu pembacaan KTP tetap jalan tanpa koneksi internet.</p>
   </article>
 </main>
 <script type="module">

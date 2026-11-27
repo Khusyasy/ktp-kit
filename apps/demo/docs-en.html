@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ktp-kit docs: install KTP OCR in the browser, JSON result, code examples</title>
-<meta name="description" content="How to install ktp-kit, what the result holds, and code examples for forms and servers. KTP OCR runs on the user's phone, the photo is never uploaded, works offline.">
+<title>ktp-kit docs - Offline Indonesian KTP OCR in JavaScript, React and Vue</title>
+<meta name="description" content="How to install ktp-kit, an offline JavaScript library for Indonesian KTP OCR in the browser. JSON result fields, React and Vue examples, and server handling with no third-party upload.">
 <link rel="canonical" href="https://ktp-kit.khusyasy.my.id/en/docs">
 <link rel="alternate" hreflang="id" href="https://ktp-kit.khusyasy.my.id/docs">
 <link rel="alternate" hreflang="en" href="https://ktp-kit.khusyasy.my.id/en/docs">
@@ -13,13 +13,14 @@
 <meta property="og:site_name" content="ktp-kit">
 <meta property="og:url" content="https://ktp-kit.khusyasy.my.id/en/docs">
 <meta property="og:locale" content="en_US">
-<meta property="og:title" content="ktp-kit docs: install KTP OCR in the browser, JSON result, code examples">
-<meta property="og:description" content="How to install ktp-kit, what the result holds, and code examples for forms and servers. KTP OCR runs on the user's phone, the photo is never uploaded, works offline.">
+<meta property="og:title" content="ktp-kit docs - Offline Indonesian KTP OCR in JavaScript, React and Vue">
+<meta property="og:description" content="How to install ktp-kit, an offline JavaScript library for Indonesian KTP OCR in the browser. JSON result fields, React and Vue examples, and server handling with no third-party upload.">
 <meta property="og:image" content="https://ktp-kit.khusyasy.my.id/og-en.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="ktp-kit reads a KTP in the browser and returns JSON">
+<meta property="og:image:alt" content="ktp-kit reads Indonesian KTP cards offline in the browser and returns JSON">
 <meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How is ktp-kit different from Tesseract.js for KTP OCR?","acceptedAnswer":{"@type":"Answer","text":"Tesseract.js is a general-purpose OCR engine, so reading KTPs still requires building card corner detection, perspective correction, blur checks, and regex field parsers yourself. ktp-kit bundles guided capture, card alignment, a KTP-trained WebAssembly reader, 16-field parsing, and NIK plus Kemendagri region validation."}},{"@type":"Question","name":"Does client-side KTP OCR help with Indonesia's UU PDP compliance?","acceptedAnswer":{"@type":"Answer","text":"Yes. Card images are processed locally in the user's browser with ONNX Runtime Web and never sent to a third-party OCR API, so your app can submit only the fields it actually needs to your own server."}},{"@type":"Question","name":"Does ktp-kit work with React, Vue, Next.js, and Nuxt?","acceptedAnswer":{"@type":"Answer","text":"Yes. Use @ktp-kit/react, @ktp-kit/vue, or the plain ktp-capture web component for HTML, Laravel Blade, Svelte, and Angular. Server-side rendering works because the camera and models only start in the browser."}},{"@type":"Question","name":"How large is the offline download?","acceptedAnswer":{"@type":"Answer","text":"The models and WebAssembly runtime are about 7.1 MB brotli-compressed, downloaded once and stored in the browser Cache API. Subsequent scans work with no internet connection."}}]}</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M1.5%208.75V5.25h3.5M19%205.25h3.5v3.5M22.5%2015.25v3.5H19M5%2018.75H1.5v-3.5%22%20fill%3D%22none%22%20stroke%3D%22%23579be8%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22square%22%2F%3E%3Cg%20fill%3D%22%23579be8%22%3E%3Crect%20x%3D%224.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2210.5%22%20y%3D%228.25%22%20width%3D%224.5%22%20height%3D%227.5%22%2F%3E%3Crect%20x%3D%2216.5%22%20y%3D%2210.75%22%20width%3D%223%22%20height%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preload" href="/fonts/ibm-plex-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/ibm-plex-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -47,12 +48,13 @@
       <li><a class="hover:text-ink" href="#server">Send to a server</a></li>
       <li><a class="hover:text-ink" href="#offline">Offline</a></li>
       <li><a class="hover:text-ink" href="#privacy">Privacy</a></li>
+      <li><a class="hover:text-ink" href="#faq">FAQ</a></li>
     </ol>
   </nav>
 
   <article class="docs max-w-4xl min-w-0">
-    <h1 class="text-4xl font-semibold tracking-tight">Docs</h1>
-    <p class="mt-4 text-lg text-muted">ktp-kit reads the KTP on the user's device and hands you the result as JSON. Forms, validation and storage stay in your app. These docs go from install to the data reaching your server.</p>
+    <h1 class="text-4xl font-semibold tracking-tight">ktp-kit documentation</h1>
+    <p class="mt-4 text-lg text-muted">ktp-kit is an offline JavaScript library for Indonesian KTP OCR in the browser. It reads the card on the user's device and hands you the result as JSON. Forms, validation and storage stay in your app. These docs go from install to the data reaching your server.</p>
 
     <h2 id="install">Install</h2>
     <ol>
@@ -221,6 +223,16 @@ app.post("/signup", upload.single("ktp"), (req, res) =&gt; {
 
     <h2 id="privacy">Privacy</h2>
     <p>The KTP photo and data stay on the device until your own app sends them. ktp-kit's only network requests download its models. Indonesia's data protection law (UU PDP) asks you to collect only what you need, so send only the fields you use, and skip storing the KTP photo unless it is required.</p>
+
+    <h2 id="faq">FAQ</h2>
+    <h3>How is ktp-kit different from Tesseract.js?</h3>
+    <p>Tesseract.js is a general-purpose OCR engine, so reading KTPs still requires building card corner detection, perspective correction, blur checks and regex field parsers yourself. ktp-kit bundles guided capture, card alignment, a KTP-trained WebAssembly reader, 16-field parsing and NIK plus Kemendagri region validation.</p>
+    <h3>Does client-side KTP OCR help with UU PDP compliance?</h3>
+    <p>Yes. Card images stay in the user's browser and are processed locally with ONNX Runtime Web, never sent to a third-party OCR API. Your app decides which fields to submit to your own server.</p>
+    <h3>Does it work with React, Vue, Next.js and Nuxt?</h3>
+    <p>Yes. Use <code>@ktp-kit/react</code>, <code>@ktp-kit/vue</code>, or the plain <code>&lt;ktp-capture&gt;</code> web component for HTML, Laravel Blade, Svelte and Angular. Server-side rendering works because the camera and models only start in the browser.</p>
+    <h3>How large is the offline download?</h3>
+    <p>The models and WebAssembly runtime are about 7.1 MB brotli-compressed, downloaded once and kept in the browser Cache API. After that, scanning works with no internet connection.</p>
   </article>
 </main>
 <script type="module">

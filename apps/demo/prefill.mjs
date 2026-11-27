@@ -9,10 +9,29 @@ export function prefill(html, lang = "id") {
   const a = html.indexOf("const T = {"), b = html.indexOf("\n  };", a);
   const T = new Function(`return ${html.slice(a + 10, b + 4)}`)();  // our own page source
   const L = T[lang];
+  const url = lang === "en" ? `${SITE}/en` : `${SITE}/`;
+  const jsonld = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "ktp-kit",
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "Web, Node.js",
+    inLanguage: lang,
+    url,
+    description: L.seoDesc,
+    softwareVersion: "0.4.0",
+    license: "https://www.apache.org/licenses/LICENSE-2.0",
+    codeRepository: "https://github.com/Khusyasy/ktp-kit",
+    downloadUrl: "https://www.npmjs.com/package/ktp-kit",
+    programmingLanguage: ["JavaScript", "TypeScript", "WebAssembly"],
+    offers: {"@type": "Offer", price: "0", priceCurrency: "IDR"},
+    author: {"@type": "Person", name: "Muhammad Luthfi Khusyasy"},
+  });
   return html
-    // per-language values in the head: <html lang>, canonical and og:url, og:locale, og:image
-    .replaceAll("%LANG%", lang).replaceAll("%URL%", lang === "en" ? `${SITE}/en` : `${SITE}/`)
+    // per-language values in the head: <html lang>, canonical and og:url, og:locale, og:image, structured data
+    .replaceAll("%LANG%", lang).replaceAll("%URL%", url)
     .replaceAll("%LOCALE%", lang === "en" ? "en_US" : "id_ID")
+    .replace("%JSONLD%", jsonld)
     // meta tags with data-t-content="key": the string goes in their content attribute
     .replace(/(<meta\b[^>]*\bdata-t-content="(\w+)"[^>]*\bcontent=")[^"]*(")/g, (m, open, key, close) =>
       typeof L[key] === "string" ? open + esc(L[key]) + close : m)
