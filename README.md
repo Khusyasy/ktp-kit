@@ -1,4 +1,8 @@
-# ktp-kit
+<h1><img src="https://raw.githubusercontent.com/Khusyasy/ktp-kit/main/.github/logo.svg" alt="" width="28" height="28" /> ktp-kit</h1>
+
+[![npm version](https://img.shields.io/npm/v/ktp-kit)](https://www.npmjs.com/package/ktp-kit)
+[![license](https://img.shields.io/npm/l/ktp-kit)](LICENSE)
+[![check](https://github.com/Khusyasy/ktp-kit/actions/workflows/check.yml/badge.svg)](https://github.com/Khusyasy/ktp-kit/actions/workflows/check.yml)
 
 Read Indonesian ID cards (KTP) **offline in the browser or Node** with JavaScript and WebAssembly. Camera guidance, all 16 printed fields, official region codes and NIK checks, all on the user's device. The photo is never uploaded, and after the first load it works without internet.
 
