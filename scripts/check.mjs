@@ -14,6 +14,10 @@ if (oracle.nama !== "SITI CONTOH" || oracle.layers.rows.nama !== "SITI CONTOH" |
 const p = kit.parseNik("3171014501909001");  // made-up NIK (sequence 9001, never real): region 317101, born 05-01-1990, female
 if (!p.valid || p.jenis_kelamin !== "PEREMPUAN" || p.tanggal_lahir !== "05-01-1990" || kit.parseNik("3171234567890123").valid)
   throw new Error("parseNik smoke test failed");
+// made-up NIKs: 31-02-1990 (female, day 71), 29-02-2001 (not a leap year), 29-02-2000 (leap year)
+if (kit.parseNik("3171017102909001").valid || kit.parseNik("3171012902019001").valid
+  || kit.parseNik("3171012902009001").tanggal_lahir !== "29-02-2000")
+  throw new Error("parseNik impossible birth date check failed");
 if (!kit.nikValid("9503020501909001") || !kit.nikValid("9604040501909001"))
   throw new Error("nikValid Papua Pegunungan / Papua Barat Daya (95-96) failed");
 if (kit.parseFields({rt_rw: "007I002"}, null).rt_rw !== "007/002")
