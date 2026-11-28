@@ -19,11 +19,14 @@ export function parseNik(nik, wilayah, now = new Date().getFullYear()) {
   const female = day > 40;
   if (female) day -= 40;
   const yy = +nik.slice(10, 12), century = 2000 + yy > now ? 1900 : 2000;
+  const month = +nik.slice(8, 10), year = century + yy;
+  // nikValid allows day 1-31 in any month; 31-02 or 29-02 in a non-leap year is not a birth date.
+  if (new Date(Date.UTC(year, month - 1, day)).getUTCDate() !== day) return {nik, valid: false};
   const name = code => wilayah?.name.get(code) ?? null;
   return {
     nik, valid: true,
     jenis_kelamin: female ? "PEREMPUAN" : "LAKI-LAKI",
-    tanggal_lahir: `${String(day).padStart(2, "0")}-${nik.slice(8, 10)}-${century + yy}`,
+    tanggal_lahir: `${String(day).padStart(2, "0")}-${nik.slice(8, 10)}-${year}`,
     kode_wilayah: nik.slice(0, 6),
     provinsi: name(nik.slice(0, 2)), kabupaten_kota: name(nik.slice(0, 4)), kecamatan: name(nik.slice(0, 6)),
     urut: nik.slice(12),
