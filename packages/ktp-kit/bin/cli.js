@@ -53,7 +53,7 @@ if (cmd === "assets") {
   if (!files.length) { console.error("ktp-kit read: no JPEG photos found in " + args.filter(a => !a.startsWith("--")).join(" ")); process.exit(1); }
   const cols = ["file", "nik", "nik_valid", "nama", "tempat_lahir", "tanggal_lahir", "jenis_kelamin", "golongan_darah", "alamat",
     "rt_rw", "kelurahan_desa", "kecamatan", "kabupaten_kota", "provinsi", "agama", "status_perkawinan", "pekerjaan",
-    "kewarganegaraan", "berlaku_hingga", "kota_terbit", "tanggal_terbit", "kode_wilayah", "perlu_dicek", "ktp_score"];
+    "kewarganegaraan", "berlaku_hingga", "kota_terbit", "tanggal_terbit", "kode_wilayah", "perlu_dicek", "ktp_score", "error"];
   const cell = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
   if (csv) console.log(cols.join(","));
   for (const file of files) {
