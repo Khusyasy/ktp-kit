@@ -1,6 +1,6 @@
 {
   "name": "ktp-kit",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Offline Indonesian KTP OCR in the browser and Node (JavaScript/WebAssembly). Guided camera, all 16 fields, region codes, no upload.",
   "keywords": [
     "ktp",

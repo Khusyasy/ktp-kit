@@ -25,7 +25,7 @@ Read Indonesian ID cards (KTP) **offline in the browser or Node** with JavaScrip
   controller for your own UI. You get the result once, as JSON. Your form decides which fields to use and edit.
 - **Free and open source:** Apache-2.0, commercial use included (see [License](#license)).
 
-Status: **0.4.0.** Public synthetic benchmark numbers are below and in [benchmark/](benchmark/README.md).
+Status: **0.4.1.** Public synthetic benchmark numbers are below and in [benchmark/](benchmark/README.md).
 
 ## Install
 
@@ -109,7 +109,7 @@ on the card. Unreadable fields are `null`.
   "berlaku_hingga": "SEUMUR HIDUP", "kota_terbit": "KOTA ADMINISTRASI JAKARTA PUSAT", "tanggal_terbit": "12-08-2020",
   "kode_wilayah": "3171011001",
   "perlu_dicek": { "tanggal_lahir": ["from_nik"] },
-  "info": { "ktp_score": 1, "ktp_check": { "nik_valid": true, "tanggal_lahir_nik": true, "...": true }, "ms": 2300, "versi": "0.4.0", "confidence": { "nama": 0.93, "alamat": 0.88 } },
+  "info": { "ktp_score": 1, "ktp_check": { "nik_valid": true, "tanggal_lahir_nik": true, "...": true }, "ms": 2300, "versi": "0.4.1", "confidence": { "nama": 0.93, "alamat": 0.88 } },
   "card": "Blob (image/jpeg)"
 }
 ```
